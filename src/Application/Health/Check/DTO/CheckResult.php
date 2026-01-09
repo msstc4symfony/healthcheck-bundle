@@ -7,10 +7,20 @@ final class CheckResult
     /**
      * @var string[]
      */
-    public array $messages = [];
+    public private(set) array $messages = [];
 
     /**
      * @var string[]
      */
-    public array $errors = [];
+    public private(set) array $errors = [];
+
+    public function addMessage(string $message): void
+    {
+        $this->messages[] = $message;
+    }
+
+    public function addError(string $error): void
+    {
+        $this->errors[] = $error;
+    }
 }

@@ -6,6 +6,7 @@ namespace MaxShamaev\HealthCheckBundle\DependencyInjection;
 
 use Exception;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\CacheChecker;
+use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\CheckInterface;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\DBALConnectionChecker;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\ElasticaConnectionChecker;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\MemcacheChecker;
@@ -14,7 +15,10 @@ use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\MongoConnectio
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\PredisChecker;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\RabbitmqChecker;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\RedisChecker;
+use Memcache;
+use Memcached;
 use Predis\Client;
+use Redis;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ChildDefinition;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
@@ -24,7 +28,7 @@ use Symfony\Component\DependencyInjection\Extension\Extension;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 use Symfony\Component\DependencyInjection\Reference;
 
-class HealthCheckExtension extends Extension implements CompilerPassInterface
+final class HealthCheckExtension extends Extension implements CompilerPassInterface
 {
     /**
      * @param array<array-key, mixed> $configs
@@ -55,9 +59,10 @@ class HealthCheckExtension extends Extension implements CompilerPassInterface
             if (preg_match('/^doctrine.dbal.(\w+)_connection$/Ss', $id, $match) === 1) {
                 $name = $match[1];
                 $hid = sprintf('healthcheck.checker.%s', $id);
-                $handler = new Definition(DBALConnectionChecker::class);
-                $handler->addArgument(new Reference($id));
-                $handler->addArgument($name);
+                $handler = new Definition(DBALConnectionChecker::class)
+                    ->addArgument(new Reference($id))
+                    ->addArgument($name)
+                ;
                 $this->addDefinition($container, $hid, $handler);
             }
         }
@@ -68,8 +73,9 @@ class HealthCheckExtension extends Extension implements CompilerPassInterface
         // Add health handler for every RabbitMQ connection
         foreach (array_keys($container->findTaggedServiceIds('old_sound_rabbit_mq.connection')) as $id) {
             $hid = sprintf('healthcheck.checker.%s', $id);
-            $handler = new Definition(RabbitmqChecker::class);
-            $handler->addArgument(new Reference($id));
+            $handler = new Definition(RabbitmqChecker::class)
+                ->addArgument(new Reference($id))
+            ;
             $this->addDefinition($container, $hid, $handler);
         }
     }
@@ -77,53 +83,35 @@ class HealthCheckExtension extends Extension implements CompilerPassInterface
     private function definedCacheClientsCheckers(ContainerBuilder $container): void
     {
         foreach ($container->getDefinitions() as $id => $definition) {
-            if ($definition->getClass() === null) {
+            $class = $definition->getClass();
+            if ($class === null) {
                 continue;
             }
 
-            $hid = null;
-            $handler = null;
+            $checkerClass = match ($class) {
+                Client::class => PredisChecker::class,
+                Memcached::class => MemcachedChecker::class,
+                Memcache::class => MemcacheChecker::class,
+                Redis::class => RedisChecker::class,
+                default => null,
+            };
 
-            switch ($definition->getClass()) {
-                // Add health handler for every Predis\Client
-                case Client::class:
-                    $hid = sprintf('healthcheck.checker.%s', $id);
-                    $handler = new Definition(PredisChecker::class);
-                    $handler->addArgument(new Reference($id));
-                    break;
-
-                    // Add health handler for every Memcached client
-                case 'Memcached':
-                    $hid = sprintf('healthcheck.checker.%s', $id);
-                    $handler = new Definition(MemcachedChecker::class);
-                    $handler->addArgument(new Reference($id));
-                    break;
-
-                    // Add health handler for every Memcache client
-                case 'Memcache':
-                    $hid = sprintf('healthcheck.checker.%s', $id);
-                    $handler = new Definition(MemcacheChecker::class);
-                    $handler->addArgument(new Reference($id));
-                    break;
-
-                    // Add health handler for every Redis client
-                case 'Redis':
-                    $hid = sprintf('healthcheck.checker.%s', $id);
-                    $handler = new Definition(RedisChecker::class);
-                    $handler->addArgument(new Reference($id));
-                    break;
+            if ($checkerClass === null) {
+                continue;
             }
 
-            if ($handler instanceof Definition) {
-                $this->addDefinition($container, $hid, $handler);
-            }
+            $hid = sprintf('healthcheck.checker.%s', $id);
+            $handler = new Definition($checkerClass)
+                ->addArgument(new Reference($id))
+            ;
+            $this->addDefinition($container, $hid, $handler);
         }
     }
 
     private function definedCachePoolsCheckers(ContainerBuilder $container): void
     {
         // Add health handler for every cache pool
-        /** @var list<array{name: string}> $tags */
+        /** @var list<array{name?: string}> $tags */
         foreach ($container->findTaggedServiceIds('cache.pool') as $id => $tags) {
             $pool = $container->getDefinition($id);
             if ($pool->isAbstract()) {
@@ -135,9 +123,10 @@ class HealthCheckExtension extends Extension implements CompilerPassInterface
                 $pool = $container->findDefinition($pool->getParent());
                 $parentName = $pool->getClass();
                 $class ??= $pool->getClass();
-                $tags = $pool->getTag('cache.pool');
-                if ($tags !== []) {
-                    $tags[0] += $tags[0];
+                $parentTags = $pool->getTag('cache.pool');
+                if ($parentTags !== []) {
+                    // Child's keys win, parent fills in the missing ones (e.g. inherited "name").
+                    $tags[0] = ($tags[0] ?? []) + $parentTags[0];
                 }
             }
             $name = $tags[0]['name'] ?? $id;
@@ -147,7 +136,7 @@ class HealthCheckExtension extends Extension implements CompilerPassInterface
             }
 
             $hid = sprintf('healthcheck.checker.cache.pool.%s', $name);
-            $handler = (new Definition(CacheChecker::class))
+            $handler = new Definition(CacheChecker::class)
                 ->addArgument(new Reference($id))
                 ->addArgument($name)
                 ->addArgument($parentName)
@@ -163,10 +152,10 @@ class HealthCheckExtension extends Extension implements CompilerPassInterface
             if (preg_match('/^doctrine_mongodb.odm.(\w+)_connection$/Ss', $id, $match) === 1) {
                 $name = $match[1];
                 $hid = sprintf('healthcheck.checker.%s', $id);
-                $handler = new Definition(MongoConnectionChecker::class);
-                $handler->addArgument(new Reference($id));
-                $handler->addArgument($name);
-                $handler->setAutowired(true);
+                $handler = new Definition(MongoConnectionChecker::class)
+                    ->addArgument(new Reference($id))
+                    ->addArgument($name)
+                ;
                 $this->addDefinition($container, $hid, $handler);
             }
         }
@@ -174,15 +163,14 @@ class HealthCheckExtension extends Extension implements CompilerPassInterface
 
     private function definedElasticaCheckers(ContainerBuilder $container): void
     {
-        // Add health handler for every Doctrine ODM connection
+        // Add health handler for every Elastica client
         foreach ($container->getDefinitions() as $id => $definition) {
             if ($definition->getClass() === \Elastica\Client::class) {
-                $name = $id;
                 $hid = sprintf('healthcheck.checker.%s', $id);
-                $handler = new Definition(ElasticaConnectionChecker::class);
-                $handler->addArgument(new Reference($id));
-                $handler->addArgument($name);
-                $handler->setAutowired(true);
+                $handler = new Definition(ElasticaConnectionChecker::class)
+                    ->addArgument(new Reference($id))
+                    ->addArgument($id)
+                ;
                 $this->addDefinition($container, $hid, $handler);
             }
         }
@@ -191,7 +179,7 @@ class HealthCheckExtension extends Extension implements CompilerPassInterface
     private function addDefinition(ContainerBuilder $container, string $id, Definition $handler): void
     {
         $handler->setAutowired(true);
-        $handler->addTag('healthcheck.checker');
+        $handler->addTag(CheckInterface::class);
 
         $container->setDefinition($id, $handler);
     }

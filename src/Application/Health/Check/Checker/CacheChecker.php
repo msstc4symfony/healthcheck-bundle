@@ -14,14 +14,14 @@ use Symfony\Component\DependencyInjection\Attribute\Exclude;
 use Throwable;
 
 #[Exclude]
-final class CacheChecker implements CheckInterface
+final readonly class CacheChecker implements CheckInterface
 {
-    private const CACHE_SERVICE_CELL = '__healthcheck';
+    private const string CACHE_SERVICE_CELL = '__healthcheck';
 
     public function __construct(
-        private readonly AdapterInterface $connection,
-        private readonly string $id,
-        private readonly ?string $parentName = null,
+        private AdapterInterface $connection,
+        private string $id,
+        private ?string $parentName = null,
     ) {
     }
 
@@ -46,32 +46,32 @@ final class CacheChecker implements CheckInterface
             }
         } catch (Throwable $e) {
             if ($this->parentName !== null) {
-                $result->errors[] = sprintf(
+                $result->addError(sprintf(
                     'Cache / %s (%s : %s) connection failed (%s)',
                     $this->connection::class,
                     $this->parentName,
                     $this->id,
                     $e->getMessage(),
-                );
+                ));
 
                 return $result;
             }
 
-            $result->errors[] = sprintf(
+            $result->addError(sprintf(
                 'Cache / %s (%s) connection failed (%s)',
                 $this->connection::class,
                 $this->id,
                 $e->getMessage(),
-            );
+            ));
 
             return $result;
         }
 
-        $result->messages[] = sprintf(
+        $result->addMessage(sprintf(
             'Cache (%s : %s) connection passed',
             $this->connection::class,
             $this->id,
-        );
+        ));
 
         return $result;
     }
@@ -80,23 +80,23 @@ final class CacheChecker implements CheckInterface
     {
         if ($this->parentName !== null) {
             if ($success) {
-                $result->messages[] = sprintf('Cache (%s / %s : %s) connection passed', $this->connection::class, $this->parentName, $this->id);
+                $result->addMessage(sprintf('Cache (%s / %s : %s) connection passed', $this->connection::class, $this->parentName, $this->id));
 
                 return;
             }
 
-            $result->errors[] = sprintf('Cache (%s / %s : %s) connection failed', $this->connection::class, $this->parentName, $this->id);
+            $result->addError(sprintf('Cache (%s / %s : %s) connection failed', $this->connection::class, $this->parentName, $this->id));
 
             return;
         }
 
         if ($success) {
-            $result->messages[] = sprintf('Cache (%s : %s) connection passed', $this->connection::class, $this->id);
+            $result->addMessage(sprintf('Cache (%s : %s) connection passed', $this->connection::class, $this->id));
 
             return;
         }
 
-        $result->errors[] = sprintf('Cache (%s : %s) connection failed', $this->connection::class, $this->id);
+        $result->addError(sprintf('Cache (%s : %s) connection failed', $this->connection::class, $this->id));
     }
 
     private function isAllowedAPCuOrNotAPCu(): bool

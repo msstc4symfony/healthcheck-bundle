@@ -12,10 +12,10 @@ use Symfony\Component\DependencyInjection\Attribute\Exclude;
 use Throwable;
 
 #[Exclude]
-final class RabbitmqChecker implements CheckInterface
+final readonly class RabbitmqChecker implements CheckInterface
 {
     public function __construct(
-        private readonly AbstractConnection $connection,
+        private AbstractConnection $connection,
     ) {
     }
 
@@ -29,14 +29,14 @@ final class RabbitmqChecker implements CheckInterface
         try {
             $this->connection->reconnect();
             if (!$this->connection->isConnected()) {
-                $result->errors[] = 'RabbitMQ connection failed';
+                $result->addError('RabbitMQ connection failed');
 
                 return $result;
             }
 
-            $result->messages[] = 'RabbitMQ connection passed';
+            $result->addMessage('RabbitMQ connection passed');
         } catch (Throwable $e) {
-            $result->errors[] = sprintf('RabbitMQ connection failed (%s)', $e->getMessage());
+            $result->addError(sprintf('RabbitMQ connection failed (%s)', $e->getMessage()));
         }
 
         return $result;

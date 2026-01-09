@@ -12,11 +12,11 @@ use Symfony\Component\DependencyInjection\Attribute\Exclude;
 use Throwable;
 
 #[Exclude]
-final class DBALConnectionChecker implements CheckInterface
+final readonly class DBALConnectionChecker implements CheckInterface
 {
     public function __construct(
-        private readonly Connection $connection,
-        private readonly string $name,
+        private Connection $connection,
+        private string $name,
     ) {
     }
 
@@ -28,15 +28,13 @@ final class DBALConnectionChecker implements CheckInterface
     public function check(CheckResult $result, Context $context): CheckResult
     {
         try {
-            if (!$this->connection->isConnected() && !$this->connection->connect()) {
-                $result->errors[] = sprintf('DB connection (%s) failed', $this->name);
-
-                return $result;
+            if (!$this->connection->isConnected()) {
+                $this->connection->getServerVersion();
             }
 
-            $result->messages[] = sprintf('DB connection (%s) passed', $this->name);
+            $result->addMessage(sprintf('DB connection (%s) passed', $this->name));
         } catch (Throwable $e) {
-            $result->errors[] = sprintf('DB connection (%s) failed. Reason: %s', $this->name, $e->getMessage());
+            $result->addError(sprintf('DB connection (%s) failed. Reason: %s', $this->name, $e->getMessage()));
         }
 
         return $result;

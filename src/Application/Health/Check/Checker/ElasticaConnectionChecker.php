@@ -12,11 +12,11 @@ use Symfony\Component\DependencyInjection\Attribute\Exclude;
 use Throwable;
 
 #[Exclude]
-final class ElasticaConnectionChecker implements CheckInterface
+final readonly class ElasticaConnectionChecker implements CheckInterface
 {
     public function __construct(
-        private readonly Client $connection,
-        private readonly string $name,
+        private Client $connection,
+        private string $name,
     ) {
     }
 
@@ -33,7 +33,7 @@ final class ElasticaConnectionChecker implements CheckInterface
                 count($connections) === 0
                 || (count($connections) === 1 && is_array($connections[0]) && ($connections[0]['host'] ?? null) === 'localhost')
             ) {
-                $result->messages[] = sprintf('Elastica connection (%s) cannot be checked: connections list is empty', $this->name);
+                $result->addMessage(sprintf('Elastica connection (%s) cannot be checked: connections list is empty', $this->name));
 
                 return $result;
             }
@@ -42,13 +42,13 @@ final class ElasticaConnectionChecker implements CheckInterface
             $status = $this->connection->getCluster()->getHealth()->getStatus();
 
             /** @psalm-suppress UndefinedClass */
-            $result->messages[] = sprintf(
+            $result->addMessage(sprintf(
                 'Elastica connection (%s) passed. Cluster status: %s',
                 $this->name,
                 $status,
-            );
+            ));
         } catch (Throwable $e) {
-            $result->errors[] = sprintf('Elastica connection (%s) failed. Reason: %s', $this->name, $e->getMessage());
+            $result->addError(sprintf('Elastica connection (%s) failed. Reason: %s', $this->name, $e->getMessage()));
         }
 
         return $result;

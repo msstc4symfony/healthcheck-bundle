@@ -9,14 +9,14 @@ use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\Request;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\Response;
 use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 
-final class Action implements ActionInterface
+final readonly class Action implements ActionInterface
 {
     /**
      * @param iterable<CheckInterface> $healthCheckers
      */
     public function __construct(
         #[AutowireIterator(CheckInterface::class)]
-        private readonly iterable $healthCheckers,
+        private iterable $healthCheckers,
     ) {
     }
 
@@ -31,6 +31,6 @@ final class Action implements ActionInterface
             }
         }
 
-        return new Response(count($result->errors) === 0, $result->errors, $result->messages);
+        return new Response($result->errors, $result->messages);
     }
 }

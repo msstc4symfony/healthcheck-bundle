@@ -7,12 +7,15 @@ use Symfony\Component\DependencyInjection\Attribute\Exclude;
 #[Exclude]
 final class Response
 {
+    public bool $success {
+        get => $this->errors === [];
+    }
+
     /**
      * @param string[] $errors
      * @param string[] $messages
      */
     public function __construct(
-        public readonly bool $success,
         public readonly array $errors,
         public readonly array $messages,
     ) {

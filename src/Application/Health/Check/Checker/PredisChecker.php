@@ -12,10 +12,10 @@ use Symfony\Component\DependencyInjection\Attribute\Exclude;
 use Throwable;
 
 #[Exclude]
-final class PredisChecker implements CheckInterface
+final readonly class PredisChecker implements CheckInterface
 {
     public function __construct(
-        private readonly Client $connection,
+        private Client $connection,
     ) {
     }
 
@@ -32,14 +32,14 @@ final class PredisChecker implements CheckInterface
             }
 
             if (!$this->connection->isConnected()) {
-                $result->errors[] = 'Redis connection failed';
+                $result->addError('Redis connection failed');
 
                 return $result;
             }
 
-            $result->messages[] = 'Redis connection passed';
+            $result->addMessage('Redis connection passed');
         } catch (Throwable $e) {
-            $result->errors[] = sprintf('Redis connection failed (%s)', $e->getMessage());
+            $result->addError(sprintf('Redis connection failed (%s)', $e->getMessage()));
         }
 
         return $result;

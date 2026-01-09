@@ -12,8 +12,8 @@ final class Request
      * @param array<string, mixed> $options
      */
     public function __construct(
-        public CheckTypeEnum $type = CheckTypeEnum::LIVELINESS,
-        public array $options = [],
+        public private(set) CheckTypeEnum $type = CheckTypeEnum::LIVELINESS,
+        public private(set) array $options = [],
     ) {
     }
 }

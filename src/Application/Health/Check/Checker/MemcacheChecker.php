@@ -12,12 +12,12 @@ use Symfony\Component\DependencyInjection\Attribute\Exclude;
 use Throwable;
 
 #[Exclude]
-final class MemcacheChecker implements CheckInterface
+final readonly class MemcacheChecker implements CheckInterface
 {
-    private const CACHE_SERVICE_CELL = '__healthcheck';
+    private const string CACHE_SERVICE_CELL = '__healthcheck';
 
     public function __construct(
-        private readonly Memcache $connection,
+        private Memcache $connection,
     ) {
     }
 
@@ -30,12 +30,12 @@ final class MemcacheChecker implements CheckInterface
     {
         try {
             if ($this->connection->set(self::CACHE_SERVICE_CELL, time(), 0, 1)) {
-                $result->messages[] = 'Memcache connection passed';
+                $result->addMessage('Memcache connection passed');
             } else {
-                $result->errors[] = 'Memcache connection failed';
+                $result->addError('Memcache connection failed');
             }
         } catch (Throwable $e) {
-            $result->errors[] = 'Memcache connection failed: ' . $e->getMessage();
+            $result->addError(sprintf('Memcache connection failed (%s)', $e->getMessage()));
         }
 
         return $result;

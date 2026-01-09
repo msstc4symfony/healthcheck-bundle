@@ -17,7 +17,7 @@ final class FailChecker implements CheckInterface
 
     public function check(CheckResult $result, Context $context): CheckResult
     {
-        $result->errors[] = 'fail dump check';
+        $result->addError('fail dump check');
 
         return $result;
     }

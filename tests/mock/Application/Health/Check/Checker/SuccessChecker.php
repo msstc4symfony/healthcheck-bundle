@@ -17,7 +17,7 @@ final class SuccessChecker implements CheckInterface
 
     public function check(CheckResult $result, Context $context): CheckResult
     {
-        $result->messages[] = 'success dump check';
+        $result->addMessage('success dump check');
 
         return $result;
     }

@@ -11,12 +11,12 @@ use Redis;
 use Symfony\Component\DependencyInjection\Attribute\Exclude;
 
 #[Exclude]
-final class RedisChecker implements CheckInterface
+final readonly class RedisChecker implements CheckInterface
 {
-    private const CACHE_SERVICE_CELL = '__healthcheck';
+    private const string CACHE_SERVICE_CELL = '__healthcheck';
 
     public function __construct(
-        private readonly Redis $connection,
+        private Redis $connection,
     ) {
     }
 
@@ -28,9 +28,9 @@ final class RedisChecker implements CheckInterface
     public function check(CheckResult $result, Context $context): CheckResult
     {
         if ($this->connection->set(self::CACHE_SERVICE_CELL, (string) time(), 1)) {
-            $result->messages[] = 'Redis connection passed';
+            $result->addMessage('Redis connection passed');
         } else {
-            $result->errors[] = 'Redis connection failed';
+            $result->addError('Redis connection failed');
         }
 
         return $result;

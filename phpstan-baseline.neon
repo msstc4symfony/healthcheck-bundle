@@ -1,7 +1,7 @@
 parameters:
 	ignoreErrors:
 		-
-			message: '#^Call to method connect\(\) on an unknown class Doctrine\\DBAL\\Connection\.$#'
+			message: '#^Call to method getServerVersion\(\) on an unknown class Doctrine\\DBAL\\Connection\.$#'
 			identifier: class.notFound
 			count: 1
 			path: src/Application/Health/Check/Checker/DBALConnectionChecker.php
@@ -125,3 +125,87 @@ parameters:
 			identifier: class.notFound
 			count: 1
 			path: src/DependencyInjection/HealthCheckExtension.php
+
+		-
+			message: '#^Call to method method\(\) on an unknown class Doctrine\\DBAL\\Connection\.$#'
+			identifier: class.notFound
+			count: 4
+			path: tests/unit/Application/Health/Check/Checker/DBALConnectionCheckerTest.php
+
+		-
+			message: '#^Class Doctrine\\DBAL\\Connection not found\.$#'
+			identifier: class.notFound
+			count: 4
+			path: tests/unit/Application/Health/Check/Checker/DBALConnectionCheckerTest.php
+
+		-
+			message: '#^Call to method method\(\) on an unknown class Elastica\\Client\.$#'
+			identifier: class.notFound
+			count: 5
+			path: tests/unit/Application/Health/Check/Checker/ElasticaConnectionCheckerTest.php
+
+		-
+			message: '#^Call to method method\(\) on an unknown class Elastica\\Cluster\.$#'
+			identifier: class.notFound
+			count: 1
+			path: tests/unit/Application/Health/Check/Checker/ElasticaConnectionCheckerTest.php
+
+		-
+			message: '#^Call to method method\(\) on an unknown class Elastica\\Cluster\\Health\.$#'
+			identifier: class.notFound
+			count: 1
+			path: tests/unit/Application/Health/Check/Checker/ElasticaConnectionCheckerTest.php
+
+		-
+			message: '#^Class Elastica\\Client not found\.$#'
+			identifier: class.notFound
+			count: 5
+			path: tests/unit/Application/Health/Check/Checker/ElasticaConnectionCheckerTest.php
+
+		-
+			message: '#^Class Elastica\\Cluster not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: tests/unit/Application/Health/Check/Checker/ElasticaConnectionCheckerTest.php
+
+		-
+			message: '#^Class Elastica\\Cluster\\Health not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: tests/unit/Application/Health/Check/Checker/ElasticaConnectionCheckerTest.php
+
+		-
+			message: '#^Call to method method\(\) on an unknown class MongoDB\\Client\.$#'
+			identifier: class.notFound
+			count: 2
+			path: tests/unit/Application/Health/Check/Checker/MongoConnectionCheckerTest.php
+
+		-
+			message: '#^Class MongoDB\\Client not found\.$#'
+			identifier: class.notFound
+			count: 3
+			path: tests/unit/Application/Health/Check/Checker/MongoConnectionCheckerTest.php
+
+		-
+			message: '#^Call to method method\(\) on an unknown class Predis\\Client\.$#'
+			identifier: class.notFound
+			count: 4
+			path: tests/unit/Application/Health/Check/Checker/PredisCheckerTest.php
+
+		-
+			message: '#^Class Predis\\Client not found\.$#'
+			identifier: class.notFound
+			count: 5
+			path: tests/unit/Application/Health/Check/Checker/PredisCheckerTest.php
+
+		-
+			message: '#^Call to method method\(\) on an unknown class PhpAmqpLib\\Connection\\AbstractConnection\.$#'
+			identifier: class.notFound
+			count: 3
+			path: tests/unit/Application/Health/Check/Checker/RabbitmqCheckerTest.php
+
+		-
+			message: '#^Class PhpAmqpLib\\Connection\\AbstractConnection not found\.$#'
+			identifier: class.notFound
+			count: 4
+			path: tests/unit/Application/Health/Check/Checker/RabbitmqCheckerTest.php

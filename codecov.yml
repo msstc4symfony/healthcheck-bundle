@@ -1,0 +1,22 @@
+coverage:
+  status:
+    project:
+      default:
+        target: 80%
+        threshold: 1%
+    patch:
+      default:
+        target: 80%
+        threshold: 1%
+
+comment:
+  layout: "reach, diff, files"
+  require_changes: true
+
+ignore:
+  - "tests/**"
+  - "vendor/**"
+  - "doc/**"
+  - "src/HealthCheckBundle.php"
+  - "src/DependencyInjection/**"
+  - "src/Application/Health/Check/Checker/**"

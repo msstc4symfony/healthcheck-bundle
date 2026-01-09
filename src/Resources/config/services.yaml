@@ -1,0 +1,10 @@
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+
+  MaxShamaev\HealthCheckBundle\:
+    resource: '../../../src/'
+    exclude:
+      - 'DependencyInjection/'
+      - 'Application/Health/Check/Checker/'

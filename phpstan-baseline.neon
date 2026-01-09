@@ -1,0 +1,127 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Call to method connect\(\) on an unknown class Doctrine\\DBAL\\Connection\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Application/Health/Check/Checker/DBALConnectionChecker.php
+
+		-
+			message: '#^Call to method isConnected\(\) on an unknown class Doctrine\\DBAL\\Connection\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Application/Health/Check/Checker/DBALConnectionChecker.php
+
+		-
+			message: '#^Parameter \$connection of method MaxShamaev\\HealthCheckBundle\\Application\\Health\\Check\\Checker\\DBALConnectionChecker\:\:__construct\(\) has invalid type Doctrine\\DBAL\\Connection\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Application/Health/Check/Checker/DBALConnectionChecker.php
+
+		-
+			message: '#^Property MaxShamaev\\HealthCheckBundle\\Application\\Health\\Check\\Checker\\DBALConnectionChecker\:\:\$connection has unknown class Doctrine\\DBAL\\Connection as its type\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Application/Health/Check/Checker/DBALConnectionChecker.php
+
+		-
+			message: '#^Call to method getCluster\(\) on an unknown class Elastica\\Client\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Application/Health/Check/Checker/ElasticaConnectionChecker.php
+
+		-
+			message: '#^Call to method getConfig\(\) on an unknown class Elastica\\Client\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Application/Health/Check/Checker/ElasticaConnectionChecker.php
+
+		-
+			message: '#^Parameter \$connection of method MaxShamaev\\HealthCheckBundle\\Application\\Health\\Check\\Checker\\ElasticaConnectionChecker\:\:__construct\(\) has invalid type Elastica\\Client\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Application/Health/Check/Checker/ElasticaConnectionChecker.php
+
+		-
+			message: '#^Property MaxShamaev\\HealthCheckBundle\\Application\\Health\\Check\\Checker\\ElasticaConnectionChecker\:\:\$connection has unknown class Elastica\\Client as its type\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Application/Health/Check/Checker/ElasticaConnectionChecker.php
+
+		-
+			message: '#^Call to method listDatabaseNames\(\) on an unknown class MongoDB\\Client\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Application/Health/Check/Checker/MongoConnectionChecker.php
+
+		-
+			message: '#^Parameter \$connection of method MaxShamaev\\HealthCheckBundle\\Application\\Health\\Check\\Checker\\MongoConnectionChecker\:\:__construct\(\) has invalid type MongoDB\\Client\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Application/Health/Check/Checker/MongoConnectionChecker.php
+
+		-
+			message: '#^Property MaxShamaev\\HealthCheckBundle\\Application\\Health\\Check\\Checker\\MongoConnectionChecker\:\:\$connection has unknown class MongoDB\\Client as its type\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Application/Health/Check/Checker/MongoConnectionChecker.php
+
+		-
+			message: '#^Call to method connect\(\) on an unknown class Predis\\Client\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Application/Health/Check/Checker/PredisChecker.php
+
+		-
+			message: '#^Call to method isConnected\(\) on an unknown class Predis\\Client\.$#'
+			identifier: class.notFound
+			count: 2
+			path: src/Application/Health/Check/Checker/PredisChecker.php
+
+		-
+			message: '#^Parameter \$connection of method MaxShamaev\\HealthCheckBundle\\Application\\Health\\Check\\Checker\\PredisChecker\:\:__construct\(\) has invalid type Predis\\Client\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Application/Health/Check/Checker/PredisChecker.php
+
+		-
+			message: '#^Property MaxShamaev\\HealthCheckBundle\\Application\\Health\\Check\\Checker\\PredisChecker\:\:\$connection has unknown class Predis\\Client as its type\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Application/Health/Check/Checker/PredisChecker.php
+
+		-
+			message: '#^Call to method isConnected\(\) on an unknown class PhpAmqpLib\\Connection\\AbstractConnection\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Application/Health/Check/Checker/RabbitmqChecker.php
+
+		-
+			message: '#^Call to method reconnect\(\) on an unknown class PhpAmqpLib\\Connection\\AbstractConnection\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Application/Health/Check/Checker/RabbitmqChecker.php
+
+		-
+			message: '#^Parameter \$connection of method MaxShamaev\\HealthCheckBundle\\Application\\Health\\Check\\Checker\\RabbitmqChecker\:\:__construct\(\) has invalid type PhpAmqpLib\\Connection\\AbstractConnection\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Application/Health/Check/Checker/RabbitmqChecker.php
+
+		-
+			message: '#^Property MaxShamaev\\HealthCheckBundle\\Application\\Health\\Check\\Checker\\RabbitmqChecker\:\:\$connection has unknown class PhpAmqpLib\\Connection\\AbstractConnection as its type\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Application/Health/Check/Checker/RabbitmqChecker.php
+
+		-
+			message: '#^Class Elastica\\Client not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/DependencyInjection/HealthCheckExtension.php
+
+		-
+			message: '#^Class Predis\\Client not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/DependencyInjection/HealthCheckExtension.php

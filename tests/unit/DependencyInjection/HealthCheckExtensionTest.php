@@ -11,6 +11,7 @@ use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\ElasticaConnec
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\MemcacheChecker;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\MemcachedChecker;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\MongoConnectionChecker;
+use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\ODMConnectionChecker;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\PredisChecker;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\RabbitmqChecker;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\RedisChecker;
@@ -98,6 +99,29 @@ final class HealthCheckExtensionTest extends TestCase
         self::assertArrayHasKey(CheckInterface::class, $checker->getTags());
 
         self::assertFalse($container->hasDefinition('healthcheck.checker.doctrine_mongodb.something_else'));
+    }
+
+    public function testProcessRegistersOdmDocumentManagerCheckers(): void
+    {
+        $container = new ContainerBuilder();
+        $container->setDefinition(
+            'doctrine_mongodb.odm.default_document_manager',
+            new Definition('Doctrine\\ODM\\MongoDB\\DocumentManager'),
+        );
+        $container->setDefinition(
+            'doctrine_mongodb.odm.other_thing',
+            new Definition('Doctrine\\ODM\\MongoDB\\DocumentManager'),
+        );
+
+        new HealthCheckExtension()->process($container);
+
+        $checker = $container->findDefinition('healthcheck.checker.doctrine_mongodb.odm.default_document_manager');
+        self::assertSame(ODMConnectionChecker::class, $checker->getClass());
+        self::assertSame('default', $checker->getArgument(1));
+        self::assertTrue($checker->isAutowired());
+        self::assertArrayHasKey(CheckInterface::class, $checker->getTags());
+
+        self::assertFalse($container->hasDefinition('healthcheck.checker.doctrine_mongodb.odm.other_thing'));
     }
 
     public function testProcessRegistersElasticaCheckers(): void

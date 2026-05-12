@@ -12,6 +12,7 @@ use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\ElasticaConnec
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\MemcacheChecker;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\MemcachedChecker;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\MongoConnectionChecker;
+use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\ODMConnectionChecker;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\PredisChecker;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\RabbitmqChecker;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\RedisChecker;
@@ -49,6 +50,7 @@ final class HealthCheckExtension extends Extension implements CompilerPassInterf
         $this->definedCacheClientsCheckers($container);
         $this->definedCachePoolsCheckers($container);
         $this->definedMongoCheckers($container);
+        $this->definedODMCheckers($container);
         $this->definedElasticaCheckers($container);
     }
 
@@ -153,6 +155,22 @@ final class HealthCheckExtension extends Extension implements CompilerPassInterf
                 $name = $match[1];
                 $hid = sprintf('healthcheck.checker.%s', $id);
                 $handler = new Definition(MongoConnectionChecker::class)
+                    ->addArgument(new Reference($id))
+                    ->addArgument($name)
+                ;
+                $this->addDefinition($container, $hid, $handler);
+            }
+        }
+    }
+
+    private function definedODMCheckers(ContainerBuilder $container): void
+    {
+        // Add health handler for every Doctrine MongoDB ODM document manager
+        foreach (array_keys($container->getDefinitions()) as $id) {
+            if (preg_match('/^doctrine_mongodb\.odm\.(\w+)_document_manager$/Ss', $id, $match) === 1) {
+                $name = $match[1];
+                $hid = sprintf('healthcheck.checker.%s', $id);
+                $handler = new Definition(ODMConnectionChecker::class)
                     ->addArgument(new Reference($id))
                     ->addArgument($name)
                 ;

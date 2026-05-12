@@ -67,6 +67,30 @@ parameters:
 			path: src/Application/Health/Check/Checker/MongoConnectionChecker.php
 
 		-
+			message: '#^Call to method getClient\(\) on an unknown class Doctrine\\ODM\\MongoDB\\DocumentManager\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Application/Health/Check/Checker/ODMConnectionChecker.php
+
+		-
+			message: '#^Call to method getConfiguration\(\) on an unknown class Doctrine\\ODM\\MongoDB\\DocumentManager\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Application/Health/Check/Checker/ODMConnectionChecker.php
+
+		-
+			message: '#^Parameter \$documentManager of method MaxShamaev\\HealthCheckBundle\\Application\\Health\\Check\\Checker\\ODMConnectionChecker\:\:__construct\(\) has invalid type Doctrine\\ODM\\MongoDB\\DocumentManager\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Application/Health/Check/Checker/ODMConnectionChecker.php
+
+		-
+			message: '#^Property MaxShamaev\\HealthCheckBundle\\Application\\Health\\Check\\Checker\\ODMConnectionChecker\:\:\$documentManager has unknown class Doctrine\\ODM\\MongoDB\\DocumentManager as its type\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Application/Health/Check/Checker/ODMConnectionChecker.php
+
+		-
 			message: '#^Call to method connect\(\) on an unknown class Predis\\Client\.$#'
 			identifier: class.notFound
 			count: 1
@@ -185,6 +209,66 @@ parameters:
 			identifier: class.notFound
 			count: 3
 			path: tests/unit/Application/Health/Check/Checker/MongoConnectionCheckerTest.php
+
+		-
+			message: '#^Call to method expects\(\) on an unknown class MongoDB\\Client\.$#'
+			identifier: class.notFound
+			count: 1
+			path: tests/unit/Application/Health/Check/Checker/ODMConnectionCheckerTest.php
+
+		-
+			message: '#^Call to method method\(\) on an unknown class Doctrine\\ODM\\MongoDB\\Configuration\.$#'
+			identifier: class.notFound
+			count: 3
+			path: tests/unit/Application/Health/Check/Checker/ODMConnectionCheckerTest.php
+
+		-
+			message: '#^Call to method method\(\) on an unknown class Doctrine\\ODM\\MongoDB\\DocumentManager\.$#'
+			identifier: class.notFound
+			count: 5
+			path: tests/unit/Application/Health/Check/Checker/ODMConnectionCheckerTest.php
+
+		-
+			message: '#^Call to method method\(\) on an unknown class MongoDB\\Client\.$#'
+			identifier: class.notFound
+			count: 1
+			path: tests/unit/Application/Health/Check/Checker/ODMConnectionCheckerTest.php
+
+		-
+			message: '#^Call to method method\(\) on an unknown class MongoDB\\Database\.$#'
+			identifier: class.notFound
+			count: 1
+			path: tests/unit/Application/Health/Check/Checker/ODMConnectionCheckerTest.php
+
+		-
+			message: '#^Class Doctrine\\ODM\\MongoDB\\Configuration not found\.$#'
+			identifier: class.notFound
+			count: 3
+			path: tests/unit/Application/Health/Check/Checker/ODMConnectionCheckerTest.php
+
+		-
+			message: '#^Class Doctrine\\ODM\\MongoDB\\DocumentManager not found\.$#'
+			identifier: class.notFound
+			count: 4
+			path: tests/unit/Application/Health/Check/Checker/ODMConnectionCheckerTest.php
+
+		-
+			message: '#^Class MongoDB\\Client not found\.$#'
+			identifier: class.notFound
+			count: 2
+			path: tests/unit/Application/Health/Check/Checker/ODMConnectionCheckerTest.php
+
+		-
+			message: '#^Class MongoDB\\Database not found\.$#'
+			identifier: class.notFound
+			count: 2
+			path: tests/unit/Application/Health/Check/Checker/ODMConnectionCheckerTest.php
+
+		-
+			message: '#^Method MaxShamaev\\HealthCheckBundle\\Test\\Unit\\Application\\Health\\Check\\Checker\\ODMConnectionCheckerTest\:\:buildDocumentManagerStub\(\) has invalid return type Doctrine\\ODM\\MongoDB\\DocumentManager\.$#'
+			identifier: class.notFound
+			count: 1
+			path: tests/unit/Application/Health/Check/Checker/ODMConnectionCheckerTest.php
 
 		-
 			message: '#^Call to method method\(\) on an unknown class Predis\\Client\.$#'

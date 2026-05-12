@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MaxShamaev\HealthCheckBundle\Test\Unit\DependencyInjection;
 
+use Doctrine\DBAL\Connection;
+use Doctrine\ODM\MongoDB\DocumentManager;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\CacheChecker;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\CheckInterface;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\DBALConnectionChecker;
@@ -23,7 +25,9 @@ use MaxShamaev\HealthCheckBundle\DependencyInjection\Detector\MongoConnectionDet
 use MaxShamaev\HealthCheckBundle\DependencyInjection\Detector\ODMDocumentManagerDetector;
 use MaxShamaev\HealthCheckBundle\DependencyInjection\Detector\RabbitMQConnectionDetector;
 use MaxShamaev\HealthCheckBundle\DependencyInjection\HealthCheckerAutoDetectionPass;
+use PhpAmqpLib\Connection\AbstractConnection;
 use PHPUnit\Framework\TestCase;
+use Predis\Client;
 use stdClass;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 use Symfony\Component\Cache\Adapter\RedisAdapter;
@@ -37,8 +41,8 @@ final class HealthCheckerAutoDetectionPassTest extends TestCase
     public function testProcessRegistersDbalCheckers(): void
     {
         $container = new ContainerBuilder();
-        $container->setDefinition('doctrine.dbal.foo_connection', new Definition('Doctrine\\DBAL\\Connection'));
-        $container->setDefinition('doctrine.dbal.bar_connection', new Definition('Doctrine\\DBAL\\Connection'));
+        $container->setDefinition('doctrine.dbal.foo_connection', new Definition(Connection::class));
+        $container->setDefinition('doctrine.dbal.bar_connection', new Definition(Connection::class));
         $container->setDefinition('unrelated.service', new Definition(stdClass::class));
 
         $this->runPass($container);
@@ -57,7 +61,7 @@ final class HealthCheckerAutoDetectionPassTest extends TestCase
     public function testProcessRegistersRabbitMqCheckers(): void
     {
         $container = new ContainerBuilder();
-        $rabbit = new Definition('PhpAmqpLib\\Connection\\AbstractConnection');
+        $rabbit = new Definition(AbstractConnection::class);
         $rabbit->addTag('old_sound_rabbit_mq.connection');
 
         $container->setDefinition('rabbit.conn', $rabbit);
@@ -77,7 +81,7 @@ final class HealthCheckerAutoDetectionPassTest extends TestCase
         $container->setDefinition('app.redis', new Definition('Redis'));
         $container->setDefinition('app.memcached', new Definition('Memcached'));
         $container->setDefinition('app.memcache', new Definition('Memcache'));
-        $container->setDefinition('app.predis', new Definition('Predis\\Client'));
+        $container->setDefinition('app.predis', new Definition(Client::class));
         $container->setDefinition('app.classless', new Definition());
         $container->setDefinition('app.other', new Definition(stdClass::class));
 
@@ -94,8 +98,8 @@ final class HealthCheckerAutoDetectionPassTest extends TestCase
     public function testProcessRegistersMongoCheckers(): void
     {
         $container = new ContainerBuilder();
-        $container->setDefinition('doctrine_mongodb.odm.default_connection', new Definition('MongoDB\\Client'));
-        $container->setDefinition('doctrine_mongodb.something_else', new Definition('MongoDB\\Client'));
+        $container->setDefinition('doctrine_mongodb.odm.default_connection', new Definition(\MongoDB\Client::class));
+        $container->setDefinition('doctrine_mongodb.something_else', new Definition(\MongoDB\Client::class));
 
         $this->runPass($container);
 
@@ -113,11 +117,11 @@ final class HealthCheckerAutoDetectionPassTest extends TestCase
         $container = new ContainerBuilder();
         $container->setDefinition(
             'doctrine_mongodb.odm.default_document_manager',
-            new Definition('Doctrine\\ODM\\MongoDB\\DocumentManager'),
+            new Definition(DocumentManager::class),
         );
         $container->setDefinition(
             'doctrine_mongodb.odm.other_thing',
-            new Definition('Doctrine\\ODM\\MongoDB\\DocumentManager'),
+            new Definition(DocumentManager::class),
         );
 
         $this->runPass($container);
@@ -134,7 +138,7 @@ final class HealthCheckerAutoDetectionPassTest extends TestCase
     public function testProcessRegistersElasticaCheckers(): void
     {
         $container = new ContainerBuilder();
-        $container->setDefinition('elastica.client.main', new Definition('Elastica\\Client'));
+        $container->setDefinition('elastica.client.main', new Definition(\Elastica\Client::class));
 
         $this->runPass($container);
 
@@ -224,8 +228,8 @@ final class HealthCheckerAutoDetectionPassTest extends TestCase
     public function testProcessRegistersBothDbalAndMongoInSingleRun(): void
     {
         $container = new ContainerBuilder();
-        $container->setDefinition('doctrine.dbal.default_connection', new Definition('Doctrine\\DBAL\\Connection'));
-        $container->setDefinition('doctrine_mongodb.odm.default_connection', new Definition('MongoDB\\Client'));
+        $container->setDefinition('doctrine.dbal.default_connection', new Definition(Connection::class));
+        $container->setDefinition('doctrine_mongodb.odm.default_connection', new Definition(\MongoDB\Client::class));
 
         $this->runPass($container);
 

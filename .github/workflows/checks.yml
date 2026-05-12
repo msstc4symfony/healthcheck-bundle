@@ -20,8 +20,8 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.1'
-          extensions: mbstring, xml, ctype, iconv, intl, xdebug
+          php-version: '8.4'
+          extensions: mbstring, xml, ctype, iconv, intl, xdebug, redis, mongodb, memcache, memcached
           coverage: xdebug
           tools: composer:v2
 
@@ -33,11 +33,16 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
-          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
-          restore-keys: ${{ runner.os }}-composer-
+          key: ${{ runner.os }}-composer-ci-${{ hashFiles('**/composer-ci.lock') }}
+          restore-keys: ${{ runner.os }}-composer-ci-
 
-      - name: Install dependencies
+      - name: Install dependencies (full set, with optional checker libs)
+        env:
+          COMPOSER: composer-ci.json
         run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Regenerate PHPStan baseline for CI environment
+        run: make regenerate-baseline
 
       - name: Run checks
         run: make check

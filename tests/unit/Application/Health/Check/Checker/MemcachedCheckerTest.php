@@ -42,7 +42,7 @@ final class MemcachedCheckerTest extends TestCase
 
         $result = new MemcachedChecker($client)->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
-        self::assertSame(['Memcached connection failed'], $result->errors);
+        self::assertSame(['Memcached connection failed (SET command returned false)'], $result->errors);
         self::assertSame([], $result->messages);
     }
 

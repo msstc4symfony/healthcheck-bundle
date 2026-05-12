@@ -4,41 +4,29 @@ declare(strict_types=1);
 
 namespace MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker;
 
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\Context;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
 use PhpAmqpLib\Connection\AbstractConnection;
+use RuntimeException;
 use Symfony\Component\DependencyInjection\Attribute\Exclude;
-use Throwable;
 
 #[Exclude]
-final readonly class RabbitmqChecker implements CheckInterface
+final readonly class RabbitmqChecker extends AbstractReadinessChecker
 {
     public function __construct(
         private AbstractConnection $connection,
     ) {
     }
 
-    public function isSupport(Context $context): bool
+    protected function doCheck(): void
     {
-        return $context->type === CheckTypeEnum::READINESS;
+        $this->connection->reconnect();
+
+        if (!$this->connection->isConnected()) {
+            throw new RuntimeException('not connected after reconnect');
+        }
     }
 
-    public function check(CheckResult $result, Context $context): CheckResult
+    protected function label(): string
     {
-        try {
-            $this->connection->reconnect();
-            if (!$this->connection->isConnected()) {
-                $result->addError('RabbitMQ connection failed');
-
-                return $result;
-            }
-
-            $result->addMessage('RabbitMQ connection passed');
-        } catch (Throwable $e) {
-            $result->addError(sprintf('RabbitMQ connection failed (%s)', $e->getMessage()));
-        }
-
-        return $result;
+        return 'RabbitMQ connection';
     }
 }

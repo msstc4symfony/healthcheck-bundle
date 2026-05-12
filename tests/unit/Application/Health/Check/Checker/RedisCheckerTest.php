@@ -39,7 +39,7 @@ final class RedisCheckerTest extends TestCase
 
         $result = new RedisChecker($redis)->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
-        self::assertSame(['Redis connection failed'], $result->errors);
+        self::assertSame(['Redis connection failed (SET command returned false)'], $result->errors);
         self::assertSame([], $result->messages);
     }
 }

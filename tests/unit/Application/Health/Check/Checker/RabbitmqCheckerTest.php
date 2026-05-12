@@ -47,7 +47,7 @@ final class RabbitmqCheckerTest extends TestCase
 
         $result = new RabbitmqChecker($connection)->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
-        self::assertSame(['RabbitMQ connection failed'], $result->errors);
+        self::assertSame(['RabbitMQ connection failed (not connected after reconnect)'], $result->errors);
         self::assertSame([], $result->messages);
     }
 

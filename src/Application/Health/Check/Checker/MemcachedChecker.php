@@ -4,15 +4,12 @@ declare(strict_types=1);
 
 namespace MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker;
 
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\Context;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
 use Memcached;
+use RuntimeException;
 use Symfony\Component\DependencyInjection\Attribute\Exclude;
-use Throwable;
 
 #[Exclude]
-final readonly class MemcachedChecker implements CheckInterface
+final readonly class MemcachedChecker extends AbstractReadinessChecker
 {
     private const string CACHE_SERVICE_CELL = '__healthcheck';
 
@@ -21,23 +18,15 @@ final readonly class MemcachedChecker implements CheckInterface
     ) {
     }
 
-    public function isSupport(Context $context): bool
+    protected function doCheck(): void
     {
-        return $context->type === CheckTypeEnum::READINESS;
+        if (!$this->connection->set(self::CACHE_SERVICE_CELL, time(), 1)) {
+            throw new RuntimeException('SET command returned false');
+        }
     }
 
-    public function check(CheckResult $result, Context $context): CheckResult
+    protected function label(): string
     {
-        try {
-            if ($this->connection->set(self::CACHE_SERVICE_CELL, time(), 1)) {
-                $result->addMessage('Memcached connection passed');
-            } else {
-                $result->addError('Memcached connection failed');
-            }
-        } catch (Throwable $e) {
-            $result->addError(sprintf('Memcached connection failed (%s)', $e->getMessage()));
-        }
-
-        return $result;
+        return 'Memcached connection';
     }
 }

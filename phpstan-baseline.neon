@@ -139,16 +139,16 @@ parameters:
 			path: src/Application/Health/Check/Checker/RabbitmqChecker.php
 
 		-
-			message: '#^Class Elastica\\Client not found\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/DependencyInjection/HealthCheckExtension.php
-
-		-
 			message: '#^Class Predis\\Client not found\.$#'
 			identifier: class.notFound
 			count: 1
-			path: src/DependencyInjection/HealthCheckExtension.php
+			path: src/DependencyInjection/Detector/CacheClientDetector.php
+
+		-
+			message: '#^Class Elastica\\Client not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/DependencyInjection/Detector/ElasticaClientDetector.php
 
 		-
 			message: '#^Call to method method\(\) on an unknown class Doctrine\\DBAL\\Connection\.$#'

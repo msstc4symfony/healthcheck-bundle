@@ -1,0 +1,25 @@
+<?php
+
+declare(strict_types=1);
+
+namespace MaxShamaev\HealthCheckBundle\DependencyInjection\Detector;
+
+use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\RabbitmqChecker;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Definition;
+use Symfony\Component\DependencyInjection\Reference;
+
+final readonly class RabbitMQConnectionDetector implements CheckerDetectorInterface
+{
+    /**
+     * @return iterable<string, Definition>
+     */
+    public function detect(ContainerBuilder $container): iterable
+    {
+        foreach (array_keys($container->findTaggedServiceIds('old_sound_rabbit_mq.connection')) as $id) {
+            yield sprintf('healthcheck.checker.%s', $id) => new Definition(RabbitmqChecker::class)
+                    ->addArgument(new Reference($id))
+            ;
+        }
+    }
+}

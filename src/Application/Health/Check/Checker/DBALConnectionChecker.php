@@ -5,14 +5,10 @@ declare(strict_types=1);
 namespace MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker;
 
 use Doctrine\DBAL\Connection;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\Context;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
 use Symfony\Component\DependencyInjection\Attribute\Exclude;
-use Throwable;
 
 #[Exclude]
-final readonly class DBALConnectionChecker implements CheckInterface
+final readonly class DBALConnectionChecker extends AbstractReadinessChecker
 {
     public function __construct(
         private Connection $connection,
@@ -20,23 +16,15 @@ final readonly class DBALConnectionChecker implements CheckInterface
     ) {
     }
 
-    public function isSupport(Context $context): bool
+    protected function doCheck(): void
     {
-        return $context->type === CheckTypeEnum::READINESS;
+        if (!$this->connection->isConnected()) {
+            $this->connection->getServerVersion();
+        }
     }
 
-    public function check(CheckResult $result, Context $context): CheckResult
+    protected function label(): string
     {
-        try {
-            if (!$this->connection->isConnected()) {
-                $this->connection->getServerVersion();
-            }
-
-            $result->addMessage(sprintf('DB connection (%s) passed', $this->name));
-        } catch (Throwable $e) {
-            $result->addError(sprintf('DB connection (%s) failed. Reason: %s', $this->name, $e->getMessage()));
-        }
-
-        return $result;
+        return sprintf('DB connection (%s)', $this->name);
     }
 }

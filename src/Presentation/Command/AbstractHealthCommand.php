@@ -19,11 +19,9 @@ abstract class AbstractHealthCommand extends Command
     abstract protected function getType(): CheckTypeEnum;
 
     #[Required]
-    public function setAction(ActionInterface $action): self
+    public function setAction(ActionInterface $action): void
     {
         $this->action = $action;
-
-        return $this;
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int

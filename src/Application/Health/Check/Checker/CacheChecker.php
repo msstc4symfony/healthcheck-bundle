@@ -40,63 +40,30 @@ final readonly class CacheChecker implements CheckInterface
                 $item = $this->connection->getItem(self::CACHE_SERVICE_CELL);
                 $item->set(time());
 
-                $this->processResult($result, $this->connection->save($item));
+                if ($this->connection->save($item)) {
+                    $result->addMessage(sprintf('%s passed', $this->buildLabel()));
+                } else {
+                    $result->addError(sprintf('%s failed', $this->buildLabel()));
+                }
 
                 return $result;
             }
         } catch (Throwable $e) {
-            if ($this->parentName !== null) {
-                $result->addError(sprintf(
-                    'Cache / %s (%s : %s) connection failed (%s)',
-                    $this->connection::class,
-                    $this->parentName,
-                    $this->id,
-                    $e->getMessage(),
-                ));
-
-                return $result;
-            }
-
-            $result->addError(sprintf(
-                'Cache / %s (%s) connection failed (%s)',
-                $this->connection::class,
-                $this->id,
-                $e->getMessage(),
-            ));
+            $result->addError(sprintf('%s failed (%s)', $this->buildLabel(), $e->getMessage()));
 
             return $result;
         }
 
-        $result->addMessage(sprintf(
-            'Cache (%s : %s) connection passed',
-            $this->connection::class,
-            $this->id,
-        ));
+        $result->addMessage(sprintf('%s passed', $this->buildLabel()));
 
         return $result;
     }
 
-    private function processResult(CheckResult $result, bool $success): void
+    private function buildLabel(): string
     {
-        if ($this->parentName !== null) {
-            if ($success) {
-                $result->addMessage(sprintf('Cache (%s / %s : %s) connection passed', $this->connection::class, $this->parentName, $this->id));
-
-                return;
-            }
-
-            $result->addError(sprintf('Cache (%s / %s : %s) connection failed', $this->connection::class, $this->parentName, $this->id));
-
-            return;
-        }
-
-        if ($success) {
-            $result->addMessage(sprintf('Cache (%s : %s) connection passed', $this->connection::class, $this->id));
-
-            return;
-        }
-
-        $result->addError(sprintf('Cache (%s : %s) connection failed', $this->connection::class, $this->id));
+        return $this->parentName !== null
+            ? sprintf('Cache (%s / %s : %s) connection', $this->connection::class, $this->parentName, $this->id)
+            : sprintf('Cache (%s : %s) connection', $this->connection::class, $this->id);
     }
 
     private function isAllowedAPCuOrNotAPCu(): bool

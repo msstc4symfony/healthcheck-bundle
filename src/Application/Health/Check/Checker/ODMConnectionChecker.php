@@ -5,37 +5,27 @@ declare(strict_types=1);
 namespace MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker;
 
 use Doctrine\ODM\MongoDB\DocumentManager;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\Context;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
 use Symfony\Component\DependencyInjection\Attribute\Exclude;
-use Throwable;
 
 #[Exclude]
-final class ODMConnectionChecker implements CheckInterface
+final readonly class ODMConnectionChecker extends AbstractReadinessChecker
 {
+    private const string DEFAULT_PING_DATABASE = 'admin';
+
     public function __construct(
-        private readonly DocumentManager $documentManager,
-        private readonly string $name,
+        private DocumentManager $documentManager,
+        private string $name,
     ) {
     }
 
-    public function isSupport(Context $context): bool
+    protected function doCheck(): void
     {
-        return $context->type === CheckTypeEnum::READINESS;
+        $defaultDb = $this->documentManager->getConfiguration()->getDefaultDB() ?? self::DEFAULT_PING_DATABASE;
+        $this->documentManager->getClient()->selectDatabase($defaultDb)->command(['ping' => 1]);
     }
 
-    public function check(CheckResult $result, Context $context): CheckResult
+    protected function label(): string
     {
-        try {
-            $defaultDb = $this->documentManager->getConfiguration()->getDefaultDB() ?? 'admin';
-            $this->documentManager->getClient()->selectDatabase($defaultDb)->command(['ping' => 1]);
-
-            $result->addMessage(sprintf('ODM connection (%s) passed', $this->name));
-        } catch (Throwable $e) {
-            $result->addError(sprintf('ODM connection (%s) failed. Reason: %s', $this->name, $e->getMessage()));
-        }
-
-        return $result;
+        return sprintf('ODM connection (%s)', $this->name);
     }
 }

@@ -58,7 +58,7 @@ final class PredisCheckerTest extends TestCase
 
         $result = new PredisChecker($client)->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
-        self::assertSame(['Redis connection failed'], $result->errors);
+        self::assertSame(['Redis connection failed (not connected after reconnect)'], $result->errors);
         self::assertSame([], $result->messages);
     }
 

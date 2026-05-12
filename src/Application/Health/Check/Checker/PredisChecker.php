@@ -4,44 +4,31 @@ declare(strict_types=1);
 
 namespace MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker;
 
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\Context;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
 use Predis\Client;
+use RuntimeException;
 use Symfony\Component\DependencyInjection\Attribute\Exclude;
-use Throwable;
 
 #[Exclude]
-final readonly class PredisChecker implements CheckInterface
+final readonly class PredisChecker extends AbstractReadinessChecker
 {
     public function __construct(
         private Client $connection,
     ) {
     }
 
-    public function isSupport(Context $context): bool
+    protected function doCheck(): void
     {
-        return $context->type === CheckTypeEnum::READINESS;
-    }
-
-    public function check(CheckResult $result, Context $context): CheckResult
-    {
-        try {
-            if (!$this->connection->isConnected()) {
-                $this->connection->connect();
-            }
-
-            if (!$this->connection->isConnected()) {
-                $result->addError('Redis connection failed');
-
-                return $result;
-            }
-
-            $result->addMessage('Redis connection passed');
-        } catch (Throwable $e) {
-            $result->addError(sprintf('Redis connection failed (%s)', $e->getMessage()));
+        if (!$this->connection->isConnected()) {
+            $this->connection->connect();
         }
 
-        return $result;
+        if (!$this->connection->isConnected()) {
+            throw new RuntimeException('not connected after reconnect');
+        }
+    }
+
+    protected function label(): string
+    {
+        return 'Redis connection';
     }
 }

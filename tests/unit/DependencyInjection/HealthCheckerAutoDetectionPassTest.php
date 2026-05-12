@@ -15,7 +15,14 @@ use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\ODMConnectionC
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\PredisChecker;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\RabbitmqChecker;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\RedisChecker;
-use MaxShamaev\HealthCheckBundle\DependencyInjection\HealthCheckExtension;
+use MaxShamaev\HealthCheckBundle\DependencyInjection\Detector\CacheClientDetector;
+use MaxShamaev\HealthCheckBundle\DependencyInjection\Detector\CachePoolDetector;
+use MaxShamaev\HealthCheckBundle\DependencyInjection\Detector\DBALConnectionDetector;
+use MaxShamaev\HealthCheckBundle\DependencyInjection\Detector\ElasticaClientDetector;
+use MaxShamaev\HealthCheckBundle\DependencyInjection\Detector\MongoConnectionDetector;
+use MaxShamaev\HealthCheckBundle\DependencyInjection\Detector\ODMDocumentManagerDetector;
+use MaxShamaev\HealthCheckBundle\DependencyInjection\Detector\RabbitMQConnectionDetector;
+use MaxShamaev\HealthCheckBundle\DependencyInjection\HealthCheckerAutoDetectionPass;
 use PHPUnit\Framework\TestCase;
 use stdClass;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
@@ -25,7 +32,7 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
 
-final class HealthCheckExtensionTest extends TestCase
+final class HealthCheckerAutoDetectionPassTest extends TestCase
 {
     public function testProcessRegistersDbalCheckers(): void
     {
@@ -34,7 +41,7 @@ final class HealthCheckExtensionTest extends TestCase
         $container->setDefinition('doctrine.dbal.bar_connection', new Definition('Doctrine\\DBAL\\Connection'));
         $container->setDefinition('unrelated.service', new Definition(stdClass::class));
 
-        new HealthCheckExtension()->process($container);
+        $this->runPass($container);
 
         $foo = $container->findDefinition('healthcheck.checker.doctrine.dbal.foo_connection');
         self::assertSame(DBALConnectionChecker::class, $foo->getClass());
@@ -55,7 +62,7 @@ final class HealthCheckExtensionTest extends TestCase
 
         $container->setDefinition('rabbit.conn', $rabbit);
 
-        new HealthCheckExtension()->process($container);
+        $this->runPass($container);
 
         $checker = $container->findDefinition('healthcheck.checker.rabbit.conn');
         self::assertSame(RabbitmqChecker::class, $checker->getClass());
@@ -74,7 +81,7 @@ final class HealthCheckExtensionTest extends TestCase
         $container->setDefinition('app.classless', new Definition());
         $container->setDefinition('app.other', new Definition(stdClass::class));
 
-        new HealthCheckExtension()->process($container);
+        $this->runPass($container);
 
         self::assertSame(RedisChecker::class, $container->findDefinition('healthcheck.checker.app.redis')->getClass());
         self::assertSame(MemcachedChecker::class, $container->findDefinition('healthcheck.checker.app.memcached')->getClass());
@@ -90,7 +97,7 @@ final class HealthCheckExtensionTest extends TestCase
         $container->setDefinition('doctrine_mongodb.odm.default_connection', new Definition('MongoDB\\Client'));
         $container->setDefinition('doctrine_mongodb.something_else', new Definition('MongoDB\\Client'));
 
-        new HealthCheckExtension()->process($container);
+        $this->runPass($container);
 
         $checker = $container->findDefinition('healthcheck.checker.doctrine_mongodb.odm.default_connection');
         self::assertSame(MongoConnectionChecker::class, $checker->getClass());
@@ -113,7 +120,7 @@ final class HealthCheckExtensionTest extends TestCase
             new Definition('Doctrine\\ODM\\MongoDB\\DocumentManager'),
         );
 
-        new HealthCheckExtension()->process($container);
+        $this->runPass($container);
 
         $checker = $container->findDefinition('healthcheck.checker.doctrine_mongodb.odm.default_document_manager');
         self::assertSame(ODMConnectionChecker::class, $checker->getClass());
@@ -129,7 +136,7 @@ final class HealthCheckExtensionTest extends TestCase
         $container = new ContainerBuilder();
         $container->setDefinition('elastica.client.main', new Definition('Elastica\\Client'));
 
-        new HealthCheckExtension()->process($container);
+        $this->runPass($container);
 
         $checker = $container->findDefinition('healthcheck.checker.elastica.client.main');
         self::assertSame(ElasticaConnectionChecker::class, $checker->getClass());
@@ -145,7 +152,7 @@ final class HealthCheckExtensionTest extends TestCase
 
         $container->setDefinition('cache.app', $pool);
 
-        new HealthCheckExtension()->process($container);
+        $this->runPass($container);
 
         $checker = $container->findDefinition('healthcheck.checker.cache.pool.my_pool');
         self::assertSame(CacheChecker::class, $checker->getClass());
@@ -163,7 +170,7 @@ final class HealthCheckExtensionTest extends TestCase
 
         $container->setDefinition('cache.abstract', $pool);
 
-        new HealthCheckExtension()->process($container);
+        $this->runPass($container);
 
         self::assertFalse($container->hasDefinition('healthcheck.checker.cache.pool.abstract_pool'));
     }
@@ -184,7 +191,7 @@ final class HealthCheckExtensionTest extends TestCase
 
         $container->setDefinition('cache.child_pool', $child);
 
-        new HealthCheckExtension()->process($container);
+        $this->runPass($container);
 
         $checker = $container->findDefinition('healthcheck.checker.cache.pool.inherited_name');
         self::assertSame('inherited_name', $checker->getArgument(1));
@@ -208,7 +215,7 @@ final class HealthCheckExtensionTest extends TestCase
 
         $container->setDefinition('cache.child_pool', $child);
 
-        new HealthCheckExtension()->process($container);
+        $this->runPass($container);
 
         self::assertTrue($container->hasDefinition('healthcheck.checker.cache.pool.child_name'));
         self::assertFalse($container->hasDefinition('healthcheck.checker.cache.pool.parent_name'));
@@ -220,9 +227,22 @@ final class HealthCheckExtensionTest extends TestCase
         $container->setDefinition('doctrine.dbal.default_connection', new Definition('Doctrine\\DBAL\\Connection'));
         $container->setDefinition('doctrine_mongodb.odm.default_connection', new Definition('MongoDB\\Client'));
 
-        new HealthCheckExtension()->process($container);
+        $this->runPass($container);
 
         self::assertTrue($container->hasDefinition('healthcheck.checker.doctrine.dbal.default_connection'));
         self::assertTrue($container->hasDefinition('healthcheck.checker.doctrine_mongodb.odm.default_connection'));
+    }
+
+    private function runPass(ContainerBuilder $container): void
+    {
+        new HealthCheckerAutoDetectionPass([
+            new DBALConnectionDetector(),
+            new RabbitMQConnectionDetector(),
+            new CacheClientDetector(),
+            new CachePoolDetector(),
+            new MongoConnectionDetector(),
+            new ODMDocumentManagerDetector(),
+            new ElasticaClientDetector(),
+        ])->process($container);
     }
 }

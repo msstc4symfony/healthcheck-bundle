@@ -4,14 +4,12 @@ declare(strict_types=1);
 
 namespace MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker;
 
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\Context;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
 use Redis;
+use RuntimeException;
 use Symfony\Component\DependencyInjection\Attribute\Exclude;
 
 #[Exclude]
-final readonly class RedisChecker implements CheckInterface
+final readonly class RedisChecker extends AbstractReadinessChecker
 {
     private const string CACHE_SERVICE_CELL = '__healthcheck';
 
@@ -20,19 +18,15 @@ final readonly class RedisChecker implements CheckInterface
     ) {
     }
 
-    public function isSupport(Context $context): bool
+    protected function doCheck(): void
     {
-        return $context->type === CheckTypeEnum::READINESS;
+        if (!$this->connection->set(self::CACHE_SERVICE_CELL, (string) time(), 1)) {
+            throw new RuntimeException('SET command returned false');
+        }
     }
 
-    public function check(CheckResult $result, Context $context): CheckResult
+    protected function label(): string
     {
-        if ($this->connection->set(self::CACHE_SERVICE_CELL, (string) time(), 1)) {
-            $result->addMessage('Redis connection passed');
-        } else {
-            $result->addError('Redis connection failed');
-        }
-
-        return $result;
+        return 'Redis connection';
     }
 }

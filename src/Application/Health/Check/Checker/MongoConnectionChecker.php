@@ -4,15 +4,11 @@ declare(strict_types=1);
 
 namespace MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker;
 
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\Context;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
 use MongoDB\Client;
 use Symfony\Component\DependencyInjection\Attribute\Exclude;
-use Throwable;
 
 #[Exclude]
-final readonly class MongoConnectionChecker implements CheckInterface
+final readonly class MongoConnectionChecker extends AbstractReadinessChecker
 {
     public function __construct(
         private Client $connection,
@@ -20,21 +16,13 @@ final readonly class MongoConnectionChecker implements CheckInterface
     ) {
     }
 
-    public function isSupport(Context $context): bool
+    protected function doCheck(): void
     {
-        return $context->type === CheckTypeEnum::READINESS;
+        $this->connection->listDatabaseNames();
     }
 
-    public function check(CheckResult $result, Context $context): CheckResult
+    protected function label(): string
     {
-        try {
-            $this->connection->listDatabaseNames();
-
-            $result->addMessage(sprintf('Mongo connection (%s) passed', $this->name));
-        } catch (Throwable $e) {
-            $result->addError(sprintf('Mongo connection (%s) failed. Reason: %s', $this->name, $e->getMessage()));
-        }
-
-        return $result;
+        return sprintf('Mongo connection (%s)', $this->name);
     }
 }

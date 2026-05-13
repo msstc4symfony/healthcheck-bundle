@@ -2,55 +2,194 @@ name: Code Quality Checks
 
 on:
   pull_request:
-    branches:
-      - '**'
+    paths-ignore:
+      - '**/*.md'
+      - LICENSE
   push:
     branches:
       - main
+    paths-ignore:
+      - '**/*.md'
+      - LICENSE
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  PHP_VERSION: '8.4'
+  COMPOSER: composer-ci.json
 
 jobs:
-  checks:
-    name: Run Code Checks and Unit Tests
+  setup:
+    name: Install dependencies
     runs-on: ubuntu-latest
-
+    outputs:
+      vendor-cache-key: ${{ steps.cache-key.outputs.value }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+      - uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.4'
-          extensions: mbstring, xml, ctype, iconv, intl, xdebug, redis, mongodb, memcache, memcached
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: mbstring, xml, ctype, iconv, intl
+          coverage: none
+          tools: composer:v2
+
+      - id: cache-key
+        run: echo "value=vendor-${{ runner.os }}-php${{ env.PHP_VERSION }}-${{ hashFiles('composer-ci.lock') }}" >> "$GITHUB_OUTPUT"
+
+      - id: vendor-cache
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: ${{ steps.cache-key.outputs.value }}
+
+      - if: steps.vendor-cache.outputs.cache-hit != 'true'
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+  lint:
+    name: PHP lint
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          coverage: none
+          tools: composer:v2
+
+      - uses: actions/cache@v4
+        with:
+          path: vendor
+          key: ${{ needs.setup.outputs.vendor-cache-key }}
+
+      - run: find ./src ./tests -name '*.php' | xargs -r -P4 -n50 php -l
+
+  phpstan:
+    name: PHPStan
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: mbstring, xml, ctype, iconv, intl, redis, mongodb, memcache, memcached
+          coverage: none
+          tools: composer:v2
+
+      - uses: actions/cache@v4
+        with:
+          path: vendor
+          key: ${{ needs.setup.outputs.vendor-cache-key }}
+
+      - uses: actions/cache@v4
+        with:
+          path: /tmp/phpstan
+          key: phpstan-${{ hashFiles('composer-ci.lock', 'phpstan*.neon') }}
+          restore-keys: |
+            phpstan-
+
+      - run: vendor/bin/phpstan analyse --memory-limit=512M -c phpstan-ci.neon
+
+  cs-fixer:
+    name: PHP-CS-Fixer
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: mbstring
+          coverage: none
+          tools: composer:v2
+
+      - uses: actions/cache@v4
+        with:
+          path: vendor
+          key: ${{ needs.setup.outputs.vendor-cache-key }}
+
+      - uses: actions/cache@v4
+        with:
+          path: .php-cs-fixer.cache
+          key: cs-fixer-${{ hashFiles('.php-cs-fixer.dist.php', 'composer-ci.lock') }}
+
+      - run: vendor/bin/php-cs-fixer check
+
+  rector:
+    name: Rector
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: mbstring
+          coverage: none
+          tools: composer:v2
+
+      - uses: actions/cache@v4
+        with:
+          path: vendor
+          key: ${{ needs.setup.outputs.vendor-cache-key }}
+
+      - uses: actions/cache@v4
+        with:
+          path: /tmp/rector
+          key: rector-${{ hashFiles('rector.php', 'composer-ci.lock') }}
+
+      - run: vendor/bin/rector process -n
+
+  composer-audit:
+    name: Composer audit
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          coverage: none
+          tools: composer:v2
+
+      - uses: actions/cache@v4
+        with:
+          path: vendor
+          key: ${{ needs.setup.outputs.vendor-cache-key }}
+
+      - run: composer audit
+
+  phpunit:
+    name: PHPUnit
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: mbstring, xml, ctype, iconv, intl
           coverage: xdebug
           tools: composer:v2
 
-      - name: Get composer cache directory
-        id: composer-cache
-        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
-
-      - name: Cache composer dependencies
-        uses: actions/cache@v4
+      - uses: actions/cache@v4
         with:
-          path: ${{ steps.composer-cache.outputs.dir }}
-          key: ${{ runner.os }}-composer-ci-${{ hashFiles('**/composer-ci.lock') }}
-          restore-keys: ${{ runner.os }}-composer-ci-
+          path: vendor
+          key: ${{ needs.setup.outputs.vendor-cache-key }}
 
-      - name: Install dependencies (full set, with optional checker libs)
-        env:
-          COMPOSER: composer-ci.json
-        run: composer install --prefer-dist --no-progress --no-interaction
+      - run: XDEBUG_MODE=coverage vendor/bin/phpunit --coverage-clover=coverage.xml --log-junit junit.xml
 
-      - name: Run checks
-        env:
-          PHPSTAN_CONFIG: phpstan-ci.neon
-        run: make check
-
-      - name: Run unit tests
-        run: XDEBUG_MODE=coverage vendor/bin/phpunit --coverage-clover=coverage.xml --log-junit junit.xml
-
-      - name: Upload coverage to Codecov
-        if: ${{ !cancelled() }}
+      - if: ${{ !cancelled() }}
         uses: codecov/codecov-action@v5
         with:
           files: ./coverage.xml
@@ -59,8 +198,7 @@ jobs:
           slug: max-shamaev-php/healthcheck-bundle
           token: ${{ secrets.CODECOV_TOKEN }}
 
-      - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
+      - if: ${{ !cancelled() }}
         uses: codecov/codecov-action@v5
         with:
           report_type: test_results

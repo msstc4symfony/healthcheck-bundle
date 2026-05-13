@@ -70,6 +70,12 @@ final class HealthCheckExtension extends Extension
             $parallel = new Definition(ParallelAction::class)->setAutowired(true);
             $container->setDefinition(self::SERVICE_PARALLEL_ACTION, $parallel);
             $innerServiceId = self::SERVICE_PARALLEL_ACTION;
+
+            // Action would otherwise stay in the container as a dead-but-resolvable service.
+            // Drop it so introspection ("debug:container Action") reflects the active wiring.
+            if ($container->hasDefinition(Action::class)) {
+                $container->removeDefinition(Action::class);
+            }
         }
 
         $actionInterfaceTarget = $innerServiceId;

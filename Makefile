@@ -1,6 +1,8 @@
+PHPSTAN_CONFIG ?= phpstan.dist.neon
+
 check: ## Check code
 	find ./ -name '*.php' -not -path './vendor/*' | xargs -r php -l
-	vendor/bin/phpstan --memory-limit=512M
+	vendor/bin/phpstan analyse --memory-limit=512M -c $(PHPSTAN_CONFIG)
 	vendor/bin/php-cs-fixer check
 	composer audit
 	vendor/bin/rector process -n

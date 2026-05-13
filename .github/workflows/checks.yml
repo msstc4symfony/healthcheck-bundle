@@ -41,10 +41,9 @@ jobs:
           COMPOSER: composer-ci.json
         run: composer install --prefer-dist --no-progress --no-interaction
 
-      - name: Regenerate PHPStan baseline for CI environment
-        run: make regenerate-baseline
-
       - name: Run checks
+        env:
+          PHPSTAN_CONFIG: phpstan-ci.neon
         run: make check
 
       - name: Run unit tests

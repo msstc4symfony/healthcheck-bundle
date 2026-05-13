@@ -47,7 +47,7 @@ final readonly class ParallelAction implements ActionInterface
         $context = new Context($request->type, $request->options);
         $runStartedAt = microtime(true);
 
-        /** @var list<array{checker: CheckInterface, fiber: Fiber<void, void, CheckResult, void>, startedAt: float}> $entries */
+        /** @var list<array{checker: CheckInterface, fiber: Fiber<void, void, CheckResult, void>|null, startedAt: float, startError: Throwable|null}> $entries */
         $entries = [];
 
         foreach ($this->healthCheckers as $checker) {
@@ -55,32 +55,44 @@ final readonly class ParallelAction implements ActionInterface
                 continue;
             }
 
+            $startedAt = microtime(true);
             $fiber = new Fiber(static fn (): CheckResult => $checker->check(new CheckResult(), $context));
-            $fiber->start();
 
-            $entries[] = ['checker' => $checker, 'fiber' => $fiber, 'startedAt' => microtime(true)];
+            // A synchronous throw inside the closure propagates here (Fibers only defer when the
+            // closure yields). Catch so one misbehaving checker cannot abort the whole drain loop.
+            try {
+                $fiber->start();
+                $entries[] = ['checker' => $checker, 'fiber' => $fiber, 'startedAt' => $startedAt, 'startError' => null];
+            } catch (Throwable $e) {
+                $entries[] = ['checker' => $checker, 'fiber' => null, 'startedAt' => $startedAt, 'startError' => $e];
+            }
         }
 
         $combined = new CheckResult();
         foreach ($entries as $entry) {
             // Synchronous fibers terminate on start(); no scheduling needed. When async-aware
             // checkers land, replace this drain with an actual loop (Suspension/Revolt).
-            try {
-                /** @var CheckResult $partial */
-                $partial = $entry['fiber']->getReturn();
-                foreach ($partial->messages as $message) {
-                    $combined->addMessage($message);
-                }
-                foreach ($partial->errors as $error) {
-                    $combined->addError($error);
-                }
-                foreach ($partial->warnings as $warning) {
-                    $combined->addWarning($warning);
-                }
-                $success = $partial->errors === [];
-            } catch (Throwable $e) {
-                $combined->addError(sprintf('parallel: %s failed (%s)', $entry['checker']::class, $e->getMessage()));
+            if ($entry['startError'] !== null) {
+                $combined->addError(sprintf('parallel: %s failed (%s)', $entry['checker']::class, $entry['startError']->getMessage()));
                 $success = false;
+            } else {
+                try {
+                    /** @var CheckResult $partial */
+                    $partial = $entry['fiber']?->getReturn() ?? new CheckResult();
+                    foreach ($partial->messages as $message) {
+                        $combined->addMessage($message);
+                    }
+                    foreach ($partial->errors as $error) {
+                        $combined->addError($error);
+                    }
+                    foreach ($partial->warnings as $warning) {
+                        $combined->addWarning($warning);
+                    }
+                    $success = $partial->errors === [];
+                } catch (Throwable $e) {
+                    $combined->addError(sprintf('parallel: %s failed (%s)', $entry['checker']::class, $e->getMessage()));
+                    $success = false;
+                }
             }
 
             $this->dispatch(new HealthCheckerCompletedEvent(

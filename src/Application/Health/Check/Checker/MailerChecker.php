@@ -21,12 +21,18 @@ final readonly class MailerChecker extends AbstractReadinessChecker
     protected function doCheck(): void
     {
         // Mailer transport exceptions may carry DSN fragments (incl. credentials) in their message.
-        // Catch any throwable and re-throw a sanitized version so the probe response never leaks secrets.
+        // Only the start() outcome reflects actual connectivity; a stop() failure is a best-effort
+        // cleanup concern and must not be reported as a connect/auth failure.
         try {
             $this->transport->start();
-            $this->transport->stop();
         } catch (Throwable) {
             throw new RuntimeException('SMTP connect/authentication failed');
+        }
+
+        try {
+            $this->transport->stop();
+        } catch (Throwable) {
+            // ignored — connection was already verified by start().
         }
     }
 

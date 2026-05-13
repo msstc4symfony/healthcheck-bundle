@@ -4,13 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A Symfony bundle that exposes Kubernetes-style **liveliness** and **readiness** health checks. Targets PHP >= 8.1 and Symfony 6.4 / 7.x / 8.x. Distributed as a `symfony-bundle` Composer package; there is no host application in the repo — everything is library code plus unit tests.
+A Symfony bundle that exposes Kubernetes-style **liveliness** and **readiness** health checks. Targets PHP >= 8.4 and Symfony 6.4 / 7.x / 8.x. Distributed as a `symfony-bundle` Composer package; there is no host application in the repo — everything is library code plus unit tests.
+
+PHP 8.4 is required because the bundle uses asymmetric visibility (`public private(set)`) on DTOs, typed class constants (`const string`), and Property Hooks. Code under `src/` is not expected to be back-compatible with earlier PHP minors.
 
 ## Common commands
 
 All workflow targets live in the `Makefile`:
 
-- `make check` — full quality gate: `php -l` lint, `phpstan` (level 9, uses `phpstan-baseline.neon`), `php-cs-fixer check`, `composer audit`, and `rector process -n` (dry run). CI runs the same target.
+- `make check` — full quality gate: `php -l` lint, `phpstan` (level 9, uses `phpstan-baseline.neon`), `php-cs-fixer check`, `composer audit`, and `rector process -n` (dry run). CI runs the same target with `PHPSTAN_CONFIG=phpstan-ci.neon` (extends `phpstan.dist.neon` with `reportUnmatchedIgnoredErrors: false` — local baseline entries for missing optional libs do not break CI where those libs are installed; new findings still fail).
 - `make fix` — apply `php-cs-fixer fix` then `rector process` writes.
 - `make test` — `vendor/bin/phpunit`.
 - `make test-with-coverage` — phpunit with HTML coverage in `coverage/`.
@@ -52,4 +54,4 @@ Every synthesized definition is autowired and re-tagged with `CheckInterface::cl
 
 - **PHPStan**: `level: 9`, `treatPhpDocTypesAsCertain: false`, with `spaze/phpstan-disallowed-calls`, `phpstan-strict-rules`, `phpstan-symfony`, `phpstan-doctrine`, `phpstan-beberlei-assert`. New issues are *not* auto-baselined — `make check` will fail; use `make regenerate-baseline` only when you have a deliberate reason.
 - **PHP-CS-Fixer**: `@Symfony` preset with project tweaks (left-aligned phpdoc, `global_namespace_import` → import classes, trailing commas in multiline arguments/arrays/match/parameters, post-increment style, no yoda conditions). Run `make fix` rather than hand-formatting.
-- **Rector**: PHP 8.1 sets plus prepared sets for deadCode/codeQuality/codingStyle/typeDeclarations/privatization/instanceOf/earlyReturn and Symfony+Doctrine quality. A handful of rectors are explicitly skipped (see `rector.php`) — respect those when refactoring.
+- **Rector**: PHP 8.4 sets plus prepared sets for deadCode/codeQuality/codingStyle/typeDeclarations/privatization/instanceOf/earlyReturn and Symfony+Doctrine quality. A handful of rectors are explicitly skipped (see `rector.php`) — respect those when refactoring.

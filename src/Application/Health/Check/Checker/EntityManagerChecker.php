@@ -26,7 +26,9 @@ final readonly class EntityManagerChecker extends AbstractReadinessChecker
 
     protected function doCheck(): void
     {
-        $this->entityManager->getConnection()->executeQuery('SELECT 1');
+        $connection = $this->entityManager->getConnection();
+        // DummySelectSQL is platform-portable (`SELECT 1` on MySQL/PG, `SELECT 1 FROM DUAL` on Oracle, etc.).
+        $connection->executeQuery($connection->getDatabasePlatform()->getDummySelectSQL());
     }
 
     protected function label(): string

@@ -45,8 +45,14 @@ final readonly class HttpClientChecker extends AbstractReadinessChecker
                 throw new RuntimeException(sprintf('unexpected status %d', $status));
             }
         } finally {
+            // cancel() can itself raise on some transports if internal state is broken — keep
+            // it best-effort so it never replaces the original (sanitized) exception.
             if ($response instanceof ResponseInterface) {
-                $response->cancel();
+                try {
+                    $response->cancel();
+                } catch (Throwable) {
+                    // ignored
+                }
             }
         }
     }

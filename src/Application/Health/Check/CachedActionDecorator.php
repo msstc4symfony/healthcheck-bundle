@@ -29,13 +29,18 @@ final readonly class CachedActionDecorator implements ActionInterface
 
     public function run(Request $request): Response
     {
-        $item = $this->cache->getItem($this->buildKey($request));
+        $key = $this->buildKey($request);
+        $item = $this->cache->getItem($key);
+
         if ($item->isHit()) {
             $cached = $item->get();
             if ($cached instanceof Response) {
                 return $cached;
             }
-            // Cache pollution (foreign value under our key) — fall through and overwrite.
+            // Cache pollution (foreign value under our key). Evict eagerly so a failing run
+            // does not leave the polluted value to be re-served by the next probe.
+            $this->cache->deleteItem($key);
+            $item = $this->cache->getItem($key);
         }
 
         $response = $this->inner->run($request);

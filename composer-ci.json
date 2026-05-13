@@ -28,9 +28,13 @@
   },
   "require-dev": {
     "doctrine/dbal": "^3.0|^4.0",
+    "doctrine/migrations": "^3.8",
     "doctrine/mongodb-odm": "^2.6",
+    "doctrine/orm": "^3.0",
     "friendsofphp/php-cs-fixer": "^3.55",
+    "league/flysystem-bundle": "^3.4",
     "mongodb/mongodb": "^2.1",
+    "opensearch-project/opensearch-php": "^2.4",
     "php-amqplib/php-amqplib": "^3.5",
     "phpstan/extension-installer": "^1.4",
     "phpstan/phpstan": "^2.1",
@@ -43,7 +47,12 @@
     "rector/rector": "^2.1",
     "roave/security-advisories": "dev-latest",
     "ruflin/elastica": "^7.3|^8.0",
-    "spaze/phpstan-disallowed-calls": "^v4.0"
+    "smi2/phpclickhouse": "^1.5",
+    "spaze/phpstan-disallowed-calls": "^v4.0",
+    "symfony/http-client": "^6.4|^7.0|^8.0",
+    "symfony/lock": "^6.4|^7.0|^8.0",
+    "symfony/mailer": "^6.4|^7.0|^8.0",
+    "symfony/messenger": "^6.4|^7.0|^8.0"
   },
   "suggest": {
     "symfony/monolog-bundle": "To upload the verification results to the logs"

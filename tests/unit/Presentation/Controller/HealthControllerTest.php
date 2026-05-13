@@ -65,7 +65,7 @@ final class HealthControllerTest extends TestCase
         $response = $controller->readiness($request);
 
         self::assertSame(Response::HTTP_OK, $response->getStatusCode());
-        self::assertSame('{"success":true,"errors":[],"messages":["success dump check"]}', $response->getContent());
+        self::assertSame('{"success":true,"errors":[],"messages":["success dump check"],"warnings":[]}', $response->getContent());
     }
 
     /**

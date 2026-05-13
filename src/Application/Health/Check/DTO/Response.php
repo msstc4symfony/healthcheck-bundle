@@ -14,10 +14,12 @@ final class Response
     /**
      * @param string[] $errors
      * @param string[] $messages
+     * @param string[] $warnings
      */
     public function __construct(
         public readonly array $errors,
         public readonly array $messages,
+        public readonly array $warnings = [],
     ) {
     }
 }

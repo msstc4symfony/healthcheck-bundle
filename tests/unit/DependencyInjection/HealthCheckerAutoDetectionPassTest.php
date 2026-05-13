@@ -4,30 +4,57 @@ declare(strict_types=1);
 
 namespace MaxShamaev\HealthCheckBundle\Test\Unit\DependencyInjection;
 
+use ClickHouseDB\Client as ClickHouseClient;
 use Doctrine\DBAL\Connection;
+use Doctrine\Migrations\DependencyFactory;
 use Doctrine\ODM\MongoDB\DocumentManager;
+use Doctrine\ORM\EntityManagerInterface;
+use League\Flysystem\Filesystem;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\CacheChecker;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\CheckInterface;
+use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\ClickHouseChecker;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\DBALConnectionChecker;
+use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\DoctrineMigrationsChecker;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\ElasticaConnectionChecker;
+use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\EntityManagerChecker;
+use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\FlysystemChecker;
+use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\HttpClientChecker;
+use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\KafkaChecker;
+use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\LockStoreChecker;
+use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\MailerChecker;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\MemcacheChecker;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\MemcachedChecker;
+use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\MessengerTransportChecker;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\MongoConnectionChecker;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\ODMConnectionChecker;
+use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\OpenSearchChecker;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\PredisChecker;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\RabbitmqChecker;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\RedisChecker;
 use MaxShamaev\HealthCheckBundle\DependencyInjection\Detector\CacheClientDetector;
 use MaxShamaev\HealthCheckBundle\DependencyInjection\Detector\CachePoolDetector;
+use MaxShamaev\HealthCheckBundle\DependencyInjection\Detector\ClickHouseDetector;
 use MaxShamaev\HealthCheckBundle\DependencyInjection\Detector\DBALConnectionDetector;
+use MaxShamaev\HealthCheckBundle\DependencyInjection\Detector\DoctrineMigrationsDetector;
 use MaxShamaev\HealthCheckBundle\DependencyInjection\Detector\ElasticaClientDetector;
+use MaxShamaev\HealthCheckBundle\DependencyInjection\Detector\EntityManagerDetector;
+use MaxShamaev\HealthCheckBundle\DependencyInjection\Detector\FlysystemDetector;
+use MaxShamaev\HealthCheckBundle\DependencyInjection\Detector\HttpClientTargetDetector;
+use MaxShamaev\HealthCheckBundle\DependencyInjection\Detector\KafkaDetector;
+use MaxShamaev\HealthCheckBundle\DependencyInjection\Detector\LockStoreDetector;
+use MaxShamaev\HealthCheckBundle\DependencyInjection\Detector\MailerDetector;
+use MaxShamaev\HealthCheckBundle\DependencyInjection\Detector\MessengerTransportDetector;
 use MaxShamaev\HealthCheckBundle\DependencyInjection\Detector\MongoConnectionDetector;
 use MaxShamaev\HealthCheckBundle\DependencyInjection\Detector\ODMDocumentManagerDetector;
+use MaxShamaev\HealthCheckBundle\DependencyInjection\Detector\OpenSearchDetector;
 use MaxShamaev\HealthCheckBundle\DependencyInjection\Detector\RabbitMQConnectionDetector;
 use MaxShamaev\HealthCheckBundle\DependencyInjection\HealthCheckerAutoDetectionPass;
+use MaxShamaev\HealthCheckBundle\DependencyInjection\HealthCheckExtension;
+use OpenSearch\Client as OpenSearchClient;
 use PhpAmqpLib\Connection\AbstractConnection;
 use PHPUnit\Framework\TestCase;
 use Predis\Client;
+use RdKafka\Producer as KafkaProducer;
 use stdClass;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 use Symfony\Component\Cache\Adapter\RedisAdapter;
@@ -35,6 +62,9 @@ use Symfony\Component\DependencyInjection\ChildDefinition;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
+use Symfony\Component\Lock\Store\InMemoryStore;
+use Symfony\Component\Mailer\Transport\Smtp\SmtpTransport;
+use Symfony\Component\Messenger\Transport\TransportInterface;
 
 final class HealthCheckerAutoDetectionPassTest extends TestCase
 {
@@ -237,6 +267,160 @@ final class HealthCheckerAutoDetectionPassTest extends TestCase
         self::assertTrue($container->hasDefinition('healthcheck.checker.doctrine_mongodb.odm.default_connection'));
     }
 
+    public function testProcessRegistersMessengerTransportCheckers(): void
+    {
+        $container = new ContainerBuilder();
+        $transport = new Definition(TransportInterface::class);
+        $transport->addTag('messenger.receiver');
+
+        $container->setDefinition('messenger.transport.async', $transport);
+
+        $this->runPass($container);
+
+        $checker = $container->findDefinition('healthcheck.checker.messenger.transport.async');
+        self::assertSame(MessengerTransportChecker::class, $checker->getClass());
+        self::assertSame('async', $checker->getArgument(1));
+        self::assertArrayHasKey(CheckInterface::class, $checker->getTags());
+    }
+
+    public function testProcessRegistersEntityManagerCheckers(): void
+    {
+        $container = new ContainerBuilder();
+        $container->setDefinition('doctrine.orm.default_entity_manager', new Definition(EntityManagerInterface::class));
+        $container->setDefinition('doctrine.orm.something_else', new Definition(EntityManagerInterface::class));
+
+        $this->runPass($container);
+
+        $checker = $container->findDefinition('healthcheck.checker.doctrine.orm.default_entity_manager');
+        self::assertSame(EntityManagerChecker::class, $checker->getClass());
+        self::assertSame('default', $checker->getArgument(1));
+        self::assertArrayHasKey(CheckInterface::class, $checker->getTags());
+
+        self::assertFalse($container->hasDefinition('healthcheck.checker.doctrine.orm.something_else'));
+    }
+
+    public function testProcessRegistersDoctrineMigrationsChecker(): void
+    {
+        $container = new ContainerBuilder();
+        $container->setDefinition(DependencyFactory::class, new Definition(DependencyFactory::class));
+
+        $this->runPass($container);
+
+        $checker = $container->findDefinition('healthcheck.checker.doctrine_migrations');
+        self::assertSame(DoctrineMigrationsChecker::class, $checker->getClass());
+        self::assertArrayHasKey(CheckInterface::class, $checker->getTags());
+    }
+
+    public function testProcessSkipsDoctrineMigrationsWhenMissing(): void
+    {
+        $container = new ContainerBuilder();
+
+        $this->runPass($container);
+
+        self::assertFalse($container->hasDefinition('healthcheck.checker.doctrine_migrations'));
+    }
+
+    public function testProcessRegistersFlysystemCheckers(): void
+    {
+        $container = new ContainerBuilder();
+        $fs = new Definition(Filesystem::class);
+        $fs->addTag('flysystem.storage');
+
+        $container->setDefinition('uploads.storage', $fs);
+
+        $this->runPass($container);
+
+        $checker = $container->findDefinition('healthcheck.checker.uploads.storage');
+        self::assertSame(FlysystemChecker::class, $checker->getClass());
+        self::assertSame('uploads.storage', $checker->getArgument(1));
+        self::assertArrayHasKey(CheckInterface::class, $checker->getTags());
+    }
+
+    public function testProcessRegistersMailerCheckers(): void
+    {
+        $container = new ContainerBuilder();
+        $container->setDefinition('mailer.smtp', new Definition(SmtpTransport::class));
+
+        $this->runPass($container);
+
+        $checker = $container->findDefinition('healthcheck.checker.mailer.smtp');
+        self::assertSame(MailerChecker::class, $checker->getClass());
+        self::assertSame('mailer.smtp', $checker->getArgument(1));
+        self::assertArrayHasKey(CheckInterface::class, $checker->getTags());
+    }
+
+    public function testProcessRegistersOpenSearchCheckers(): void
+    {
+        $container = new ContainerBuilder();
+        $container->setDefinition('opensearch.client.main', new Definition(OpenSearchClient::class));
+
+        $this->runPass($container);
+
+        $checker = $container->findDefinition('healthcheck.checker.opensearch.client.main');
+        self::assertSame(OpenSearchChecker::class, $checker->getClass());
+        self::assertSame('opensearch.client.main', $checker->getArgument(1));
+    }
+
+    public function testProcessRegistersKafkaCheckers(): void
+    {
+        $container = new ContainerBuilder();
+        $container->setDefinition('kafka.producer', new Definition(KafkaProducer::class));
+
+        $this->runPass($container);
+
+        $checker = $container->findDefinition('healthcheck.checker.kafka.producer');
+        self::assertSame(KafkaChecker::class, $checker->getClass());
+        self::assertSame('kafka.producer', $checker->getArgument(1));
+    }
+
+    public function testProcessRegistersClickHouseCheckers(): void
+    {
+        $container = new ContainerBuilder();
+        $container->setDefinition('clickhouse.analytics', new Definition(ClickHouseClient::class));
+
+        $this->runPass($container);
+
+        $checker = $container->findDefinition('healthcheck.checker.clickhouse.analytics');
+        self::assertSame(ClickHouseChecker::class, $checker->getClass());
+        self::assertSame('clickhouse.analytics', $checker->getArgument(1));
+    }
+
+    public function testProcessRegistersLockStoreCheckers(): void
+    {
+        $container = new ContainerBuilder();
+        $container->setDefinition('lock.default.store', new Definition(InMemoryStore::class));
+
+        $this->runPass($container);
+
+        $checker = $container->findDefinition('healthcheck.checker.lock.default.store');
+        self::assertSame(LockStoreChecker::class, $checker->getClass());
+        self::assertSame('lock.default.store', $checker->getArgument(1));
+    }
+
+    public function testProcessRegistersHttpClientTargetsFromConfig(): void
+    {
+        $container = new ContainerBuilder();
+        $container->setParameter(HealthCheckExtension::PARAM_HTTP_CLIENT_TARGETS, [
+            'upstream' => [
+                'url' => 'https://api.example.com/health',
+                'method' => 'GET',
+                'expected_status_codes' => [200],
+                'client' => null,
+                'timeout_seconds' => 3,
+            ],
+        ]);
+
+        $this->runPass($container);
+
+        $checker = $container->findDefinition('healthcheck.checker.http_client.upstream');
+        self::assertSame(HttpClientChecker::class, $checker->getClass());
+        self::assertSame('upstream', $checker->getArgument(1));
+        self::assertSame('https://api.example.com/health', $checker->getArgument(2));
+        self::assertSame('GET', $checker->getArgument(3));
+        self::assertSame([200], $checker->getArgument(4));
+        self::assertSame(3, $checker->getArgument(5));
+    }
+
     private function runPass(ContainerBuilder $container): void
     {
         new HealthCheckerAutoDetectionPass([
@@ -247,6 +431,16 @@ final class HealthCheckerAutoDetectionPassTest extends TestCase
             new MongoConnectionDetector(),
             new ODMDocumentManagerDetector(),
             new ElasticaClientDetector(),
+            new MessengerTransportDetector(),
+            new EntityManagerDetector(),
+            new DoctrineMigrationsDetector(),
+            new FlysystemDetector(),
+            new MailerDetector(),
+            new OpenSearchDetector(),
+            new KafkaDetector(),
+            new ClickHouseDetector(),
+            new LockStoreDetector(),
+            new HttpClientTargetDetector(),
         ])->process($container);
     }
 }

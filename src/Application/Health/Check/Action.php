@@ -7,6 +7,10 @@ use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\Context;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\Request;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\Response;
+use MaxShamaev\HealthCheckBundle\Application\Health\Check\Event\HealthCheckerCompletedEvent;
+use MaxShamaev\HealthCheckBundle\Application\Health\Check\Event\HealthCheckRunCompletedEvent;
+use MaxShamaev\HealthCheckBundle\Application\Health\Check\Event\HealthCheckRunStartedEvent;
+use Psr\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 
 final readonly class Action implements ActionInterface
@@ -17,20 +21,46 @@ final readonly class Action implements ActionInterface
     public function __construct(
         #[AutowireIterator(CheckInterface::class)]
         private iterable $healthCheckers,
+        private ?EventDispatcherInterface $eventDispatcher = null,
     ) {
     }
 
     public function run(Request $request): Response
     {
+        $this->dispatch(new HealthCheckRunStartedEvent($request));
+
         $result = new CheckResult();
         $context = new Context($request->type, $request->options);
+        $runStartedAt = microtime(true);
 
         foreach ($this->healthCheckers as $checker) {
-            if ($checker->isSupport($context)) {
-                $result = $checker->check($result, $context);
+            if (!$checker->isSupport($context)) {
+                continue;
             }
+
+            $errorsBefore = count($result->errors);
+            $checkerStartedAt = microtime(true);
+
+            $result = $checker->check($result, $context);
+
+            $this->dispatch(new HealthCheckerCompletedEvent(
+                $checker::class,
+                (microtime(true) - $checkerStartedAt) * 1000,
+                count($result->errors) === $errorsBefore,
+            ));
         }
 
-        return new Response($result->errors, $result->messages);
+        $response = new Response($result->errors, $result->messages, $result->warnings);
+        $this->dispatch(new HealthCheckRunCompletedEvent(
+            $response,
+            (microtime(true) - $runStartedAt) * 1000,
+        ));
+
+        return $response;
+    }
+
+    private function dispatch(object $event): void
+    {
+        $this->eventDispatcher?->dispatch($event);
     }
 }

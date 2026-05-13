@@ -11,7 +11,6 @@ use MaxShamaev\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use Symfony\Component\Messenger\Transport\Receiver\MessageCountAwareInterface;
-use Symfony\Component\Messenger\Transport\SetupableTransportInterface;
 use Symfony\Component\Messenger\Transport\TransportInterface;
 
 final class MessengerTransportCheckerTest extends TestCase
@@ -42,9 +41,12 @@ final class MessengerTransportCheckerTest extends TestCase
         self::assertSame([], $result->errors);
     }
 
-    public function testCheckFallsBackToSetupWhenMessageCountUnavailable(): void
+    public function testCheckSkipsActiveProbeForNonCountableTransport(): void
     {
-        $transport = self::createStub(SetupableMessengerTransportFixture::class);
+        // For transports without MessageCountAware, the checker deliberately does NOT call setup()
+        // (which is destructive — creates tables/queues). It simply records that the transport
+        // was reachable via the DI graph (instantiation already succeeded).
+        $transport = self::createStub(TransportInterface::class);
 
         $result = new MessengerTransportChecker($transport, 'async')->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
@@ -66,9 +68,5 @@ final class MessengerTransportCheckerTest extends TestCase
 }
 
 interface CountableMessengerTransportFixture extends TransportInterface, MessageCountAwareInterface
-{
-}
-
-interface SetupableMessengerTransportFixture extends TransportInterface, SetupableTransportInterface
 {
 }

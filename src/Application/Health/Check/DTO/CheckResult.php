@@ -38,7 +38,7 @@ final class CheckResult
      * Truncate trailing messages/errors/warnings back to the recorded sizes. Used by decorators
      * to discard partial inner-state when overriding the outcome (e.g. timeout, criticality).
      */
-    public function resetTrailing(int $messagesCount, int $errorsCount, int $warningsCount = 0): void
+    public function resetTrailing(int $messagesCount, int $errorsCount, int $warningsCount): void
     {
         $this->messages = array_slice($this->messages, 0, $messagesCount);
         $this->errors = array_slice($this->errors, 0, $errorsCount);

@@ -57,8 +57,11 @@ final class HealthCheckBundle extends Bundle
             new HttpClientTargetDetector(),
         ]));
 
-        $container->addCompilerPass(new HealthCheckerCriticalityDecorationPass());
+        // Order matters: Timeout MUST wrap first so the outermost decorator is Criticality.
+        // Final composition = NonCritical( Timeout( inner ) ). A non-critical checker that
+        // exceeds its budget then produces a warning, not an error.
         $container->addCompilerPass(new HealthCheckerTimeoutDecorationPass());
+        $container->addCompilerPass(new HealthCheckerCriticalityDecorationPass());
     }
 
     #[Override]

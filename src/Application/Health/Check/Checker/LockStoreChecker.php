@@ -7,6 +7,7 @@ namespace MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker;
 use Symfony\Component\DependencyInjection\Attribute\Exclude;
 use Symfony\Component\Lock\Key;
 use Symfony\Component\Lock\PersistingStoreInterface;
+use Throwable;
 
 #[Exclude]
 final readonly class LockStoreChecker extends AbstractReadinessChecker
@@ -22,10 +23,15 @@ final readonly class LockStoreChecker extends AbstractReadinessChecker
     protected function doCheck(): void
     {
         $key = new Key(self::PROBE_RESOURCE);
+
+        // Let save() throw naturally — its exception is the actual probe failure.
+        $this->store->save($key);
+
+        // Best-effort cleanup; never mask the save() outcome with a delete() failure.
         try {
-            $this->store->save($key);
-        } finally {
             $this->store->delete($key);
+        } catch (Throwable) {
+            // ignored
         }
     }
 

@@ -19,12 +19,13 @@ use Symfony\Component\DependencyInjection\Attribute\Exclude;
 use Throwable;
 
 /**
- * Fiber-based ActionInterface that runs supported checkers in parallel fibers.
+ * Fiber-based ActionInterface that runs supported checkers in independent fibers.
  *
- * Note: wall-clock parallelism is only realized when checkers use async-aware I/O
- * (amphp/http-client, react/mysql, etc.). For synchronous probes (PDO, Predis, sync HTTP)
- * the fibers run to completion sequentially and the speedup is negligible — but the API
- * shape is correct for future migration to async drivers.
+ * Honest limitation: PHP's Fibers are cooperative coroutines without a built-in scheduler.
+ * For a synchronous checker (PDO/Predis/sync HTTP) Fiber::start() runs the closure to
+ * completion before returning, so no wall-clock overlap occurs — this class is sequential
+ * in practice today. The wiring is in place so a future migration to async-aware drivers
+ * (amphp, react) yields real parallelism without touching call sites.
  */
 #[Exclude]
 final readonly class ParallelAction implements ActionInterface
@@ -62,14 +63,11 @@ final readonly class ParallelAction implements ActionInterface
 
         $combined = new CheckResult();
         foreach ($entries as $entry) {
-            while (!$entry['fiber']->isTerminated()) {
-                usleep(1000);
-            }
-
+            // Synchronous fibers terminate on start(); no scheduling needed. When async-aware
+            // checkers land, replace this drain with an actual loop (Suspension/Revolt).
             try {
                 /** @var CheckResult $partial */
                 $partial = $entry['fiber']->getReturn();
-                $errorsBefore = count($partial->errors);
                 foreach ($partial->messages as $message) {
                     $combined->addMessage($message);
                 }
@@ -79,9 +77,9 @@ final readonly class ParallelAction implements ActionInterface
                 foreach ($partial->warnings as $warning) {
                     $combined->addWarning($warning);
                 }
-                $success = $errorsBefore === 0;
+                $success = $partial->errors === [];
             } catch (Throwable $e) {
-                $combined->addError(sprintf('%s failed (%s)', $entry['checker']::class, $e->getMessage()));
+                $combined->addError(sprintf('parallel: %s failed (%s)', $entry['checker']::class, $e->getMessage()));
                 $success = false;
             }
 
@@ -103,6 +101,13 @@ final readonly class ParallelAction implements ActionInterface
 
     private function dispatch(object $event): void
     {
-        $this->eventDispatcher?->dispatch($event);
+        if (!$this->eventDispatcher instanceof EventDispatcherInterface) {
+            return;
+        }
+        try {
+            $this->eventDispatcher->dispatch($event);
+        } catch (Throwable) {
+            // A buggy listener must never fail the readiness probe.
+        }
     }
 }

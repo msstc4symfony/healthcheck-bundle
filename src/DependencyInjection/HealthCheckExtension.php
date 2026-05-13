@@ -47,7 +47,6 @@ final class HealthCheckExtension extends Extension
     public function load(array $configs, ContainerBuilder $container): void
     {
         $loader = new YamlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
-        /** @psalm-suppress ReservedWord */
         $loader->load('services.yaml');
 
         /** @var array{
@@ -66,25 +65,28 @@ final class HealthCheckExtension extends Extension
         $container->setParameter(self::PARAM_NON_CRITICAL_CHECKERS, $config['non_critical'] ?? []);
 
         // Inner runner: sequential Action by default, ParallelAction (fiber-based) when opted in.
-        $innerAlias = Action::class;
+        $innerServiceId = Action::class;
         if (($config['execution'] ?? 'sequential') === 'parallel') {
             $parallel = new Definition(ParallelAction::class)->setAutowired(true);
             $container->setDefinition(self::SERVICE_PARALLEL_ACTION, $parallel);
-            $innerAlias = self::SERVICE_PARALLEL_ACTION;
+            $innerServiceId = self::SERVICE_PARALLEL_ACTION;
         }
+
+        $actionInterfaceTarget = $innerServiceId;
 
         if (($config['cache']['enabled'] ?? false) === true) {
             $cached = new Definition(CachedActionDecorator::class)
                 ->setAutowired(false)
-                ->setArgument(0, new Reference($innerAlias))
+                ->setArgument(0, new Reference($innerServiceId))
                 ->setArgument(1, new Reference($config['cache']['pool'] ?? 'cache.app'))
                 ->setArgument(2, $config['cache']['ttl_seconds'] ?? 5)
             ;
 
             $container->setDefinition(self::SERVICE_CACHED_ACTION, $cached);
-            $container->setAlias(ActionInterface::class, self::SERVICE_CACHED_ACTION);
-        } elseif ($innerAlias !== Action::class) {
-            $container->setAlias(ActionInterface::class, $innerAlias);
+            $actionInterfaceTarget = self::SERVICE_CACHED_ACTION;
         }
+
+        // Always alias ActionInterface explicitly — do not rely on the PSR-4 service loader.
+        $container->setAlias(ActionInterface::class, $actionInterfaceTarget);
     }
 }

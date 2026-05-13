@@ -58,15 +58,19 @@ final class HttpClientCheckerTest extends TestCase
         self::assertStringContainsString('unexpected status 503', $result->errors[0]);
     }
 
-    public function testCheckOnException(): void
+    public function testCheckOnTransportExceptionEmitsSanitizedMessage(): void
     {
         $client = self::createStub(HttpClientInterface::class);
-        $client->method('request')->willThrowException(new RuntimeException('DNS resolution failed'));
+        // Symfony HTTP exceptions often include the full URL (incl. ?token=...). The checker
+        // must NOT leak this to the response body.
+        $client->method('request')->willThrowException(new RuntimeException('Could not resolve host: api.example.com?token=secret-token'));
 
         $result = $this->buildChecker($client)->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
         self::assertCount(1, $result->errors);
-        self::assertStringContainsString('DNS resolution failed', $result->errors[0]);
+        self::assertStringContainsString('HTTP probe transport error', $result->errors[0]);
+        self::assertStringNotContainsString('secret-token', $result->errors[0]);
+        self::assertStringNotContainsString('?token=', $result->errors[0]);
     }
 
     private function buildChecker(HttpClientInterface $client): HttpClientChecker

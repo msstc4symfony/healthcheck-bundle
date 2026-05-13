@@ -6,9 +6,16 @@ namespace MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker;
 
 use Symfony\Component\DependencyInjection\Attribute\Exclude;
 use Symfony\Component\Messenger\Transport\Receiver\MessageCountAwareInterface;
-use Symfony\Component\Messenger\Transport\SetupableTransportInterface;
 use Symfony\Component\Messenger\Transport\TransportInterface;
 
+/**
+ * Probes a Symfony Messenger transport.
+ *
+ * Only transports implementing MessageCountAwareInterface get an active probe (read-only count).
+ * For other transports we deliberately skip the probe — calling setup() would be destructive
+ * (Doctrine creates tables, AMQP declares exchanges/queues, etc.), which is unsafe to run on
+ * every readiness check.
+ */
 #[Exclude]
 final readonly class MessengerTransportChecker extends AbstractReadinessChecker
 {
@@ -22,13 +29,8 @@ final readonly class MessengerTransportChecker extends AbstractReadinessChecker
     {
         if ($this->transport instanceof MessageCountAwareInterface) {
             $this->transport->getMessageCount();
-
-            return;
         }
-
-        if ($this->transport instanceof SetupableTransportInterface) {
-            $this->transport->setup();
-        }
+        // Else: no safe probe; service-graph instantiation already verified the transport.
     }
 
     protected function label(): string

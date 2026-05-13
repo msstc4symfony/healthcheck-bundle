@@ -39,15 +39,19 @@ final class MailerCheckerTest extends TestCase
         self::assertSame([], $result->errors);
     }
 
-    public function testCheckOnException(): void
+    public function testCheckOnExceptionEmitsSanitizedMessage(): void
     {
         $transport = self::createStub(SmtpTransport::class);
-        $transport->method('start')->willThrowException(new RuntimeException('connect timeout'));
+        // The DSN-fragment "smtp://user:s3cret@host" must NEVER appear in the response;
+        // the checker is required to swallow the underlying exception and emit a generic message.
+        $transport->method('start')->willThrowException(new RuntimeException('smtp://user:s3cret@host: connect timeout'));
 
         $result = new MailerChecker($transport, 'smtp')->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
         self::assertCount(1, $result->errors);
         self::assertStringContainsString('smtp', $result->errors[0]);
-        self::assertStringContainsString('connect timeout', $result->errors[0]);
+        self::assertStringContainsString('SMTP connect/authentication failed', $result->errors[0]);
+        self::assertStringNotContainsString('s3cret', $result->errors[0]);
+        self::assertStringNotContainsString('user:', $result->errors[0]);
     }
 }

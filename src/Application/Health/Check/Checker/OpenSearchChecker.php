@@ -18,7 +18,6 @@ final readonly class OpenSearchChecker extends AbstractReadinessChecker
 
     protected function doCheck(): void
     {
-        /** @psalm-suppress UndefinedClass */
         $this->connection->cluster()->health();
     }
 

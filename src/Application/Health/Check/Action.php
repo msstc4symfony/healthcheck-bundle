@@ -12,6 +12,7 @@ use MaxShamaev\HealthCheckBundle\Application\Health\Check\Event\HealthCheckRunCo
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Event\HealthCheckRunStartedEvent;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
+use Throwable;
 
 final readonly class Action implements ActionInterface
 {
@@ -61,6 +62,13 @@ final readonly class Action implements ActionInterface
 
     private function dispatch(object $event): void
     {
-        $this->eventDispatcher?->dispatch($event);
+        if (!$this->eventDispatcher instanceof EventDispatcherInterface) {
+            return;
+        }
+        try {
+            $this->eventDispatcher->dispatch($event);
+        } catch (Throwable) {
+            // A buggy listener must never fail the readiness probe.
+        }
     }
 }

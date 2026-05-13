@@ -6,14 +6,12 @@ namespace MaxShamaev\HealthCheckBundle\Test\Unit\Application\Health\Check\Checke
 
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\Mapping\ClassMetadataFactory;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\EntityManagerChecker;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\Context;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
-use Throwable;
 
 final class EntityManagerCheckerTest extends TestCase
 {
@@ -26,15 +24,15 @@ final class EntityManagerCheckerTest extends TestCase
 
     public function testIsSupportReadinessOnly(): void
     {
-        $checker = new EntityManagerChecker($this->buildEntityManagerStub(connected: true), 'default');
+        $checker = new EntityManagerChecker($this->buildEntityManagerStub(), 'default');
 
         self::assertTrue($checker->isSupport(new Context(CheckTypeEnum::READINESS)));
         self::assertFalse($checker->isSupport(new Context(CheckTypeEnum::LIVELINESS)));
     }
 
-    public function testCheckOnAlreadyConnected(): void
+    public function testCheckOnSuccess(): void
     {
-        $em = $this->buildEntityManagerStub(connected: true);
+        $em = $this->buildEntityManagerStub();
 
         $result = new EntityManagerChecker($em, 'default')->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
@@ -42,43 +40,27 @@ final class EntityManagerCheckerTest extends TestCase
         self::assertSame([], $result->errors);
     }
 
-    public function testCheckForcesConnectionWhenDisconnected(): void
+    public function testCheckOnException(): void
     {
-        $em = $this->buildEntityManagerStub(connected: false);
+        $connection = self::createStub(Connection::class);
+        $connection->method('executeQuery')->willThrowException(new RuntimeException('connection refused'));
 
-        $result = new EntityManagerChecker($em, 'default')->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
-
-        self::assertSame(['EntityManager (default) passed'], $result->messages);
-        self::assertSame([], $result->errors);
-    }
-
-    public function testCheckOnBrokenMapping(): void
-    {
-        $em = $this->buildEntityManagerStub(connected: true, metadataException: new RuntimeException('mapping broken'));
+        $em = self::createStub(EntityManagerInterface::class);
+        $em->method('getConnection')->willReturn($connection);
 
         $result = new EntityManagerChecker($em, 'default')->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
         self::assertCount(1, $result->errors);
         self::assertStringContainsString('default', $result->errors[0]);
-        self::assertStringContainsString('mapping broken', $result->errors[0]);
+        self::assertStringContainsString('connection refused', $result->errors[0]);
     }
 
-    private function buildEntityManagerStub(bool $connected, ?Throwable $metadataException = null): EntityManagerInterface
+    private function buildEntityManagerStub(): EntityManagerInterface
     {
         $connection = self::createStub(Connection::class);
-        $connection->method('isConnected')->willReturn($connected);
-        $connection->method('getServerVersion')->willReturn('15.4');
-
-        $metadataFactory = self::createStub(ClassMetadataFactory::class);
-        if ($metadataException instanceof Throwable) {
-            $metadataFactory->method('getAllMetadata')->willThrowException($metadataException);
-        } else {
-            $metadataFactory->method('getAllMetadata')->willReturn([]);
-        }
 
         $em = self::createStub(EntityManagerInterface::class);
         $em->method('getConnection')->willReturn($connection);
-        $em->method('getMetadataFactory')->willReturn($metadataFactory);
 
         return $em;
     }

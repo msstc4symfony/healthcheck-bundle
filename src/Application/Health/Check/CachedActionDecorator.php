@@ -12,6 +12,10 @@ use Symfony\Component\DependencyInjection\Attribute\Exclude;
 /**
  * Wraps any ActionInterface in a PSR-6 cache layer keyed by request type+options.
  * Targets k8s probe scenarios where the same readiness check is hit every 5-10s.
+ *
+ * Only successful responses are cached. A transient failure (100ms blip) won't trap the
+ * service at "down" for the configured TTL — the next probe re-runs the chain and recovers
+ * as soon as the underlying issue clears.
  */
 #[Exclude]
 final readonly class CachedActionDecorator implements ActionInterface
@@ -27,24 +31,43 @@ final readonly class CachedActionDecorator implements ActionInterface
     {
         $item = $this->cache->getItem($this->buildKey($request));
         if ($item->isHit()) {
-            /** @var Response $cached */
             $cached = $item->get();
-
-            return $cached;
+            if ($cached instanceof Response) {
+                return $cached;
+            }
+            // Cache pollution (foreign value under our key) — fall through and overwrite.
         }
 
         $response = $this->inner->run($request);
-        $item->set($response);
-        $item->expiresAfter($this->ttlSeconds);
 
-        $this->cache->save($item);
+        if ($response->success) {
+            $item->set($response);
+            $item->expiresAfter($this->ttlSeconds);
+            $this->cache->save($item);
+        }
 
         return $response;
     }
 
+    /**
+     * @param array<array-key, mixed> $arr
+     */
+    private static function sortRecursive(array &$arr): void
+    {
+        foreach ($arr as &$value) {
+            if (is_array($value)) {
+                self::sortRecursive($value);
+            }
+        }
+        unset($value);
+        ksort($arr, SORT_STRING);
+    }
+
     private function buildKey(Request $request): string
     {
-        $optionsHash = hash('sha256', json_encode($request->options, JSON_THROW_ON_ERROR));
+        $options = $request->options;
+        self::sortRecursive($options);
+        $optionsHash = hash('sha256', json_encode($options, JSON_THROW_ON_ERROR));
 
         return sprintf('maxshamaev_healthcheck.%s.%s', $request->type->value, $optionsHash);
     }

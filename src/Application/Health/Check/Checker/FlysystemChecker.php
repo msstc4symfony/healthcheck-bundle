@@ -10,6 +10,8 @@ use Symfony\Component\DependencyInjection\Attribute\Exclude;
 #[Exclude]
 final readonly class FlysystemChecker extends AbstractReadinessChecker
 {
+    private const string PROBE_PATH = '.healthcheck-probe';
+
     public function __construct(
         private FilesystemOperator $filesystem,
         private string $name,
@@ -18,9 +20,10 @@ final readonly class FlysystemChecker extends AbstractReadinessChecker
 
     protected function doCheck(): void
     {
-        // Lightweight read-only probe: existence check on the root path.
-        // Throws FilesystemException on backend connection error; returns bool on success.
-        $this->filesystem->directoryExists('/');
+        // fileExists() exercises auth + reachability against backends like S3 even when the file
+        // is missing. directoryExists('/') is unreliable on bucket-based stores (no notion of root).
+        // The bool result is intentionally ignored; only exceptions from the backend signal failure.
+        $this->filesystem->fileExists(self::PROBE_PATH);
     }
 
     protected function label(): string

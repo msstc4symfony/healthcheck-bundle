@@ -35,6 +35,7 @@ final readonly class TimeoutCheckerDecorator implements CheckInterface
         $startedAt = microtime(true);
         $messagesBefore = count($result->messages);
         $errorsBefore = count($result->errors);
+        $warningsBefore = count($result->warnings);
 
         $result = $this->inner->check($result, $context);
 
@@ -43,8 +44,8 @@ final readonly class TimeoutCheckerDecorator implements CheckInterface
             return $result;
         }
 
-        // Strip messages/errors added by the inner during this call; report timeout instead.
-        $result->resetTrailing($messagesBefore, $errorsBefore);
+        // Strip messages/errors/warnings added by the inner during this call; report timeout instead.
+        $result->resetTrailing($messagesBefore, $errorsBefore, $warningsBefore);
         $result->addError(sprintf(
             '%s exceeded budget (%d ms > %d ms)',
             $this->inner::class,

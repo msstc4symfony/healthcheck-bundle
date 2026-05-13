@@ -17,8 +17,11 @@ final readonly class MessengerTransportDetector implements CheckerDetectorInterf
     public function detect(ContainerBuilder $container): iterable
     {
         foreach (array_keys($container->findTaggedServiceIds('messenger.receiver')) as $id) {
-            // Symfony sets up "messenger.transport.X" service ids; the tag is on the receiver alias.
-            $name = preg_replace('/^messenger\.transport\./', '', (string) $id) ?? (string) $id;
+            // Symfony registers transports as "messenger.transport.X"; strip the prefix for a clean name.
+            // (preg_replace on a literal pattern can only return string|null on regex errors, which
+            // is impossible here — no defensive fallback needed.)
+            $name = (string) preg_replace('/^messenger\.transport\./', '', (string) $id);
+
             yield sprintf('healthcheck.checker.%s', $id) => new Definition(MessengerTransportChecker::class)
                 ->addArgument(new Reference($id))
                 ->addArgument($name)

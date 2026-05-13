@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace MaxShamaev\HealthCheckBundle\Test\Unit\Application\Health\Check;
 
+use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\CheckInterface;
+use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
+use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\Context;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\Request;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Event\HealthCheckerCompletedEvent;
@@ -12,6 +15,7 @@ use MaxShamaev\HealthCheckBundle\Application\Health\Check\Event\HealthCheckRunSt
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\ParallelAction;
 use MaxShamaev\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\FailChecker;
 use MaxShamaev\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\SuccessChecker;
+use MaxShamaev\HealthCheckBundle\Test\Mock\Application\Health\Check\Event\RecordingDispatcherFixture;
 use PHPUnit\Framework\TestCase;
 
 final class ParallelActionTest extends TestCase
@@ -31,13 +35,17 @@ final class ParallelActionTest extends TestCase
         self::assertCount(1, $response->errors);
     }
 
-    public function testFiltersUnsupportedCheckers(): void
+    public function testSkipsCheckersThatReportNoSupport(): void
     {
-        // SuccessChecker.isSupport returns true for any type, so use a fresh-checker pattern via filtering on type.
-        $action = new ParallelAction([new SuccessChecker()]);
+        $action = new ParallelAction([
+            new SuccessChecker(),
+            $this->makeReadinessOnlyChecker(),
+        ]);
 
         $response = $action->run(new Request(CheckTypeEnum::LIVELINESS));
 
+        // SuccessChecker supports everything → produces its message.
+        // The readiness-only checker is filtered out → no second message.
         self::assertTrue($response->success);
         self::assertSame(['success dump check'], $response->messages);
     }
@@ -53,6 +61,18 @@ final class ParallelActionTest extends TestCase
         self::assertSame([], $response->errors);
     }
 
+    public function testFailingCheckerReportsSuccessFalseInEvent(): void
+    {
+        $dispatcher = new RecordingDispatcherFixture();
+        $action = new ParallelAction([new FailChecker()], $dispatcher);
+
+        $action->run(new Request(CheckTypeEnum::READINESS));
+
+        $checkerEvent = $dispatcher->events[1];
+        self::assertInstanceOf(HealthCheckerCompletedEvent::class, $checkerEvent);
+        self::assertFalse($checkerEvent->success);
+    }
+
     public function testDispatchesEvents(): void
     {
         $dispatcher = new RecordingDispatcherFixture();
@@ -64,5 +84,22 @@ final class ParallelActionTest extends TestCase
         self::assertInstanceOf(HealthCheckRunStartedEvent::class, $dispatcher->events[0]);
         self::assertInstanceOf(HealthCheckerCompletedEvent::class, $dispatcher->events[1]);
         self::assertInstanceOf(HealthCheckRunCompletedEvent::class, $dispatcher->events[2]);
+    }
+
+    private function makeReadinessOnlyChecker(): CheckInterface
+    {
+        return new readonly class implements CheckInterface {
+            public function isSupport(Context $context): bool
+            {
+                return $context->type === CheckTypeEnum::READINESS;
+            }
+
+            public function check(CheckResult $result, Context $context): CheckResult
+            {
+                $result->addMessage('readiness-only ran');
+
+                return $result;
+            }
+        };
     }
 }

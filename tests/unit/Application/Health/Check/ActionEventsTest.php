@@ -12,8 +12,10 @@ use MaxShamaev\HealthCheckBundle\Application\Health\Check\Event\HealthCheckRunCo
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Event\HealthCheckRunStartedEvent;
 use MaxShamaev\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\FailChecker;
 use MaxShamaev\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\SuccessChecker;
+use MaxShamaev\HealthCheckBundle\Test\Mock\Application\Health\Check\Event\RecordingDispatcherFixture;
 use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
+use RuntimeException;
 
 final class ActionEventsTest extends TestCase
 {
@@ -52,22 +54,24 @@ final class ActionEventsTest extends TestCase
     {
         $action = new Action([new SuccessChecker()]);
 
-        // Should not throw, just runs without events.
         $response = $action->run(new Request(CheckTypeEnum::READINESS));
 
         self::assertTrue($response->success);
     }
-}
 
-final class RecordingDispatcherFixture implements EventDispatcherInterface
-{
-    /** @var list<object> */
-    public array $events = [];
-
-    public function dispatch(object $event): object
+    public function testBuggyListenerDoesNotFailProbe(): void
     {
-        $this->events[] = $event;
+        $dispatcher = new class implements EventDispatcherInterface {
+            public function dispatch(object $event): object
+            {
+                throw new RuntimeException('listener exploded');
+            }
+        };
+        $action = new Action([new SuccessChecker()], $dispatcher);
 
-        return $event;
+        $response = $action->run(new Request(CheckTypeEnum::READINESS));
+
+        self::assertTrue($response->success);
+        self::assertSame(['success dump check'], $response->messages);
     }
 }

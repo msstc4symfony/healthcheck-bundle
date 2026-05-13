@@ -7,6 +7,8 @@ namespace MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker;
 use RuntimeException;
 use Symfony\Component\DependencyInjection\Attribute\Exclude;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Symfony\Contracts\HttpClient\ResponseInterface;
+use Throwable;
 
 #[Exclude]
 final readonly class HttpClientChecker extends AbstractReadinessChecker
@@ -26,13 +28,26 @@ final readonly class HttpClientChecker extends AbstractReadinessChecker
 
     protected function doCheck(): void
     {
-        $response = $this->client->request($this->method, $this->url, [
-            'timeout' => $this->timeoutSeconds,
-        ]);
-        $status = $response->getStatusCode();
+        // The Symfony HttpClient throws TransportException whose message often contains the full
+        // URL (including any query string secrets). Wrap to keep the probe response sanitized.
+        $response = null;
+        try {
+            try {
+                $response = $this->client->request($this->method, $this->url, [
+                    'timeout' => $this->timeoutSeconds,
+                ]);
+                $status = $response->getStatusCode();
+            } catch (Throwable) {
+                throw new RuntimeException('HTTP probe transport error');
+            }
 
-        if (!in_array($status, $this->expectedStatusCodes, true)) {
-            throw new RuntimeException(sprintf('unexpected status %d', $status));
+            if (!in_array($status, $this->expectedStatusCodes, true)) {
+                throw new RuntimeException(sprintf('unexpected status %d', $status));
+            }
+        } finally {
+            if ($response instanceof ResponseInterface) {
+                $response->cancel();
+            }
         }
     }
 

@@ -54,25 +54,21 @@ final readonly class CachedActionDecorator implements ActionInterface
         return $response;
     }
 
-    /**
-     * @param array<array-key, mixed> $arr
-     */
-    private static function sortRecursive(array &$arr): void
+    private static function canonicalize(mixed $value): mixed
     {
-        foreach ($arr as &$value) {
-            if (is_array($value)) {
-                self::sortRecursive($value);
-            }
+        if (!is_array($value)) {
+            return $value;
         }
-        unset($value);
-        ksort($arr, SORT_STRING);
+
+        $sorted = array_map(self::canonicalize(...), $value);
+        ksort($sorted, SORT_STRING);
+
+        return $sorted;
     }
 
     private function buildKey(Request $request): string
     {
-        $options = $request->options;
-        self::sortRecursive($options);
-        $optionsHash = hash('sha256', json_encode($options, JSON_THROW_ON_ERROR));
+        $optionsHash = hash('sha256', json_encode(self::canonicalize($request->options), JSON_THROW_ON_ERROR));
 
         return sprintf('maxshamaev_healthcheck.%s.%s', $request->type->value, $optionsHash);
     }

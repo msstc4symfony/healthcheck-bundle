@@ -38,10 +38,8 @@ final readonly class ElasticaConnectionChecker implements CheckInterface
                 return $result;
             }
 
-            /** @psalm-suppress UndefinedClass */
             $status = $this->connection->getCluster()->getHealth()->getStatus();
 
-            /** @psalm-suppress UndefinedClass */
             $result->addMessage(sprintf(
                 'Elastica connection (%s) passed. Cluster status: %s',
                 $this->name,

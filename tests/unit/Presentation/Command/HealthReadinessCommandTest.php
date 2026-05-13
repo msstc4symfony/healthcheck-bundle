@@ -23,8 +23,7 @@ final class HealthReadinessCommandTest extends TestCase
     #[DataProvider('getDataForTestExecute')]
     public function testExecute(array $checkers, string $expect): void
     {
-        $command = new HealthReadinessCommand();
-        $command->setAction(new Action($checkers));
+        $command = new HealthReadinessCommand(new Action($checkers));
 
         $input = new ArrayInput([], $command->getDefinition());
         $output = new BufferedOutput();

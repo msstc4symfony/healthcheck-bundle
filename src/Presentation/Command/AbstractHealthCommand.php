@@ -10,19 +10,16 @@ use MaxShamaev\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Contracts\Service\Attribute\Required;
 
 abstract class AbstractHealthCommand extends Command
 {
-    private ActionInterface $action;
+    public function __construct(
+        private readonly ActionInterface $action,
+    ) {
+        parent::__construct();
+    }
 
     abstract protected function getType(): CheckTypeEnum;
-
-    #[Required]
-    public function setAction(ActionInterface $action): void
-    {
-        $this->action = $action;
-    }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {

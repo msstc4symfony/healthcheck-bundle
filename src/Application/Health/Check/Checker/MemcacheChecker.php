@@ -11,8 +11,6 @@ use Symfony\Component\DependencyInjection\Attribute\Exclude;
 #[Exclude]
 final readonly class MemcacheChecker extends AbstractReadinessChecker
 {
-    private const string CACHE_SERVICE_CELL = '__healthcheck';
-
     public function __construct(
         private Memcache $connection,
     ) {
@@ -20,7 +18,7 @@ final readonly class MemcacheChecker extends AbstractReadinessChecker
 
     protected function doCheck(): void
     {
-        if (!$this->connection->set(self::CACHE_SERVICE_CELL, time(), 0, 1)) {
+        if (!$this->connection->set(CheckInterface::PROBE_KEY, time(), 0, 1)) {
             throw new RuntimeException('SET command returned false');
         }
     }

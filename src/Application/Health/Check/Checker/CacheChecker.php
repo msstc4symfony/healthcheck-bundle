@@ -16,8 +16,6 @@ use Throwable;
 #[Exclude]
 final readonly class CacheChecker implements CheckInterface
 {
-    private const string CACHE_SERVICE_CELL = '__healthcheck';
-
     public function __construct(
         private AdapterInterface $connection,
         private string $id,
@@ -35,9 +33,9 @@ final readonly class CacheChecker implements CheckInterface
         try {
             if (
                 !($this->connection instanceof NullAdapter)
-                && $this->isAllowedAPCuOrNotAPCu()
+                && $this->canProbe()
             ) {
-                $item = $this->connection->getItem(self::CACHE_SERVICE_CELL);
+                $item = $this->connection->getItem(self::PROBE_KEY);
                 $item->set(time());
 
                 if ($this->connection->save($item)) {
@@ -66,7 +64,7 @@ final readonly class CacheChecker implements CheckInterface
             : sprintf('Cache (%s : %s) connection', $this->connection::class, $this->id);
     }
 
-    private function isAllowedAPCuOrNotAPCu(): bool
+    private function canProbe(): bool
     {
         return !($this->connection instanceof ApcuAdapter)
             || PHP_SAPI !== 'cli'

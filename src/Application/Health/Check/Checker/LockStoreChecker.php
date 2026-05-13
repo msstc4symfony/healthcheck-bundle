@@ -12,8 +12,6 @@ use Throwable;
 #[Exclude]
 final readonly class LockStoreChecker extends AbstractReadinessChecker
 {
-    private const string PROBE_RESOURCE = '__healthcheck';
-
     public function __construct(
         private PersistingStoreInterface $store,
         private string $name,
@@ -22,7 +20,7 @@ final readonly class LockStoreChecker extends AbstractReadinessChecker
 
     protected function doCheck(): void
     {
-        $key = new Key(self::PROBE_RESOURCE);
+        $key = new Key(CheckInterface::PROBE_KEY);
 
         // Let save() throw naturally — its exception is the actual probe failure.
         $this->store->save($key);

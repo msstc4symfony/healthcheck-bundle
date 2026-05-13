@@ -23,8 +23,7 @@ final class HealthLivelinessCommandTest extends TestCase
     #[DataProvider('getDataForTestExecute')]
     public function testExecute(array $checkers, string $expect): void
     {
-        $command = new HealthLivelinessCommand();
-        $command->setAction(new Action($checkers));
+        $command = new HealthLivelinessCommand(new Action($checkers));
 
         $input = new ArrayInput([], $command->getDefinition());
         $output = new BufferedOutput();

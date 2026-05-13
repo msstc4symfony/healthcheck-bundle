@@ -169,9 +169,21 @@ jobs:
       - run: composer audit
 
   phpunit:
-    name: PHPUnit
-    needs: setup
+    name: PHPUnit (Symfony ${{ matrix.symfony.version }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        symfony:
+          - version: '6.4.*'
+            label: '6.4'
+            codecov: false
+          - version: '7.*'
+            label: '7'
+            codecov: false
+          - version: '8.*'
+            label: '8'
+            codecov: true
     steps:
       - uses: actions/checkout@v4
 
@@ -185,11 +197,25 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: vendor
-          key: ${{ needs.setup.outputs.vendor-cache-key }}
+          key: vendor-${{ runner.os }}-php${{ env.PHP_VERSION }}-symfony${{ matrix.symfony.label }}-${{ hashFiles('composer-ci.json') }}
+          restore-keys: |
+            vendor-${{ runner.os }}-php${{ env.PHP_VERSION }}-symfony${{ matrix.symfony.label }}-
+
+      - name: Pin Symfony version
+        env:
+          SYMFONY_VERSION: ${{ matrix.symfony.version }}
+        run: |
+          composer require --no-update --no-interaction \
+            "symfony/framework-bundle:${SYMFONY_VERSION}" \
+            "symfony/http-foundation:${SYMFONY_VERSION}" \
+            "symfony/console:${SYMFONY_VERSION}"
+
+      - name: Resolve dependencies
+        run: composer update --prefer-dist --no-progress --no-interaction
 
       - run: XDEBUG_MODE=coverage vendor/bin/phpunit --coverage-clover=coverage.xml --log-junit junit.xml
 
-      - if: ${{ !cancelled() }}
+      - if: ${{ matrix.symfony.codecov && !cancelled() }}
         uses: codecov/codecov-action@v5
         with:
           files: ./coverage.xml
@@ -198,7 +224,7 @@ jobs:
           slug: max-shamaev-php/healthcheck-bundle
           token: ${{ secrets.CODECOV_TOKEN }}
 
-      - if: ${{ !cancelled() }}
+      - if: ${{ matrix.symfony.codecov && !cancelled() }}
         uses: codecov/codecov-action@v5
         with:
           report_type: test_results

@@ -1,7 +1,7 @@
 # Healthcheck Symfony Bundle
 
 ![Build Status](https://github.com/max-shamaev-php/healthcheck-bundle/actions/workflows/checks.yml/badge.svg?branch=main)
-[![codecov](https://codecov.io/github/max-shamaev-php/healthcheck-bundle/graph/badge.svg?token=NO9FYTJMSU)](https://codecov.io/github/max-shamaev-php/healthcheck-bundle)
+[![codecov](https://codecov.io/github/max-shamaev-php/healthcheck-bundle/branch/main/graph/badge.svg?token=NO9FYTJMSU)](https://codecov.io/github/max-shamaev-php/healthcheck-bundle/branch/main)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A Symfony bundle for comprehensive health checking of your application and its external dependencies. Provides both **liveliness** and **readiness** probes compatible with Kubernetes health checks.

@@ -7,6 +7,7 @@ check: ## Check code
 	composer validate --strict --no-check-publish
 	composer audit
 	vendor/bin/rector process -n
+	vendor/bin/deptrac analyse --config-file=deptrac.yaml --no-progress
 
 test: ## Test code
 	vendor/bin/phpunit

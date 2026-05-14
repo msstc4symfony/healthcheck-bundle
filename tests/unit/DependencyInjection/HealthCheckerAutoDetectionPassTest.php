@@ -31,8 +31,10 @@ use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\OpenSearchChec
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\PredisChecker;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\RabbitmqChecker;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\RedisChecker;
+use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\HttpProbeTarget;
 use MaxShamaev\HealthCheckBundle\DependencyInjection\Detector\CacheClientDetector;
 use MaxShamaev\HealthCheckBundle\DependencyInjection\Detector\CachePoolDetector;
+use MaxShamaev\HealthCheckBundle\DependencyInjection\Detector\CheckerDetectorInterface;
 use MaxShamaev\HealthCheckBundle\DependencyInjection\Detector\ClickHouseDetector;
 use MaxShamaev\HealthCheckBundle\DependencyInjection\Detector\DBALConnectionDetector;
 use MaxShamaev\HealthCheckBundle\DependencyInjection\Detector\DoctrineMigrationsDetector;
@@ -415,32 +417,41 @@ final class HealthCheckerAutoDetectionPassTest extends TestCase
         $checker = $container->findDefinition('healthcheck.checker.http_client.upstream');
         self::assertSame(HttpClientChecker::class, $checker->getClass());
         self::assertSame('upstream', $checker->getArgument(1));
-        self::assertSame('https://api.example.com/health', $checker->getArgument(2));
-        self::assertSame('GET', $checker->getArgument(3));
-        self::assertSame([200], $checker->getArgument(4));
-        self::assertSame(3, $checker->getArgument(5));
+
+        $target = $checker->getArgument(2);
+        self::assertInstanceOf(Definition::class, $target);
+        self::assertSame(HttpProbeTarget::class, $target->getClass());
+        self::assertSame('https://api.example.com/health', $target->getArgument(0));
+        self::assertSame('GET', $target->getArgument(1));
+        self::assertSame([200], $target->getArgument(2));
+        self::assertSame(3, $target->getArgument(3));
     }
 
     private function runPass(ContainerBuilder $container): void
     {
-        new HealthCheckerAutoDetectionPass([
-            new DBALConnectionDetector(),
-            new RabbitMQConnectionDetector(),
-            new CacheClientDetector(),
-            new CachePoolDetector(),
-            new MongoConnectionDetector(),
-            new ODMDocumentManagerDetector(),
-            new ElasticaClientDetector(),
-            new MessengerTransportDetector(),
-            new EntityManagerDetector(),
-            new DoctrineMigrationsDetector(),
-            new FlysystemDetector(),
-            new MailerDetector(),
-            new OpenSearchDetector(),
-            new KafkaDetector(),
-            new ClickHouseDetector(),
-            new LockStoreDetector(),
-            new HttpClientTargetDetector(),
-        ])->process($container);
+        $detectorClasses = [
+            DBALConnectionDetector::class,
+            RabbitMQConnectionDetector::class,
+            CacheClientDetector::class,
+            CachePoolDetector::class,
+            MongoConnectionDetector::class,
+            ODMDocumentManagerDetector::class,
+            ElasticaClientDetector::class,
+            MessengerTransportDetector::class,
+            EntityManagerDetector::class,
+            DoctrineMigrationsDetector::class,
+            FlysystemDetector::class,
+            MailerDetector::class,
+            OpenSearchDetector::class,
+            KafkaDetector::class,
+            ClickHouseDetector::class,
+            LockStoreDetector::class,
+            HttpClientTargetDetector::class,
+        ];
+        foreach ($detectorClasses as $class) {
+            $container->setDefinition($class, new Definition($class)->addTag(CheckerDetectorInterface::TAG));
+        }
+
+        new HealthCheckerAutoDetectionPass()->process($container);
     }
 }

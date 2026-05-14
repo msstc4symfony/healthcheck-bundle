@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace MaxShamaev\HealthCheckBundle\Test\Unit\DependencyInjection\Detector;
 
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\HttpClientChecker;
+use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\HttpProbeTarget;
 use MaxShamaev\HealthCheckBundle\DependencyInjection\Detector\HttpClientTargetDetector;
 use MaxShamaev\HealthCheckBundle\DependencyInjection\HealthCheckExtension;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
@@ -33,10 +35,14 @@ final class HttpClientTargetDetectorTest extends TestCase
         self::assertSame(HttpClientChecker::class, $checker->getClass());
         self::assertEquals(new Reference(HttpClientInterface::class), $checker->getArgument(0));
         self::assertSame('upstream', $checker->getArgument(1));
-        self::assertSame('https://api.example.com/health', $checker->getArgument(2));
-        self::assertSame('GET', $checker->getArgument(3));
-        self::assertSame([200, 204], $checker->getArgument(4));
-        self::assertSame(3, $checker->getArgument(5));
+
+        $target = $checker->getArgument(2);
+        self::assertInstanceOf(Definition::class, $target);
+        self::assertSame(HttpProbeTarget::class, $target->getClass());
+        self::assertSame('https://api.example.com/health', $target->getArgument(0));
+        self::assertSame('GET', $target->getArgument(1));
+        self::assertSame([200, 204], $target->getArgument(2));
+        self::assertSame(3, $target->getArgument(3));
     }
 
     public function testDetectUsesExplicitlyConfiguredClient(): void

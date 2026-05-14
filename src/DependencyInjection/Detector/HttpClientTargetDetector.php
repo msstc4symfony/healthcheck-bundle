@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MaxShamaev\HealthCheckBundle\DependencyInjection\Detector;
 
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\HttpClientChecker;
+use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\HttpProbeTarget;
 use MaxShamaev\HealthCheckBundle\DependencyInjection\HealthCheckExtension;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -30,13 +31,17 @@ final readonly class HttpClientTargetDetector implements CheckerDetectorInterfac
                 ? new Reference($cfg['client'])
                 : new Reference(HttpClientInterface::class);
 
+            $target = new Definition(HttpProbeTarget::class)
+                ->setArgument(0, $cfg['url'])
+                ->setArgument(1, $cfg['method'])
+                ->setArgument(2, $cfg['expected_status_codes'])
+                ->setArgument(3, $cfg['timeout_seconds'])
+            ;
+
             yield sprintf('healthcheck.checker.http_client.%s', $name) => new Definition(HttpClientChecker::class)
                 ->addArgument($clientRef)
                 ->addArgument($name)
-                ->addArgument($cfg['url'])
-                ->addArgument($cfg['method'])
-                ->addArgument($cfg['expected_status_codes'])
-                ->addArgument($cfg['timeout_seconds'])
+                ->addArgument($target)
             ;
         }
     }

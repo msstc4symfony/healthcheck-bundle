@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker;
 
+use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\HttpProbeTarget;
 use RuntimeException;
 use Symfony\Component\DependencyInjection\Attribute\Exclude;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -13,16 +14,10 @@ use Throwable;
 #[Exclude]
 final readonly class HttpClientChecker extends AbstractReadinessChecker
 {
-    /**
-     * @param list<int> $expectedStatusCodes
-     */
     public function __construct(
         private HttpClientInterface $client,
         private string $name,
-        private string $url,
-        private string $method,
-        private array $expectedStatusCodes,
-        private int $timeoutSeconds,
+        private HttpProbeTarget $target,
     ) {
     }
 
@@ -33,15 +28,15 @@ final readonly class HttpClientChecker extends AbstractReadinessChecker
         $response = null;
         try {
             try {
-                $response = $this->client->request($this->method, $this->url, [
-                    'timeout' => $this->timeoutSeconds,
+                $response = $this->client->request($this->target->method, $this->target->url, [
+                    'timeout' => $this->target->timeoutSeconds,
                 ]);
                 $status = $response->getStatusCode();
             } catch (Throwable) {
                 throw new RuntimeException('HTTP probe transport error');
             }
 
-            if (!in_array($status, $this->expectedStatusCodes, true)) {
+            if (!in_array($status, $this->target->expectedStatusCodes, true)) {
                 throw new RuntimeException(sprintf('unexpected status %d', $status));
             }
         } finally {

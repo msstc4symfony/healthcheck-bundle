@@ -13,7 +13,7 @@ use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\Response;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Event\HealthCheckerCompletedEvent;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Event\HealthCheckRunCompletedEvent;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Event\HealthCheckRunStartedEvent;
-use Psr\EventDispatcher\EventDispatcherInterface;
+use MaxShamaev\HealthCheckBundle\Application\Health\Check\Event\SafeEventDispatcher;
 use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 use Symfony\Component\DependencyInjection\Attribute\Exclude;
 use Throwable;
@@ -36,13 +36,13 @@ final readonly class ParallelAction implements ActionInterface
     public function __construct(
         #[AutowireIterator(CheckInterface::class)]
         private iterable $healthCheckers,
-        private ?EventDispatcherInterface $eventDispatcher = null,
+        private SafeEventDispatcher $eventDispatcher = new SafeEventDispatcher(),
     ) {
     }
 
     public function run(Request $request): Response
     {
-        $this->dispatch(new HealthCheckRunStartedEvent($request));
+        $this->eventDispatcher->dispatch(new HealthCheckRunStartedEvent($request));
 
         $context = new Context($request->type, $request->options);
         $runStartedAt = microtime(true);
@@ -95,7 +95,7 @@ final readonly class ParallelAction implements ActionInterface
                 }
             }
 
-            $this->dispatch(new HealthCheckerCompletedEvent(
+            $this->eventDispatcher->dispatch(new HealthCheckerCompletedEvent(
                 $entry['checker']::class,
                 (microtime(true) - $entry['startedAt']) * 1000,
                 $success,
@@ -103,23 +103,11 @@ final readonly class ParallelAction implements ActionInterface
         }
 
         $response = new Response($combined->errors, $combined->messages, $combined->warnings);
-        $this->dispatch(new HealthCheckRunCompletedEvent(
+        $this->eventDispatcher->dispatch(new HealthCheckRunCompletedEvent(
             $response,
             (microtime(true) - $runStartedAt) * 1000,
         ));
 
         return $response;
-    }
-
-    private function dispatch(object $event): void
-    {
-        if (!$this->eventDispatcher instanceof EventDispatcherInterface) {
-            return;
-        }
-        try {
-            $this->eventDispatcher->dispatch($event);
-        } catch (Throwable) {
-            // A buggy listener must never fail the readiness probe.
-        }
     }
 }

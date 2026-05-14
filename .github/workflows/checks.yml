@@ -148,6 +148,27 @@ jobs:
 
       - run: vendor/bin/rector process -n
 
+  deptrac:
+    name: DEPTRAC (layer rules)
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: mbstring
+          coverage: none
+          tools: composer:v2
+
+      - uses: actions/cache@v5
+        with:
+          path: vendor
+          key: ${{ needs.setup.outputs.vendor-cache-key }}
+
+      - run: vendor/bin/deptrac analyse --config-file=deptrac.yaml --no-progress
+
   composer-audit:
     name: Composer validate + audit
     needs: setup
@@ -234,6 +255,33 @@ jobs:
           fail_ci_if_error: true
           slug: max-shamaev-php/healthcheck-bundle
           token: ${{ secrets.CODECOV_TOKEN }}
+
+  bc-check:
+    # roave/backward-compatibility-check — informational until v1.1.0 is tagged.
+    # On first run it compares HEAD against v1.0.0 and reports the accumulated
+    # API changes; flip to blocking once a new tag is cut.
+    name: BC check (Roave)
+    needs: setup
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0  # Roave BC check needs git history + tags
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: mbstring
+          coverage: none
+          tools: composer:v2
+
+      - uses: actions/cache@v5
+        with:
+          path: vendor
+          key: ${{ needs.setup.outputs.vendor-cache-key }}
+
+      - run: vendor/bin/roave-backward-compatibility-check --format=github-actions --no-interaction
 
   infection:
     # Mutation testing — informational only at this stage (no MSI threshold).

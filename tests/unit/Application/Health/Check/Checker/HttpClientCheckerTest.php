@@ -7,6 +7,7 @@ namespace MaxShamaev\HealthCheckBundle\Test\Unit\Application\Health\Check\Checke
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\HttpClientChecker;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\Context;
+use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\HttpProbeTarget;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -78,10 +79,7 @@ final class HttpClientCheckerTest extends TestCase
         return new HttpClientChecker(
             $client,
             'upstream',
-            'https://api.example.com/health',
-            'GET',
-            [200, 204],
-            3,
+            new HttpProbeTarget('https://api.example.com/health', 'GET', [200, 204], 3),
         );
     }
 }

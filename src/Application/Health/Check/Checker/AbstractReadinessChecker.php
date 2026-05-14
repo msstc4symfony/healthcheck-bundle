@@ -18,6 +18,13 @@ abstract readonly class AbstractReadinessChecker implements CheckInterface
 
     final public function check(CheckResult $result, Context $context): CheckResult
     {
+        $skipReason = $this->skipReason();
+        if ($skipReason !== null) {
+            $result->addMessage(sprintf('%s skipped (%s)', $this->label(), $skipReason));
+
+            return $result;
+        }
+
         try {
             $this->doCheck();
             $result->addMessage(sprintf('%s passed', $this->label()));
@@ -37,4 +44,16 @@ abstract readonly class AbstractReadinessChecker implements CheckInterface
      * Human-readable identifier for log/HTTP output, e.g. "DB connection (default)".
      */
     abstract protected function label(): string;
+
+    /**
+     * Override to short-circuit the probe with a "skipped (<reason>)" message. Default: always probe.
+     *
+     * Used by checkers whose underlying driver supports only a destructive or unavailable probe
+     * in certain runtime configurations (APCu in CLI, NullAdapter, Messenger transports without
+     * MessageCountAwareInterface, etc.).
+     */
+    protected function skipReason(): ?string
+    {
+        return null;
+    }
 }

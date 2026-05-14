@@ -12,6 +12,7 @@ use MaxShamaev\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Event\HealthCheckerCompletedEvent;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Event\HealthCheckRunCompletedEvent;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Event\HealthCheckRunStartedEvent;
+use MaxShamaev\HealthCheckBundle\Application\Health\Check\Event\SafeEventDispatcher;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\ParallelAction;
 use MaxShamaev\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\FailChecker;
 use MaxShamaev\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\SuccessChecker;
@@ -64,7 +65,7 @@ final class ParallelActionTest extends TestCase
     public function testFailingCheckerReportsSuccessFalseInEvent(): void
     {
         $dispatcher = new RecordingDispatcherFixture();
-        $action = new ParallelAction([new FailChecker()], $dispatcher);
+        $action = new ParallelAction([new FailChecker()], new SafeEventDispatcher($dispatcher));
 
         $action->run(new Request(CheckTypeEnum::READINESS));
 
@@ -76,7 +77,7 @@ final class ParallelActionTest extends TestCase
     public function testDispatchesEvents(): void
     {
         $dispatcher = new RecordingDispatcherFixture();
-        $action = new ParallelAction([new SuccessChecker()], $dispatcher);
+        $action = new ParallelAction([new SuccessChecker()], new SafeEventDispatcher($dispatcher));
 
         $action->run(new Request(CheckTypeEnum::READINESS));
 

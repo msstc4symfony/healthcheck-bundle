@@ -20,12 +20,22 @@ final readonly class KafkaDetector implements CheckerDetectorInterface
     {
         foreach ($container->getDefinitions() as $id => $definition) {
             $class = $definition->getClass();
-            if ($class === Producer::class || $class === KafkaConsumer::class) {
-                yield sprintf('healthcheck.checker.%s', $id) => new Definition(KafkaChecker::class)
-                    ->addArgument(new Reference($id))
-                    ->addArgument($id)
-                ;
+            if ($class === null) {
+                continue;
             }
+
+            $matches = $class === Producer::class
+                || $class === KafkaConsumer::class
+                || is_subclass_of($class, Producer::class)
+                || is_subclass_of($class, KafkaConsumer::class);
+            if (!$matches) {
+                continue;
+            }
+
+            yield sprintf('healthcheck.checker.%s', $id) => new Definition(KafkaChecker::class)
+                ->addArgument(new Reference($id))
+                ->addArgument($id)
+            ;
         }
     }
 }

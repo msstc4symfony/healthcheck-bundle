@@ -18,12 +18,15 @@ final readonly class ElasticaClientDetector implements CheckerDetectorInterface
     public function detect(ContainerBuilder $container): iterable
     {
         foreach ($container->getDefinitions() as $id => $definition) {
-            if ($definition->getClass() === Client::class) {
-                yield sprintf('healthcheck.checker.%s', $id) => new Definition(ElasticaConnectionChecker::class)
-                        ->addArgument(new Reference($id))
-                        ->addArgument($id)
-                ;
+            $class = $definition->getClass();
+            if ($class === null || ($class !== Client::class && !is_subclass_of($class, Client::class))) {
+                continue;
             }
+
+            yield sprintf('healthcheck.checker.%s', $id) => new Definition(ElasticaConnectionChecker::class)
+                    ->addArgument(new Reference($id))
+                    ->addArgument($id)
+            ;
         }
     }
 }

@@ -64,6 +64,18 @@ final class HealthCheckExtension extends Extension
         $container->setParameter(self::PARAM_TIMEOUT_OVERRIDES, $config['timeouts']['overrides'] ?? []);
         $container->setParameter(self::PARAM_NON_CRITICAL_CHECKERS, $config['non_critical'] ?? []);
 
+        $this->wireActionPipeline($container, $config);
+    }
+
+    /**
+     * @param array{
+     *     execution?: string,
+     *     cache?: array{enabled: bool, ttl_seconds: int, pool: string},
+     *     ...
+     * } $config
+     */
+    private function wireActionPipeline(ContainerBuilder $container, array $config): void
+    {
         // Inner runner: sequential Action by default, ParallelAction (fiber-based) when opted in.
         $innerServiceId = Action::class;
         if (($config['execution'] ?? 'sequential') === 'parallel') {

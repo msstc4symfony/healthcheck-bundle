@@ -4,17 +4,14 @@ declare(strict_types=1);
 
 namespace MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker;
 
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\Context;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
+use RuntimeException;
 use Symfony\Component\Cache\Adapter\AdapterInterface;
 use Symfony\Component\Cache\Adapter\ApcuAdapter;
 use Symfony\Component\Cache\Adapter\NullAdapter;
 use Symfony\Component\DependencyInjection\Attribute\Exclude;
-use Throwable;
 
 #[Exclude]
-final readonly class CacheChecker implements CheckInterface
+final readonly class CacheChecker extends AbstractReadinessChecker
 {
     public function __construct(
         private AdapterInterface $connection,
@@ -23,51 +20,36 @@ final readonly class CacheChecker implements CheckInterface
     ) {
     }
 
-    public function isSupport(Context $context): bool
+    protected function doCheck(): void
     {
-        return $context->type === CheckTypeEnum::READINESS;
+        $item = $this->connection->getItem(self::PROBE_KEY);
+        $item->set(time());
+
+        if (!$this->connection->save($item)) {
+            throw new RuntimeException('save() returned false');
+        }
     }
 
-    public function check(CheckResult $result, Context $context): CheckResult
+    protected function label(): string
     {
-        try {
-            if (
-                !($this->connection instanceof NullAdapter)
-                && $this->canProbe()
-            ) {
-                $item = $this->connection->getItem(self::PROBE_KEY);
-                $item->set(time());
+        // The adapter implementation class is intentionally NOT included — exposing it leaks
+        // Symfony-internal type names into the probe HTTP/CLI output. The parent service id
+        // already identifies the underlying adapter type in the standard Symfony cache wiring.
+        return $this->parentName !== null
+            ? sprintf('Cache (%s : %s) connection', $this->parentName, $this->id)
+            : sprintf('Cache (%s) connection', $this->id);
+    }
 
-                if ($this->connection->save($item)) {
-                    $result->addMessage(sprintf('%s passed', $this->buildLabel()));
-                } else {
-                    $result->addError(sprintf('%s failed', $this->buildLabel()));
-                }
-
-                return $result;
-            }
-        } catch (Throwable $e) {
-            $result->addError(sprintf('%s failed (%s)', $this->buildLabel(), $e->getMessage()));
-
-            return $result;
+    protected function skipReason(): ?string
+    {
+        if ($this->connection instanceof NullAdapter) {
+            return 'NullAdapter';
         }
 
-        $result->addMessage(sprintf('%s passed', $this->buildLabel()));
+        if ($this->connection instanceof ApcuAdapter && PHP_SAPI === 'cli' && !filter_var(ini_get('apc.enable_cli'), FILTER_VALIDATE_BOOLEAN)) {
+            return 'APCu in CLI without apc.enable_cli';
+        }
 
-        return $result;
-    }
-
-    private function buildLabel(): string
-    {
-        return $this->parentName !== null
-            ? sprintf('Cache (%s / %s : %s) connection', $this->connection::class, $this->parentName, $this->id)
-            : sprintf('Cache (%s : %s) connection', $this->connection::class, $this->id);
-    }
-
-    private function canProbe(): bool
-    {
-        return !($this->connection instanceof ApcuAdapter)
-            || PHP_SAPI !== 'cli'
-            || filter_var(ini_get('apc.enable_cli'), FILTER_VALIDATE_BOOLEAN);
+        return null;
     }
 }

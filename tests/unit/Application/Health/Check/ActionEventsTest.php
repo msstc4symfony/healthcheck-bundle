@@ -10,6 +10,7 @@ use MaxShamaev\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Event\HealthCheckerCompletedEvent;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Event\HealthCheckRunCompletedEvent;
 use MaxShamaev\HealthCheckBundle\Application\Health\Check\Event\HealthCheckRunStartedEvent;
+use MaxShamaev\HealthCheckBundle\Application\Health\Check\Event\SafeEventDispatcher;
 use MaxShamaev\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\FailChecker;
 use MaxShamaev\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\SuccessChecker;
 use MaxShamaev\HealthCheckBundle\Test\Mock\Application\Health\Check\Event\RecordingDispatcherFixture;
@@ -22,7 +23,7 @@ final class ActionEventsTest extends TestCase
     public function testDispatchesStartedAndCompletedEvents(): void
     {
         $dispatcher = new RecordingDispatcherFixture();
-        $action = new Action([new SuccessChecker()], $dispatcher);
+        $action = new Action([new SuccessChecker()], new SafeEventDispatcher($dispatcher));
 
         $action->run(new Request(CheckTypeEnum::READINESS));
 
@@ -40,7 +41,7 @@ final class ActionEventsTest extends TestCase
     public function testCheckerEventCarriesFailureFlag(): void
     {
         $dispatcher = new RecordingDispatcherFixture();
-        $action = new Action([new FailChecker()], $dispatcher);
+        $action = new Action([new FailChecker()], new SafeEventDispatcher($dispatcher));
 
         $action->run(new Request(CheckTypeEnum::READINESS));
 
@@ -67,7 +68,7 @@ final class ActionEventsTest extends TestCase
                 throw new RuntimeException('listener exploded');
             }
         };
-        $action = new Action([new SuccessChecker()], $dispatcher);
+        $action = new Action([new SuccessChecker()], new SafeEventDispatcher($dispatcher));
 
         $response = $action->run(new Request(CheckTypeEnum::READINESS));
 

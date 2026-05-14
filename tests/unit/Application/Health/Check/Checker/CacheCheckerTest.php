@@ -25,7 +25,7 @@ final class CacheCheckerTest extends TestCase
         self::assertFalse($checker->isSupport(new Context(CheckTypeEnum::LIVELINESS)));
     }
 
-    public function testCheckWithNullAdapterReportsPassed(): void
+    public function testCheckWithNullAdapterReportsSkipped(): void
     {
         $checker = new CacheChecker(new NullAdapter(), 'cache.app');
 
@@ -34,7 +34,8 @@ final class CacheCheckerTest extends TestCase
         self::assertSame([], $result->errors);
         self::assertCount(1, $result->messages);
         self::assertStringContainsString('cache.app', $result->messages[0]);
-        self::assertStringContainsString('passed', $result->messages[0]);
+        self::assertStringContainsString('skipped', $result->messages[0]);
+        self::assertStringContainsString('NullAdapter', $result->messages[0]);
     }
 
     public function testCheckWithSuccessfulSaveReportsPassed(): void
@@ -94,7 +95,7 @@ final class CacheCheckerTest extends TestCase
 
         self::assertSame([], $result->errors);
         self::assertCount(1, $result->messages);
-        self::assertStringContainsString('RedisAdapter', $result->messages[0]);
+        self::assertStringContainsString(RedisAdapter::class, $result->messages[0]);
         self::assertStringContainsString('cache.app', $result->messages[0]);
     }
 
@@ -110,7 +111,7 @@ final class CacheCheckerTest extends TestCase
 
         self::assertSame([], $result->messages);
         self::assertCount(1, $result->errors);
-        self::assertStringContainsString('RedisAdapter', $result->errors[0]);
+        self::assertStringContainsString(RedisAdapter::class, $result->errors[0]);
     }
 
     public function testCheckWithParentNameOnException(): void
@@ -124,7 +125,7 @@ final class CacheCheckerTest extends TestCase
 
         self::assertCount(1, $result->errors);
         self::assertStringContainsString('boom', $result->errors[0]);
-        self::assertStringContainsString('RedisAdapter', $result->errors[0]);
+        self::assertStringContainsString(RedisAdapter::class, $result->errors[0]);
         self::assertStringContainsString('cache.app', $result->errors[0]);
     }
 }

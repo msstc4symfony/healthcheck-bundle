@@ -1,6 +1,5 @@
 {
   "name": "max-shamaev-php/healthcheck-bundle",
-  "version": "1.0.0",
   "license": "MIT",
   "type": "symfony-bundle",
   "description": "Health checks bundle (CI manifest with full optional dependencies)",
@@ -14,6 +13,7 @@
   },
   "autoload-dev": {
     "psr-4": {
+      "MaxShamaev\\HealthCheckBundle\\Test\\Integration\\": "tests/integration/",
       "MaxShamaev\\HealthCheckBundle\\Test\\Mock\\": "tests/mock/",
       "MaxShamaev\\HealthCheckBundle\\Test\\Unit\\": "tests/unit/"
     }
@@ -32,6 +32,7 @@
     "doctrine/mongodb-odm": "^2.6",
     "doctrine/orm": "^3.0",
     "friendsofphp/php-cs-fixer": "^3.55",
+    "infection/infection": "^0.32",
     "league/flysystem-bundle": "^3.4",
     "mongodb/mongodb": "^2.1",
     "opensearch-project/opensearch-php": "^2.4",
@@ -52,7 +53,10 @@
     "symfony/http-client": "^6.4|^7.0|^8.0",
     "symfony/lock": "^6.4|^7.0|^8.0",
     "symfony/mailer": "^6.4|^7.0|^8.0",
-    "symfony/messenger": "^6.4|^7.0|^8.0"
+    "symfony/messenger": "^6.4|^7.0|^8.0",
+    "symfony/phpunit-bridge": "^7.0|^8.0",
+    "symfony/browser-kit": "^6.4|^7.0|^8.0",
+    "symfony/runtime": "^6.4|^7.0|^8.0"
   },
   "suggest": {
     "symfony/monolog-bundle": "To upload the verification results to the logs"
@@ -60,7 +64,9 @@
   "config": {
     "allow-plugins": {
       "composer/package-versions-deprecated": true,
-      "phpstan/extension-installer": true
+      "infection/extension-installer": true,
+      "phpstan/extension-installer": true,
+      "symfony/runtime": false
     },
     "sort-packages": true
   },

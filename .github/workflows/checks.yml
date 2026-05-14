@@ -149,7 +149,7 @@ jobs:
       - run: vendor/bin/rector process -n
 
   composer-audit:
-    name: Composer audit
+    name: Composer validate + audit
     needs: setup
     runs-on: ubuntu-latest
     steps:
@@ -165,6 +165,8 @@ jobs:
         with:
           path: vendor
           key: ${{ needs.setup.outputs.vendor-cache-key }}
+
+      - run: composer validate --strict --no-check-publish
 
       - run: composer audit
 
@@ -232,3 +234,37 @@ jobs:
           fail_ci_if_error: true
           slug: max-shamaev-php/healthcheck-bundle
           token: ${{ secrets.CODECOV_TOKEN }}
+
+  infection:
+    # Mutation testing — informational only at this stage (no MSI threshold).
+    # Runs on push-to-main to keep PR feedback fast; ~10s on this codebase but
+    # may grow with src/.
+    name: Infection (mutation testing)
+    needs: setup
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: mbstring, xml, ctype, iconv, intl
+          coverage: xdebug
+          tools: composer:v2
+
+      - uses: actions/cache@v5
+        with:
+          path: vendor
+          key: ${{ needs.setup.outputs.vendor-cache-key }}
+
+      - run: XDEBUG_MODE=coverage vendor/bin/infection --threads=$(nproc) --no-interaction --logger-github
+
+      - if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: infection-report
+          path: var/infection/
+          if-no-files-found: ignore
+          retention-days: 14

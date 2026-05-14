@@ -1,6 +1,5 @@
 {
   "name": "max-shamaev-php/healthcheck-bundle",
-  "version": "1.0.0",
   "license": "MIT",
   "type": "symfony-bundle",
   "description": "Health checks bundle",
@@ -14,6 +13,7 @@
   },
   "autoload-dev": {
     "psr-4": {
+      "MaxShamaev\\HealthCheckBundle\\Test\\Integration\\": "tests/integration/",
       "MaxShamaev\\HealthCheckBundle\\Test\\Mock\\": "tests/mock/",
       "MaxShamaev\\HealthCheckBundle\\Test\\Unit\\": "tests/unit/"
     }

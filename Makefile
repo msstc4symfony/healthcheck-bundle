@@ -4,6 +4,7 @@ check: ## Check code
 	find ./ -name '*.php' -not -path './vendor/*' | xargs -r php -l
 	vendor/bin/phpstan analyse --memory-limit=512M -c $(PHPSTAN_CONFIG)
 	vendor/bin/php-cs-fixer check
+	composer validate --strict --no-check-publish
 	composer audit
 	vendor/bin/rector process -n
 
@@ -12,6 +13,9 @@ test: ## Test code
 
 test-with-coverage: ## Test code with coverage
 	vendor/bin/phpunit --coverage-html coverage
+
+infection: ## Run mutation testing
+	XDEBUG_MODE=coverage vendor/bin/infection --threads=$(shell nproc) --no-interaction
 
 regenerate-baseline: ## Regenerate baseline
 	vendor/bin/phpstan analyse --memory-limit=512M -b phpstan-baseline.neon

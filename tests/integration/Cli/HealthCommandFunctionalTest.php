@@ -54,6 +54,14 @@ final class HealthCommandFunctionalTest extends KernelTestCase
         self::assertTrue($application->has('healthcheck:readiness'));
     }
 
+    public function testHealthcheckAliasResolvesToLiveliness(): void
+    {
+        $application = new Application(self::bootKernel());
+
+        $command = $application->find('healthcheck');
+        self::assertSame('healthcheck:liveliness', $command->getName());
+    }
+
     private function runCommand(string $name): CommandTester
     {
         $kernel = self::bootKernel();

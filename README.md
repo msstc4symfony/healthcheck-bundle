@@ -14,8 +14,8 @@ A Symfony bundle for comprehensive health checking of your application and its e
 
 ## Requirements
 
-- PHP >= 8.1
-- Symfony >= 6.4 | 7.x | 8.x
+- PHP >= 8.4
+- Symfony 6.4 | 7.x | 8.x
 
 ## Installation
 
@@ -36,19 +36,26 @@ return [
 
 ## Built-in Checkers
 
-The bundle automatically detects and registers health checkers for the following services:
+The bundle automatically detects and registers health checkers for the following services when their corresponding clients are present in the container:
 
-- **Doctrine DBAL** - Database connections
-- **Doctrine MongoDB ODM** - MongoDB connections
-- **Symfony Cache Pools** - All configured cache pools
-- **Redis** - Redis client connections
-- **Predis** - Predis client connections
-- **Memcached** - Memcached connections
-- **Memcache** - Memcache connections
-- **RabbitMQ** - Old Sound RabbitMQ connections
-- **Elastica** - Elasticsearch connections
+- **Doctrine DBAL** — database connections (`doctrine.dbal.*_connection`)
+- **Doctrine ORM** — entity managers (`doctrine.orm.*_entity_manager`)
+- **Doctrine MongoDB ODM** — MongoDB connections + document managers
+- **Doctrine Migrations** — schema-status probe
+- **Symfony Cache Pools** — all `cache.pool`-tagged services
+- **Redis** / **Predis** / **Memcached** / **Memcache** — cache clients detected by class
+- **RabbitMQ** — `old_sound_rabbit_mq.connection`-tagged services
+- **Elastica** — Elasticsearch clients
+- **OpenSearch** — OpenSearch clients
+- **ClickHouse** — ClickHouseDB clients
+- **Kafka** — `RdKafka\Producer` / `RdKafka\KafkaConsumer`
+- **Symfony Messenger** — transports implementing `MessageCountAwareInterface`
+- **Symfony Mailer** — SMTP transports (`SmtpTransport` subclasses)
+- **Symfony Lock** — `PersistingStoreInterface` implementations
+- **Flysystem** — `flysystem.storage`-tagged services
+- **HTTP probes** — arbitrary configured URLs via `http_client` bundle config
 
-All these checkers are automatically registered if the corresponding services are detected in your application.
+All detections happen automatically when the relevant package is installed and a service is registered. Third-party packages can contribute their own detectors by implementing `CheckerDetectorInterface` and registering the service — the bundle picks them up via the `healthcheck.detector` tag.
 
 ## Usage
 

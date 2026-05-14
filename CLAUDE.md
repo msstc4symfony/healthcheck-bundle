@@ -1,57 +1,89 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for Claude Code working in this repository. Deep references live
+under `.claude/docs/`; this file stays lean.
 
 ## What this is
 
-A Symfony bundle that exposes Kubernetes-style **liveliness** and **readiness** health checks. Targets PHP >= 8.4 and Symfony 6.4 / 7.x / 8.x. Distributed as a `symfony-bundle` Composer package; there is no host application in the repo — everything is library code plus unit tests.
+A Symfony bundle exposing Kubernetes-style **liveliness** and **readiness**
+health checks. Targets PHP >= 8.4 and Symfony 6.4 / 7.x / 8.x. Library code
+only — no host application in the repo.
 
-PHP 8.4 is required because the bundle uses asymmetric visibility (`public private(set)`) on DTOs, typed class constants (`const string`), and Property Hooks. Code under `src/` is not expected to be back-compatible with earlier PHP minors.
+PHP 8.4 is mandatory: the bundle uses asymmetric visibility, typed class
+constants, property hooks, and `#[Override]` everywhere. Do not propose
+backports.
 
 ## Common commands
 
-All workflow targets live in the `Makefile`:
+All in `Makefile`:
 
-- `make check` — full quality gate: `php -l` lint, `phpstan` (level 9, uses `phpstan-baseline.neon`), `php-cs-fixer check`, `composer audit`, and `rector process -n` (dry run). CI runs the same target with `PHPSTAN_CONFIG=phpstan-ci.neon` (extends `phpstan.dist.neon` with `reportUnmatchedIgnoredErrors: false` — local baseline entries for missing optional libs do not break CI where those libs are installed; new findings still fail).
+- `make check` — full quality gate (lint, PHPStan level 9, php-cs-fixer,
+  `composer validate --strict`, `composer audit`, Rector dry-run, DEPTRAC).
+  CI runs the same pieces in parallel jobs with `PHPSTAN_CONFIG=phpstan-ci.neon`.
 - `make fix` — apply `php-cs-fixer fix` then `rector process` writes.
-- `make test` — `vendor/bin/phpunit`.
-- `make test-with-coverage` — phpunit with HTML coverage in `coverage/`.
-- `make regenerate-baseline` — regenerate `phpstan-baseline.neon` (only when intentionally accepting new findings).
+- `make test` — `vendor/bin/phpunit` (unit + integration suites).
+- `make test-with-coverage` — HTML coverage to `coverage/`.
+- `make infection` — mutation testing (not in `make check` — too slow).
+- `make regenerate-baseline` — regenerate `phpstan-baseline.neon` (only when
+  intentionally accepting new findings).
 
-Run a single test: `vendor/bin/phpunit --filter testRun tests/unit/Application/Health/Check/ActionTest.php`.
+Run a single test: `vendor/bin/phpunit --filter testRun tests/unit/...`.
+Run a single suite: `vendor/bin/phpunit --testsuite=unit` (or `integration`).
 
-`phpunit.xml.dist` is **strict** — `failOnRisky`, `failOnWarning`, `failOnPhpunitDeprecation`, and `beStrictAboutOutputDuringTests` are all enabled, so any new warning/deprecation/output breaks the suite.
+## Quality gate notes
 
-## Architecture
+- `phpunit.xml.dist` is **strict**: `failOnRisky`, `failOnWarning`,
+  `failOnPhpunitDeprecation`, `beStrictAboutOutputDuringTests`. Any new
+  warning, deprecation, or stdout/stderr write fails the suite.
+- PHPStan baseline entries are **not** added automatically. `make check`
+  fails on new findings; use `make regenerate-baseline` only deliberately.
+- Two composer manifests: `composer.json` (published) and `composer-ci.json`
+  (full optional dev-deps, used in CI via `COMPOSER=composer-ci.json`).
+- `make fix` is idempotent — cs-fixer and Rector both run, in that order.
 
-The codebase splits into three layers under `src/`:
+## Architecture in 60 seconds
 
-- `Application/Health/Check/` — orchestration, DTOs, checkers, and the `CheckTypeEnum` (`READINESS` / `LIVELINESS`).
-- `Presentation/` — entry points: `Controller/HealthController` exposes `GET /_/healthcheck/{ping,readiness,liveliness}` (200 on success, 406 on failure; JSON or plain text based on request format). `Command/AbstractHealthCommand` + `HealthLivelinessCommand` / `HealthReadinessCommand` provide the CLI commands `healthcheck:liveliness` (alias `healthcheck`) and `healthcheck:readiness`.
-- `DependencyInjection/HealthCheckExtension` — loads `Resources/config/services.yaml` and also implements `CompilerPassInterface`.
+Three layers under `src/`, enforced by DEPTRAC:
 
-The single execution path is `Action::run(Request) -> Response`:
+- `Application/Health/Check/` — domain core (Action runners, DTOs,
+  checkers, `CheckTypeEnum`).
+- `Presentation/` — entry points (`HealthController` for
+  `/_/healthcheck/{ping,readiness,liveliness}`, `healthcheck:liveliness` /
+  `healthcheck:readiness` console commands).
+- `DependencyInjection/` — extension + 3 compiler passes + 17 detectors.
 
-1. `Action` receives `iterable<CheckInterface>` via `#[AutowireIterator(CheckInterface::class)]` — every checker tagged with `CheckInterface::class` flows in.
-2. For each checker, `isSupport(Context)` filters by `CheckTypeEnum` (a checker can opt in to readiness, liveliness, or both).
-3. Selected checkers mutate a shared `CheckResult` (`messages[]` / `errors[]`) via `check()`.
-4. The final `Response` has `success = (errors === [])`.
+Single execution path: `ActionInterface::run(Request) -> Response`. Action
+runners (`Action` / `ParallelAction`) consume
+`iterable<CheckInterface>` via `#[AutowireIterator(CheckInterface::class)]`.
 
-**Auto-registration of checkers is the load-bearing part.** `CheckInterface` carries `#[AutoconfigureTag(CheckInterface::class)]`, so any user-defined implementor in an autoconfigured service path is automatically tagged. On top of that, `HealthCheckExtension::process()` scans the *container* and synthesizes checkers for every detected infrastructure service:
+**Checker discovery has two paths:** (1) user-supplied classes implementing
+`CheckInterface` are auto-tagged via `#[AutoconfigureTag]`;
+(2) `HealthCheckerAutoDetectionPass` discovers
+`CheckerDetectorInterface` services (themselves tagged
+`healthcheck.detector` via `#[AutoconfigureTag]`), runs each to synthesize
+infrastructure-checker `Definition`s, and tags them `CheckInterface::class`.
 
-- `doctrine.dbal.*_connection` → `DBALConnectionChecker`
-- `doctrine_mongodb.odm.*_connection` → `MongoConnectionChecker`
-- services tagged `old_sound_rabbit_mq.connection` → `RabbitmqChecker`
-- definitions whose class is `Predis\Client` / `Redis` / `Memcached` / `Memcache` → matching client checker
-- services tagged `cache.pool` (walking `ChildDefinition` parents to recover the real class) → `CacheChecker`
-- definitions whose class is `\Elastica\Client` → `ElasticaConnectionChecker`
+Third-party bundles can contribute detectors by registering services
+implementing `CheckerDetectorInterface`. No `HealthCheckBundle` subclass
+needed.
 
-Every synthesized definition is autowired and re-tagged with `CheckInterface::class`, so it joins the same iterator `Action` consumes. When adding a new infrastructure checker, follow this pattern: implement `CheckInterface`, then either rely on autoconfigure (user-supplied services) or add a `defined*Checkers()` scan in `HealthCheckExtension::process()` for services that need detection from the container.
+## Pointers to deep references
 
-`services.yaml` PSR-4-loads everything under the bundle namespace **except** `DependencyInjection/` (loaded by Symfony itself) and `Application/Health/Check/Checker/` (registered explicitly by the compiler pass to avoid double-registration of auto-detected ones).
+Read these when the task touches the area:
 
-## Code-quality config worth knowing
-
-- **PHPStan**: `level: 9`, `treatPhpDocTypesAsCertain: false`, with `spaze/phpstan-disallowed-calls`, `phpstan-strict-rules`, `phpstan-symfony`, `phpstan-doctrine`, `phpstan-beberlei-assert`. New issues are *not* auto-baselined — `make check` will fail; use `make regenerate-baseline` only when you have a deliberate reason.
-- **PHP-CS-Fixer**: `@Symfony` preset with project tweaks (left-aligned phpdoc, `global_namespace_import` → import classes, trailing commas in multiline arguments/arrays/match/parameters, post-increment style, no yoda conditions). Run `make fix` rather than hand-formatting.
-- **Rector**: PHP 8.4 sets plus prepared sets for deadCode/codeQuality/codingStyle/typeDeclarations/privatization/instanceOf/earlyReturn and Symfony+Doctrine quality. A handful of rectors are explicitly skipped (see `rector.php`) — respect those when refactoring.
+- [`.claude/docs/architecture.md`](.claude/docs/architecture.md) — layer
+  rules, compiler-pass chain, detector contract, AbstractReadinessChecker
+  template, DTOs.
+- [`.claude/docs/conventions.md`](.claude/docs/conventions.md) — PHP 8.4
+  idioms, naming, file headers, test conventions, comment policy.
+- [`.claude/docs/testing.md`](.claude/docs/testing.md) — unit vs
+  integration suite split, TestKernel pattern, SafeEventDispatcher in
+  tests, Infection scope.
+- [`.claude/docs/tooling.md`](.claude/docs/tooling.md) — quality gate
+  breakdown, baselines policy, DEPTRAC rules, Roave BC, two-manifest
+  setup.
+- [`.claude/docs/ci.md`](.claude/docs/ci.md) — workflow structure, matrix
+  jobs, caches, action-version policy.
+- [`.claude/docs/known-issues.md`](.claude/docs/known-issues.md) —
+  gotchas, deferred work. **Check this before chasing a "weird"
+  failure.**

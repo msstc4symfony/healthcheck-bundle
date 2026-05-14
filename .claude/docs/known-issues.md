@@ -3,6 +3,33 @@
 Items that have bitten us once and might bite again. Living list — append,
 don't churn.
 
+## phpunit matrix conflicts with dev-only tools
+
+Two dev-deps pin `symfony/console` ranges that block matrix variants:
+
+- `roave/backward-compatibility-check` 8.x requires `symfony/console ^7.4.4`
+  → blocks the Symfony 6.4 matrix entry.
+- `deptrac/deptrac` 4.x requires `symfony/console ^6.4 || ^7.4 || ^8.0`
+  → blocks any Symfony 7.0–7.3 minor.
+
+Neither is exercised under the phpunit job (they have dedicated CI jobs
+on the locked Symfony version). The phpunit matrix step removes both
+before `composer update`:
+
+```yaml
+- name: Drop tools incompatible with the matrix Symfony version
+  run: |
+    composer remove --dev --no-update --no-interaction \
+      roave/backward-compatibility-check \
+      deptrac/deptrac
+```
+
+If you add a new dev-tool that pins a narrow Symfony range, either:
+(a) ensure it supports all matrix variants, or (b) add it to this
+removal list. Don't loosen the matrix to "the lowest common denominator
+that satisfies dev tools" — the matrix tests the bundle's runtime
+compatibility, not dev-tooling's.
+
 ## Roave BC check + `roave/security-advisories` recursion
 
 Running `roave-backward-compatibility-check` locally with xdebug enabled

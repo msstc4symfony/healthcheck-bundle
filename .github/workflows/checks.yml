@@ -224,6 +224,15 @@ jobs:
           restore-keys: |
             vendor-${{ runner.os }}-php${{ env.PHP_VERSION }}-symfony${{ matrix.symfony.label }}-
 
+      - name: Drop tools incompatible with the matrix Symfony version
+        # roave/backward-compatibility-check requires symfony/console ^7.4.4 (blocks Symfony 6.4).
+        # deptrac/deptrac requires symfony/console ^6.4 || ^7.4 || ^8.0 (blocks Symfony 7.0–7.3).
+        # Both are exercised in their own dedicated jobs, never under phpunit — drop before resolve.
+        run: |
+          composer remove --dev --no-update --no-interaction \
+            roave/backward-compatibility-check \
+            deptrac/deptrac
+
       - name: Pin Symfony version
         env:
           SYMFONY_VERSION: ${{ matrix.symfony.version }}

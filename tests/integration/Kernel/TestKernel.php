@@ -42,6 +42,10 @@ final class TestKernel extends Kernel
         $container->extension('framework', [
             'secret' => 'test',
             'http_method_override' => false,
+            // 7.0+ default; setting explicitly silences the Symfony 6.4 deprecation
+            // ("Not setting the 'framework.handle_all_throwables' config option is deprecated")
+            // which the phpunit-bridge promotes to a fatal under max[direct]=0.
+            'handle_all_throwables' => true,
             'test' => true,
             'router' => ['utf8' => true],
             // 'php_errors.log' defaults to true in 7+ and registers a global error handler

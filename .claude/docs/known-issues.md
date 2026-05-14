@@ -30,6 +30,31 @@ removal list. Don't loosen the matrix to "the lowest common denominator
 that satisfies dev tools" — the matrix tests the bundle's runtime
 compatibility, not dev-tooling's.
 
+## phpunit matrix — `browser-kit` / `dom-crawler` must match `http-kernel`
+
+`Symfony\Component\HttpKernel\HttpKernelBrowser` extends
+`Symfony\Component\BrowserKit\AbstractBrowser`. In Symfony 7+ the parent
+gained a `: object` return type on `doRequest()`; the 6.4 child doesn't
+declare it. If composer resolves browser-kit / dom-crawler to a higher
+major than http-kernel (which happens by default — they have no
+constraint locking them to the matrix-pinned major), PHP rejects the
+class with a signature compatibility fatal during `WebTestCase`
+autoload, manifesting as PHPUnit's "Premature end of PHP process".
+
+The phpunit matrix step pins both packages alongside framework-bundle,
+http-foundation, console. If you add another tightly-coupled
+`symfony/*` pair, pin them too.
+
+## phpunit matrix — `framework.handle_all_throwables`
+
+Symfony 6.4 introduced a soft-deprecation asking apps to explicitly set
+`framework.handle_all_throwables: true` because 7.0+ defaults to it. The
+phpunit-bridge running under `SYMFONY_DEPRECATIONS_HELPER=max[direct]=0`
+promotes the deprecation to a fatal during integration test boots.
+
+`tests/integration/Kernel/TestKernel.php` sets the option explicitly
+(harmless on 7+/8+).
+
 ## Roave BC check + `roave/security-advisories` recursion
 
 Running `roave-backward-compatibility-check` locally with xdebug enabled

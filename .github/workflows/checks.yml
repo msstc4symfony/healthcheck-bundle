@@ -236,11 +236,15 @@ jobs:
       - name: Pin Symfony version
         env:
           SYMFONY_VERSION: ${{ matrix.symfony.version }}
+        # browser-kit + dom-crawler must match http-kernel's major (transitive via framework-bundle)
+        # — otherwise WebTestCase blows up loading HttpKernelBrowser with a signature mismatch fatal.
         run: |
           composer require --no-update --no-interaction \
             "symfony/framework-bundle:${SYMFONY_VERSION}" \
             "symfony/http-foundation:${SYMFONY_VERSION}" \
-            "symfony/console:${SYMFONY_VERSION}"
+            "symfony/console:${SYMFONY_VERSION}" \
+            "symfony/browser-kit:${SYMFONY_VERSION}" \
+            "symfony/dom-crawler:${SYMFONY_VERSION}"
 
       - name: Resolve dependencies
         run: composer update --prefer-dist --no-progress --no-interaction
@@ -290,7 +294,12 @@ jobs:
           path: vendor
           key: ${{ needs.setup.outputs.vendor-cache-key }}
 
-      - run: vendor/bin/roave-backward-compatibility-check --format=github-actions --no-interaction
+      # BC-check installs deps for both `from` (historical tag) and `to` (HEAD) in temp dirs.
+      # The historical tag may predate composer-ci.json — and conceptually we want to check
+      # BC against the published composer.json manifest, not the CI manifest. Unset COMPOSER.
+      - env:
+          COMPOSER: composer.json
+        run: vendor/bin/roave-backward-compatibility-check --format=github-actions --no-interaction
 
   infection:
     # Mutation testing — informational only at this stage (no MSI threshold).

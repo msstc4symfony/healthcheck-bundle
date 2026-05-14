@@ -27,7 +27,7 @@ jobs:
     outputs:
       vendor-cache-key: ${{ steps.cache-key.outputs.value }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: shivammathur/setup-php@v2
         with:
@@ -40,7 +40,7 @@ jobs:
         run: echo "value=vendor-${{ runner.os }}-php${{ env.PHP_VERSION }}-${{ hashFiles('composer-ci.lock') }}" >> "$GITHUB_OUTPUT"
 
       - id: vendor-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: vendor
           key: ${{ steps.cache-key.outputs.value }}
@@ -53,7 +53,7 @@ jobs:
     needs: setup
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: shivammathur/setup-php@v2
         with:
@@ -61,7 +61,7 @@ jobs:
           coverage: none
           tools: composer:v2
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: vendor
           key: ${{ needs.setup.outputs.vendor-cache-key }}
@@ -73,7 +73,7 @@ jobs:
     needs: setup
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: shivammathur/setup-php@v2
         with:
@@ -82,12 +82,12 @@ jobs:
           coverage: none
           tools: composer:v2
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: vendor
           key: ${{ needs.setup.outputs.vendor-cache-key }}
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: /tmp/phpstan
           key: phpstan-${{ hashFiles('composer-ci.lock', 'phpstan*.neon') }}
@@ -101,7 +101,7 @@ jobs:
     needs: setup
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: shivammathur/setup-php@v2
         with:
@@ -110,12 +110,12 @@ jobs:
           coverage: none
           tools: composer:v2
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: vendor
           key: ${{ needs.setup.outputs.vendor-cache-key }}
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: .php-cs-fixer.cache
           key: cs-fixer-${{ hashFiles('.php-cs-fixer.dist.php', 'composer-ci.lock') }}
@@ -127,7 +127,7 @@ jobs:
     needs: setup
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: shivammathur/setup-php@v2
         with:
@@ -136,12 +136,12 @@ jobs:
           coverage: none
           tools: composer:v2
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: vendor
           key: ${{ needs.setup.outputs.vendor-cache-key }}
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: /tmp/rector
           key: rector-${{ hashFiles('rector.php', 'composer-ci.lock') }}
@@ -153,7 +153,7 @@ jobs:
     needs: setup
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: shivammathur/setup-php@v2
         with:
@@ -161,7 +161,7 @@ jobs:
           coverage: none
           tools: composer:v2
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: vendor
           key: ${{ needs.setup.outputs.vendor-cache-key }}
@@ -185,7 +185,7 @@ jobs:
             label: '8'
             codecov: true
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: shivammathur/setup-php@v2
         with:
@@ -194,7 +194,7 @@ jobs:
           coverage: xdebug
           tools: composer:v2
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: vendor
           key: vendor-${{ runner.os }}-php${{ env.PHP_VERSION }}-symfony${{ matrix.symfony.label }}-${{ hashFiles('composer-ci.json') }}
@@ -216,7 +216,7 @@ jobs:
       - run: XDEBUG_MODE=coverage vendor/bin/phpunit --coverage-clover=coverage.xml --log-junit junit.xml
 
       - if: ${{ matrix.symfony.codecov && !cancelled() }}
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           files: ./coverage.xml
           flags: phpunit
@@ -225,7 +225,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
 
       - if: ${{ matrix.symfony.codecov && !cancelled() }}
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           report_type: test_results
           flags: phpunit

@@ -6,12 +6,12 @@ namespace MSSTC4PHP\HealthCheckBundle\Test\Unit\Application\Health\Check\Checker
 
 use Doctrine\ODM\MongoDB\Configuration;
 use Doctrine\ODM\MongoDB\DocumentManager;
+use MongoDB\Client;
+use MongoDB\Database;
 use MSSTC4PHP\HealthCheckBundle\Application\Health\Check\Checker\ODMConnectionChecker;
 use MSSTC4PHP\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
 use MSSTC4PHP\HealthCheckBundle\Application\Health\Check\DTO\Context;
 use MSSTC4PHP\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
-use MongoDB\Client;
-use MongoDB\Database;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 

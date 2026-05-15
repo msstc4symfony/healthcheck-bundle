@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace MSSTC4PHP\HealthCheckBundle\DependencyInjection\Detector;
 
+use Memcache;
+use Memcached;
 use MSSTC4PHP\HealthCheckBundle\Application\Health\Check\Checker\MemcacheChecker;
 use MSSTC4PHP\HealthCheckBundle\Application\Health\Check\Checker\MemcachedChecker;
 use MSSTC4PHP\HealthCheckBundle\Application\Health\Check\Checker\PredisChecker;
 use MSSTC4PHP\HealthCheckBundle\Application\Health\Check\Checker\RedisChecker;
-use Memcache;
-use Memcached;
 use Predis\Client;
 use Redis;
 use Symfony\Component\DependencyInjection\ContainerBuilder;

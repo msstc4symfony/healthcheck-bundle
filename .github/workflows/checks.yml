@@ -283,7 +283,10 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ env.PHP_VERSION }}
-          extensions: mbstring
+          # rdkafka required so BetterReflection can locate RdKafka\* symbols
+          # used by KafkaChecker / KafkaDetector. Without it Roave aborts with
+          # "ReflectionClass RdKafka\KafkaConsumer could not be found".
+          extensions: mbstring, rdkafka
           coverage: none
           tools: composer:v2
 

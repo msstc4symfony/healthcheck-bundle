@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace MSSTC4PHP\HealthCheckBundle\Test\Unit\Application\Health\Check\Checker;
 
+use Memcached;
 use MSSTC4PHP\HealthCheckBundle\Application\Health\Check\Checker\MemcachedChecker;
 use MSSTC4PHP\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
 use MSSTC4PHP\HealthCheckBundle\Application\Health\Check\DTO\Context;
 use MSSTC4PHP\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
-use Memcached;
 use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace MSSTC4PHP\HealthCheckBundle\Test\Unit\DependencyInjection\Detector;
 
+use MongoDB\Client;
 use MSSTC4PHP\HealthCheckBundle\Application\Health\Check\Checker\MongoConnectionChecker;
 use MSSTC4PHP\HealthCheckBundle\DependencyInjection\Detector\MongoConnectionDetector;
-use MongoDB\Client;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;

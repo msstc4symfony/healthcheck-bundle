@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace MSSTC4PHP\HealthCheckBundle\Test\Unit\Application\Health\Check\Checker;
 
 use ArrayIterator;
+use MongoDB\Client;
 use MSSTC4PHP\HealthCheckBundle\Application\Health\Check\Checker\MongoConnectionChecker;
 use MSSTC4PHP\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
 use MSSTC4PHP\HealthCheckBundle\Application\Health\Check\DTO\Context;
 use MSSTC4PHP\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
-use MongoDB\Client;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 

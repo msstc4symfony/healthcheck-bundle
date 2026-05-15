@@ -258,7 +258,6 @@ jobs:
           flags: phpunit
           fail_ci_if_error: true
           slug: msstc4php/healthcheck-bundle
-          token: ${{ secrets.CODECOV_TOKEN }}
 
       - if: ${{ matrix.symfony.codecov && !cancelled() }}
         uses: codecov/codecov-action@v6
@@ -267,7 +266,6 @@ jobs:
           flags: phpunit
           fail_ci_if_error: true
           slug: msstc4php/healthcheck-bundle
-          token: ${{ secrets.CODECOV_TOKEN }}
 
   bc-check:
     # roave/backward-compatibility-check — informational until v1.1.0 is tagged.

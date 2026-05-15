@@ -1,0 +1,17 @@
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+
+  MSSTC4PHP\HealthCheckBundle\:
+    resource: '../../../src/'
+    exclude:
+      - 'DependencyInjection/'
+      - 'Application/Health/Check/Checker/'
+
+  # Detectors are picked up via #[AutoconfigureTag('healthcheck.detector')] on the interface.
+  # Listing the namespace explicitly because the parent block excludes DependencyInjection/.
+  MSSTC4PHP\HealthCheckBundle\DependencyInjection\Detector\:
+    resource: '../../../src/DependencyInjection/Detector/'
+    exclude:
+      - '../../../src/DependencyInjection/Detector/CheckerDetectorInterface.php'

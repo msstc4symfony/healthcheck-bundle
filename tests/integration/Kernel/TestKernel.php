@@ -1,0 +1,71 @@
+<?php
+
+declare(strict_types=1);
+
+namespace MSSTC4PHP\HealthCheckBundle\Test\Integration\Kernel;
+
+use MSSTC4PHP\HealthCheckBundle\HealthCheckBundle;
+use Override;
+use Psr\Log\NullLogger;
+use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
+use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
+use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
+use Symfony\Component\HttpKernel\Kernel;
+use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
+
+final class TestKernel extends Kernel
+{
+    use MicroKernelTrait;
+
+    public function registerBundles(): iterable
+    {
+        return [
+            new FrameworkBundle(),
+            new HealthCheckBundle(),
+        ];
+    }
+
+    #[Override]
+    public function getCacheDir(): string
+    {
+        return sys_get_temp_dir() . '/msstc4php-healthcheck-bundle-test/cache/' . $this->environment;
+    }
+
+    #[Override]
+    public function getLogDir(): string
+    {
+        return sys_get_temp_dir() . '/msstc4php-healthcheck-bundle-test/log';
+    }
+
+    protected function configureContainer(ContainerConfigurator $container): void
+    {
+        $container->extension('framework', [
+            'secret' => 'test',
+            'http_method_override' => false,
+            // 7.0+ default; setting explicitly silences the Symfony 6.4 deprecation
+            // ("Not setting the 'framework.handle_all_throwables' config option is deprecated")
+            // which the phpunit-bridge promotes to a fatal under max[direct]=0.
+            'handle_all_throwables' => true,
+            'test' => true,
+            'router' => ['utf8' => true],
+            // 'php_errors.log' defaults to true in 7+ and registers a global error handler
+            // that survives kernel shutdown — trips PHPUnit's failOnRisky. Force off.
+            'php_errors' => ['log' => false],
+        ]);
+
+        // Silence the default Symfony console logger; it writes to stdout/stderr and
+        // trips beStrictAboutOutputDuringTests during functional tests.
+        $container->services()
+            ->set('logger', NullLogger::class)
+            ->public()
+        ;
+    }
+
+    protected function configureRoutes(RoutingConfigurator $routes): void
+    {
+        $routes->import(
+            \dirname(__DIR__, 3) . '/src/Presentation/Controller/',
+            'attribute',
+        );
+    }
+}

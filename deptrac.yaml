@@ -1,0 +1,45 @@
+deptrac:
+    paths:
+        - ./src
+
+    exclude_files:
+        - '#.*test.*#i'
+
+    layers:
+        - name: Application
+          collectors:
+              - type: directory
+                value: src/Application/.*
+
+        - name: Presentation
+          collectors:
+              - type: directory
+                value: src/Presentation/.*
+
+        - name: DependencyInjection
+          collectors:
+              - type: directory
+                value: src/DependencyInjection/.*
+
+        - name: BundleRoot
+          collectors:
+              - type: classLike
+                value: MSSTC4PHP\\HealthCheckBundle\\HealthCheckBundle
+
+    ruleset:
+        # Domain core must never reach back into Presentation or wiring layers.
+        Application: ~
+
+        # Presentation owns the HTTP / CLI entry points; it consumes Application.
+        Presentation:
+            - Application
+
+        # DependencyInjection wires Application services; it must not depend on Presentation.
+        DependencyInjection:
+            - Application
+
+        # The bundle entrypoint composes the DI layer. It is allowed to mention
+        # Application types (e.g. CheckInterface) and DependencyInjection detectors.
+        BundleRoot:
+            - Application
+            - DependencyInjection

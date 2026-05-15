@@ -251,12 +251,15 @@ jobs:
 
       - run: XDEBUG_MODE=coverage vendor/bin/phpunit --coverage-clover=coverage.xml --log-junit junit.xml
 
+      # fail_ci_if_error: false until the repo is made public — Codecov tokenless
+      # upload requires a public repo (otherwise: "Token required - not valid
+      # tokenless upload"). Flip back to true once the repo is published.
       - if: ${{ matrix.symfony.codecov && !cancelled() }}
         uses: codecov/codecov-action@v6
         with:
           files: ./coverage.xml
           flags: phpunit
-          fail_ci_if_error: true
+          fail_ci_if_error: false
           slug: msstc4php/healthcheck-bundle
 
       - if: ${{ matrix.symfony.codecov && !cancelled() }}
@@ -264,7 +267,7 @@ jobs:
         with:
           report_type: test_results
           flags: phpunit
-          fail_ci_if_error: true
+          fail_ci_if_error: false
           slug: msstc4php/healthcheck-bundle
 
   bc-check:

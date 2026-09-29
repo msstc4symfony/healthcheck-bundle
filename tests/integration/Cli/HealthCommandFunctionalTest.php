@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace MaxShamaev\HealthCheckBundle\Test\Integration\Cli;
+namespace Msstc4Symfony\HealthCheckBundle\Test\Integration\Cli;
 
-use MaxShamaev\HealthCheckBundle\Test\Integration\Kernel\TestKernel;
+use Msstc4Symfony\HealthCheckBundle\Test\Integration\Kernel\TestKernel;
 use Override;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -21,7 +21,7 @@ final class HealthCommandFunctionalTest extends KernelTestCase
 {
     protected function setUp(): void
     {
-        new Filesystem()->remove(sys_get_temp_dir() . '/maxshamaev-healthcheck-bundle-test');
+        new Filesystem()->remove(sys_get_temp_dir() . '/msstc4symfony-healthcheck-bundle-test');
     }
 
     #[Override]

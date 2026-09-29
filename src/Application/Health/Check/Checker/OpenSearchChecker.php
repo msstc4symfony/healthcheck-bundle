@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker;
+namespace Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker;
 
 use OpenSearch\Client;
 use Symfony\Component\DependencyInjection\Attribute\Exclude;

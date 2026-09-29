@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace MaxShamaev\HealthCheckBundle\Test\Unit\DependencyInjection\Detector;
+namespace Msstc4Symfony\HealthCheckBundle\Test\Unit\DependencyInjection\Detector;
 
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\RabbitmqChecker;
-use MaxShamaev\HealthCheckBundle\DependencyInjection\Detector\RabbitMQConnectionDetector;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\RabbitmqChecker;
+use Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector\RabbitMQConnectionDetector;
 use PhpAmqpLib\Connection\AbstractConnection;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;

@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace MaxShamaev\HealthCheckBundle\Test\Unit\Application\Health\Check\Checker;
+namespace Msstc4Symfony\HealthCheckBundle\Test\Unit\Application\Health\Check\Checker;
 
 use ArrayIterator;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\MongoConnectionChecker;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\Context;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
 use MongoDB\Client;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\MongoConnectionChecker;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\Context;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 

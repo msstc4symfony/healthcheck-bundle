@@ -18,11 +18,11 @@ The bundle hard-requires PHP 8.4. Don't propose downgrades.
 
 ## File / namespace conventions
 
-- PSR-4 root: `MaxShamaev\HealthCheckBundle\` → `src/`.
+- PSR-4 root: `Msstc4Symfony\HealthCheckBundle\` → `src/`.
 - Test PSR-4 roots:
-  - `MaxShamaev\HealthCheckBundle\Test\Unit\` → `tests/unit/`
-  - `MaxShamaev\HealthCheckBundle\Test\Integration\` → `tests/integration/`
-  - `MaxShamaev\HealthCheckBundle\Test\Mock\` → `tests/mock/`
+  - `Msstc4Symfony\HealthCheckBundle\Test\Unit\` → `tests/unit/`
+  - `Msstc4Symfony\HealthCheckBundle\Test\Integration\` → `tests/integration/`
+  - `Msstc4Symfony\HealthCheckBundle\Test\Mock\` → `tests/mock/`
 - One class per file. Classes are `final readonly` unless extension is part
   of the contract (`AbstractReadinessChecker`).
 - `#[Exclude]` on classes that are constructed by compiler passes as
@@ -87,6 +87,6 @@ sequence; their fixes are idempotent.
 
 ## Configuration namespacing
 
-All bundle parameters use the `maxshamaev_healthcheck.` prefix. Public
+All bundle parameters use the `msstc4symfony_healthcheck.` prefix. Public
 constants (`HealthCheckExtension::PARAM_*` / `SERVICE_*`) are the
 single source of truth for parameter / service IDs.

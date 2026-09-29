@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace MaxShamaev\HealthCheckBundle\Test\Unit\Application\Health\Check\Checker;
+namespace Msstc4Symfony\HealthCheckBundle\Test\Unit\Application\Health\Check\Checker;
 
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\OpenSearchChecker;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\Context;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\OpenSearchChecker;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\Context;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
 use OpenSearch\Client;
 use OpenSearch\Namespaces\ClusterNamespace;
 use PHPUnit\Framework\TestCase;

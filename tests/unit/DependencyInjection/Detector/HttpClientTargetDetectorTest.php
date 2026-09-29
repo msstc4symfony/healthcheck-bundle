@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace MaxShamaev\HealthCheckBundle\Test\Unit\DependencyInjection\Detector;
+namespace Msstc4Symfony\HealthCheckBundle\Test\Unit\DependencyInjection\Detector;
 
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\HttpClientChecker;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\HttpProbeTarget;
-use MaxShamaev\HealthCheckBundle\DependencyInjection\Detector\HttpClientTargetDetector;
-use MaxShamaev\HealthCheckBundle\DependencyInjection\HealthCheckExtension;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\HttpClientChecker;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\HttpProbeTarget;
+use Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector\HttpClientTargetDetector;
+use Msstc4Symfony\HealthCheckBundle\DependencyInjection\HealthCheckExtension;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;

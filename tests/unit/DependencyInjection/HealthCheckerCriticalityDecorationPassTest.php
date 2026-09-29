@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace MaxShamaev\HealthCheckBundle\Test\Unit\DependencyInjection;
+namespace Msstc4Symfony\HealthCheckBundle\Test\Unit\DependencyInjection;
 
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\CheckInterface;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\NonCriticalCheckerDecorator;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\TimeoutCheckerDecorator;
-use MaxShamaev\HealthCheckBundle\DependencyInjection\HealthCheckerCriticalityDecorationPass;
-use MaxShamaev\HealthCheckBundle\DependencyInjection\HealthCheckerTimeoutDecorationPass;
-use MaxShamaev\HealthCheckBundle\DependencyInjection\HealthCheckExtension;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CheckInterface;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\NonCriticalCheckerDecorator;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\TimeoutCheckerDecorator;
+use Msstc4Symfony\HealthCheckBundle\DependencyInjection\HealthCheckerCriticalityDecorationPass;
+use Msstc4Symfony\HealthCheckBundle\DependencyInjection\HealthCheckerTimeoutDecorationPass;
+use Msstc4Symfony\HealthCheckBundle\DependencyInjection\HealthCheckExtension;
 use PHPUnit\Framework\TestCase;
 use stdClass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;

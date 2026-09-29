@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace MaxShamaev\HealthCheckBundle\Test\Unit\DependencyInjection\Detector;
+namespace Msstc4Symfony\HealthCheckBundle\Test\Unit\DependencyInjection\Detector;
 
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\MongoConnectionChecker;
-use MaxShamaev\HealthCheckBundle\DependencyInjection\Detector\MongoConnectionDetector;
 use MongoDB\Client;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\MongoConnectionChecker;
+use Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector\MongoConnectionDetector;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;

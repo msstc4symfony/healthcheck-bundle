@@ -2,21 +2,21 @@
 
 declare(strict_types=1);
 
-namespace MaxShamaev\HealthCheckBundle\Test\Unit\Application\Health\Check;
+namespace Msstc4Symfony\HealthCheckBundle\Test\Unit\Application\Health\Check;
 
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\CheckInterface;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\Context;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\Request;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Event\HealthCheckerCompletedEvent;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Event\HealthCheckRunCompletedEvent;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Event\HealthCheckRunStartedEvent;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Event\SafeEventDispatcher;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\ParallelAction;
-use MaxShamaev\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\FailChecker;
-use MaxShamaev\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\SuccessChecker;
-use MaxShamaev\HealthCheckBundle\Test\Mock\Application\Health\Check\Event\RecordingDispatcherFixture;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CheckInterface;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\Context;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\Request;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Event\HealthCheckerCompletedEvent;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Event\HealthCheckRunCompletedEvent;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Event\HealthCheckRunStartedEvent;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Event\SafeEventDispatcher;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\ParallelAction;
+use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\FailChecker;
+use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\SuccessChecker;
+use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Event\RecordingDispatcherFixture;
 use PHPUnit\Framework\TestCase;
 
 final class ParallelActionTest extends TestCase

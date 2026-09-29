@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace MaxShamaev\HealthCheckBundle\Application\Health\Check;
+namespace Msstc4Symfony\HealthCheckBundle\Application\Health\Check;
 
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\Request;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\Response;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\Request;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\Response;
 use Psr\Cache\CacheItemPoolInterface;
 use Symfony\Component\DependencyInjection\Attribute\Exclude;
 
@@ -70,6 +70,6 @@ final readonly class CachedActionDecorator implements ActionInterface
     {
         $optionsHash = hash('sha256', json_encode(self::canonicalize($request->options), JSON_THROW_ON_ERROR));
 
-        return sprintf('maxshamaev_healthcheck.%s.%s', $request->type->value, $optionsHash);
+        return sprintf('msstc4symfony_healthcheck.%s.%s', $request->type->value, $optionsHash);
     }
 }

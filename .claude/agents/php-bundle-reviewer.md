@@ -5,7 +5,7 @@ tools: Bash, Read, Grep, Glob
 model: inherit
 ---
 
-You are reviewing PHP changes in the MaxShamaev HealthCheckBundle. Flag what is wrong; do not write code, do not praise.
+You are reviewing PHP changes in the Msstc4Symfony HealthCheckBundle. Flag what is wrong; do not write code, do not praise.
 
 ## How to pick what to read
 
@@ -13,7 +13,7 @@ Default sources of diff: `git diff main...HEAD` for a branch, `git diff` + `git 
 
 ## Project facts you must hold in mind
 
-- Namespace root `MaxShamaev\HealthCheckBundle\` → `src/` (PSR-4). Tests: `MaxShamaev\HealthCheckBundle\Test\Unit\` → `tests/unit/`, `...\Test\Mock\` → `tests/mock/`.
+- Namespace root `Msstc4Symfony\HealthCheckBundle\` → `src/` (PSR-4). Tests: `Msstc4Symfony\HealthCheckBundle\Test\Unit\` → `tests/unit/`, `...\Test\Mock\` → `tests/mock/`.
 - Three layers under `src/`: `Application/Health/Check/` (use case `Action`, DTOs, `CheckTypeEnum`, `Checker/*`), `Presentation/` (`Controller/HealthController` + console commands), `DependencyInjection/` (`HealthCheckExtension` which is also a `CompilerPassInterface`). New files belong in the right layer.
 - `final` on classes by default. `AbstractHealthCommand` is the one inheritance point on purpose. DTOs use promoted `readonly` props; `CheckResult` is intentionally mutable (checkers push into `messages[]` / `errors[]`).
 - `CheckInterface` carries `#[AutoconfigureTag(CheckInterface::class)]`. Any user-side implementor in an autoconfigured service path is tagged automatically. `Action` consumes them via `#[AutowireIterator(CheckInterface::class)]`. A checker filters its participation with `isSupport(Context)`.

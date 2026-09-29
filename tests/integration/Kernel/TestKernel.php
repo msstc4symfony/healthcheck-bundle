@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace MaxShamaev\HealthCheckBundle\Test\Integration\Kernel;
+namespace Msstc4Symfony\HealthCheckBundle\Test\Integration\Kernel;
 
-use MaxShamaev\HealthCheckBundle\HealthCheckBundle;
+use Msstc4Symfony\HealthCheckBundle\HealthCheckBundle;
 use Override;
 use Psr\Log\NullLogger;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
@@ -28,13 +28,13 @@ final class TestKernel extends Kernel
     #[Override]
     public function getCacheDir(): string
     {
-        return sys_get_temp_dir() . '/maxshamaev-healthcheck-bundle-test/cache/' . $this->environment;
+        return sys_get_temp_dir() . '/msstc4symfony-healthcheck-bundle-test/cache/' . $this->environment;
     }
 
     #[Override]
     public function getLogDir(): string
     {
-        return sys_get_temp_dir() . '/maxshamaev-healthcheck-bundle-test/log';
+        return sys_get_temp_dir() . '/msstc4symfony-healthcheck-bundle-test/log';
     }
 
     protected function configureContainer(ContainerConfigurator $container): void

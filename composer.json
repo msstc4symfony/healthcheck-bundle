@@ -1,6 +1,12 @@
 {
-  "name": "max-shamaev-php/healthcheck-bundle",
+  "name": "msstc4symfony/healthcheck-bundle",
   "license": "MIT",
+  "authors": [
+    {
+      "name": "Maxim Shamaev",
+      "email": "maxim.shamaev@gmail.com"
+    }
+  ],
   "type": "symfony-bundle",
   "description": "Health checks bundle",
   "minimum-stability": "stable",
@@ -8,14 +14,14 @@
   "prefer-stable": true,
   "autoload": {
     "psr-4": {
-      "MaxShamaev\\HealthCheckBundle\\": "src/"
+      "Msstc4Symfony\\HealthCheckBundle\\": "src/"
     }
   },
   "autoload-dev": {
     "psr-4": {
-      "MaxShamaev\\HealthCheckBundle\\Test\\Integration\\": "tests/integration/",
-      "MaxShamaev\\HealthCheckBundle\\Test\\Mock\\": "tests/mock/",
-      "MaxShamaev\\HealthCheckBundle\\Test\\Unit\\": "tests/unit/"
+      "Msstc4Symfony\\HealthCheckBundle\\Test\\Integration\\": "tests/integration/",
+      "Msstc4Symfony\\HealthCheckBundle\\Test\\Mock\\": "tests/mock/",
+      "Msstc4Symfony\\HealthCheckBundle\\Test\\Unit\\": "tests/unit/"
     }
   },
   "require": {

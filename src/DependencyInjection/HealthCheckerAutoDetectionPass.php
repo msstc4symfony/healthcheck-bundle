@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace MaxShamaev\HealthCheckBundle\DependencyInjection;
+namespace Msstc4Symfony\HealthCheckBundle\DependencyInjection;
 
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\CheckInterface;
-use MaxShamaev\HealthCheckBundle\DependencyInjection\Detector\CheckerDetectorInterface;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CheckInterface;
+use Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector\CheckerDetectorInterface;
 use RuntimeException;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;

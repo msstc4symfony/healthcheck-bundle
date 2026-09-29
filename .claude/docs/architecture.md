@@ -157,15 +157,15 @@ they reduce boilerplate.
 ## Configuration surface
 
 `HealthCheckExtension` exposes these container parameters:
-- `maxshamaev_healthcheck.http_client_targets`
-- `maxshamaev_healthcheck.default_timeout_ms`
-- `maxshamaev_healthcheck.timeout_overrides`
-- `maxshamaev_healthcheck.non_critical_checkers`
+- `msstc4symfony_healthcheck.http_client_targets`
+- `msstc4symfony_healthcheck.default_timeout_ms`
+- `msstc4symfony_healthcheck.timeout_overrides`
+- `msstc4symfony_healthcheck.non_critical_checkers`
 
 Plus two service ids:
-- `maxshamaev_healthcheck.action.parallel`
-- `maxshamaev_healthcheck.action.cached`
+- `msstc4symfony_healthcheck.action.parallel`
+- `msstc4symfony_healthcheck.action.cached`
 
 The `ActionInterface` alias points at one of `Action::class`,
-`maxshamaev_healthcheck.action.parallel`, or
-`maxshamaev_healthcheck.action.cached` depending on config.
+`msstc4symfony_healthcheck.action.parallel`, or
+`msstc4symfony_healthcheck.action.cached` depending on config.

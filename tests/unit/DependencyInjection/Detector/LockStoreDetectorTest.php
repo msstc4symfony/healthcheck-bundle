@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace MaxShamaev\HealthCheckBundle\Test\Unit\DependencyInjection\Detector;
+namespace Msstc4Symfony\HealthCheckBundle\Test\Unit\DependencyInjection\Detector;
 
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\LockStoreChecker;
-use MaxShamaev\HealthCheckBundle\DependencyInjection\Detector\LockStoreDetector;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\LockStoreChecker;
+use Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector\LockStoreDetector;
 use PHPUnit\Framework\TestCase;
 use stdClass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;

@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace MaxShamaev\HealthCheckBundle\Test\Unit\DependencyInjection\Detector;
+namespace Msstc4Symfony\HealthCheckBundle\Test\Unit\DependencyInjection\Detector;
 
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\MemcacheChecker;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\MemcachedChecker;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\PredisChecker;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\RedisChecker;
-use MaxShamaev\HealthCheckBundle\DependencyInjection\Detector\CacheClientDetector;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\MemcacheChecker;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\MemcachedChecker;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\PredisChecker;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\RedisChecker;
+use Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector\CacheClientDetector;
 use PHPUnit\Framework\TestCase;
 use Predis\Client;
 use stdClass;

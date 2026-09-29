@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace MaxShamaev\HealthCheckBundle\Test\Integration;
+namespace Msstc4Symfony\HealthCheckBundle\Test\Integration;
 
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Action;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\ActionInterface;
-use MaxShamaev\HealthCheckBundle\HealthCheckBundle;
-use MaxShamaev\HealthCheckBundle\Presentation\Command\HealthLivelinessCommand;
-use MaxShamaev\HealthCheckBundle\Presentation\Command\HealthReadinessCommand;
-use MaxShamaev\HealthCheckBundle\Presentation\Controller\HealthController;
-use MaxShamaev\HealthCheckBundle\Test\Integration\Kernel\TestKernel;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Action;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\ActionInterface;
+use Msstc4Symfony\HealthCheckBundle\HealthCheckBundle;
+use Msstc4Symfony\HealthCheckBundle\Presentation\Command\HealthLivelinessCommand;
+use Msstc4Symfony\HealthCheckBundle\Presentation\Command\HealthReadinessCommand;
+use Msstc4Symfony\HealthCheckBundle\Presentation\Controller\HealthController;
+use Msstc4Symfony\HealthCheckBundle\Test\Integration\Kernel\TestKernel;
 use Override;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Filesystem\Filesystem;
@@ -26,7 +26,7 @@ final class ContainerCompileTest extends KernelTestCase
 {
     protected function setUp(): void
     {
-        new Filesystem()->remove(sys_get_temp_dir() . '/maxshamaev-healthcheck-bundle-test');
+        new Filesystem()->remove(sys_get_temp_dir() . '/msstc4symfony-healthcheck-bundle-test');
     }
 
     #[Override]

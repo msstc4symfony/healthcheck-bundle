@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace MaxShamaev\HealthCheckBundle\Test\Unit\DependencyInjection\Detector;
+namespace Msstc4Symfony\HealthCheckBundle\Test\Unit\DependencyInjection\Detector;
 
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\OpenSearchChecker;
-use MaxShamaev\HealthCheckBundle\DependencyInjection\Detector\OpenSearchDetector;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\OpenSearchChecker;
+use Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector\OpenSearchDetector;
 use OpenSearch\Client;
 use PHPUnit\Framework\TestCase;
 use stdClass;

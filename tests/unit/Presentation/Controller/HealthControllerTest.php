@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace MaxShamaev\HealthCheckBundle\Test\Unit\Presentation\Controller;
+namespace Msstc4Symfony\HealthCheckBundle\Test\Unit\Presentation\Controller;
 
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Action;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\CheckInterface;
-use MaxShamaev\HealthCheckBundle\Presentation\Controller\HealthController;
-use MaxShamaev\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\FailChecker;
-use MaxShamaev\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\SuccessChecker;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Action;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CheckInterface;
+use Msstc4Symfony\HealthCheckBundle\Presentation\Controller\HealthController;
+use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\FailChecker;
+use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\SuccessChecker;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;

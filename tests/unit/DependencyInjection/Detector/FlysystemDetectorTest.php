@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace MaxShamaev\HealthCheckBundle\Test\Unit\DependencyInjection\Detector;
+namespace Msstc4Symfony\HealthCheckBundle\Test\Unit\DependencyInjection\Detector;
 
 use League\Flysystem\Filesystem;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\FlysystemChecker;
-use MaxShamaev\HealthCheckBundle\DependencyInjection\Detector\FlysystemDetector;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\FlysystemChecker;
+use Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector\FlysystemDetector;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;

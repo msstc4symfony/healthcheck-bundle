@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace MaxShamaev\HealthCheckBundle\Test\Unit\Application\Health\Check\Checker;
+namespace Msstc4Symfony\HealthCheckBundle\Test\Unit\Application\Health\Check\Checker;
 
 use Closure;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\CheckInterface;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\TimeoutCheckerDecorator;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\Context;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CheckInterface;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\TimeoutCheckerDecorator;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\Context;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
 use PHPUnit\Framework\TestCase;
 
 final class TimeoutCheckerDecoratorTest extends TestCase

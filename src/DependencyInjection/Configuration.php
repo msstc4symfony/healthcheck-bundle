@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MaxShamaev\HealthCheckBundle\DependencyInjection;
+namespace Msstc4Symfony\HealthCheckBundle\DependencyInjection;
 
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
@@ -11,7 +11,7 @@ final readonly class Configuration implements ConfigurationInterface
 {
     public function getConfigTreeBuilder(): TreeBuilder
     {
-        $treeBuilder = new TreeBuilder('maxshamaev_healthcheck');
+        $treeBuilder = new TreeBuilder('msstc4symfony_healthcheck');
 
         $treeBuilder->getRootNode()
             ->children()

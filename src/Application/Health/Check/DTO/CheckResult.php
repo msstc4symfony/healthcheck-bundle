@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO;
+namespace Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO;
 
 final class CheckResult
 {

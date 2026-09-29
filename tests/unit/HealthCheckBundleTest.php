@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace MaxShamaev\HealthCheckBundle\Test\Unit;
+namespace Msstc4Symfony\HealthCheckBundle\Test\Unit;
 
-use MaxShamaev\HealthCheckBundle\DependencyInjection\HealthCheckExtension;
-use MaxShamaev\HealthCheckBundle\HealthCheckBundle;
+use Msstc4Symfony\HealthCheckBundle\DependencyInjection\HealthCheckExtension;
+use Msstc4Symfony\HealthCheckBundle\HealthCheckBundle;
 use PHPUnit\Framework\TestCase;
 
 final class HealthCheckBundleTest extends TestCase

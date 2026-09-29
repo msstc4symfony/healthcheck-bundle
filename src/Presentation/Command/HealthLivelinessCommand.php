@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace MaxShamaev\HealthCheckBundle\Presentation\Command;
+namespace Msstc4Symfony\HealthCheckBundle\Presentation\Command;
 
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
 use Symfony\Component\Console\Attribute\AsCommand;
 
 #[AsCommand(name: 'healthcheck:liveliness', description: 'Check liveliness status', aliases: ['healthcheck'])]

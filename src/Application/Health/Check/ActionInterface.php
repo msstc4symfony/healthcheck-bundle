@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace MaxShamaev\HealthCheckBundle\Application\Health\Check;
+namespace Msstc4Symfony\HealthCheckBundle\Application\Health\Check;
 
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\Request;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\Response;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\Request;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\Response;
 
 interface ActionInterface
 {

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MaxShamaev\HealthCheckBundle\Test\Mock\Application\Health\Check\Event;
+namespace Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Event;
 
 use Psr\EventDispatcher\EventDispatcherInterface;
 

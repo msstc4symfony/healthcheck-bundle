@@ -1,11 +1,11 @@
 # Healthcheck Symfony Bundle
 
-![Build Status](https://github.com/max-shamaev-php/healthcheck-bundle/actions/workflows/checks.yml/badge.svg?branch=main)
-[![codecov](https://codecov.io/github/max-shamaev-php/healthcheck-bundle/branch/main/graph/badge.svg?token=NO9FYTJMSU)](https://codecov.io/github/max-shamaev-php/healthcheck-bundle/branch/main)
+![Build Status](https://github.com/msstc4symfony/healthcheck-bundle/actions/workflows/checks.yml/badge.svg?branch=main)
+[![codecov](https://codecov.io/github/msstc4symfony/healthcheck-bundle/branch/main/graph/badge.svg?token=NO9FYTJMSU)](https://codecov.io/github/msstc4symfony/healthcheck-bundle/branch/main)
 [![PHP Version](https://img.shields.io/badge/PHP-%3E%3D8.4-787CB5?logo=php&logoColor=white)](https://php.net)
 [![Symfony Versions](https://img.shields.io/badge/Symfony-6.4%20%7C%207.x%20%7C%208.x-000000?logo=symfony&logoColor=white)](https://symfony.com)
 [![PHPStan](https://img.shields.io/badge/PHPStan-level%209-2a5ea7)](https://phpstan.org)
-[![Last commit](https://img.shields.io/github/last-commit/max-shamaev-php/healthcheck-bundle/main)](https://github.com/max-shamaev-php/healthcheck-bundle/commits/main)
+[![Last commit](https://img.shields.io/github/last-commit/msstc4symfony/healthcheck-bundle/main)](https://github.com/msstc4symfony/healthcheck-bundle/commits/main)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A Symfony bundle for comprehensive health checking of your application and its external dependencies. Provides both **liveliness** and **readiness** probes compatible with Kubernetes health checks.
@@ -26,7 +26,7 @@ A Symfony bundle for comprehensive health checking of your application and its e
 Install the bundle via Composer:
 
 ```bash
-composer require max-shamaev-php/healthcheck-bundle
+composer require msstc4symfony/healthcheck-bundle
 ```
 
 If you're not using Symfony Flex, you'll need to manually enable the bundle in your `config/bundles.php`:
@@ -34,7 +34,7 @@ If you're not using Symfony Flex, you'll need to manually enable the bundle in y
 ```php
 return [
     // ...
-    MaxShamaev\HealthCheckBundle\HealthCheckBundle::class => ['all' => true],
+    Msstc4Symfony\HealthCheckBundle\HealthCheckBundle::class => ['all' => true],
 ];
 ```
 
@@ -182,10 +182,10 @@ To create a custom health checker, implement the `CheckInterface`:
 
 namespace App\HealthCheck;
 
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\CheckInterface;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\Context;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CheckInterface;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\Context;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
 
 class CustomServiceChecker implements CheckInterface
 {

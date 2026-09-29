@@ -257,7 +257,7 @@ jobs:
           files: ./coverage.xml
           flags: phpunit
           fail_ci_if_error: true
-          slug: max-shamaev-php/healthcheck-bundle
+          slug: msstc4symfony/healthcheck-bundle
           token: ${{ secrets.CODECOV_TOKEN }}
 
       - if: ${{ matrix.symfony.codecov && !cancelled() }}
@@ -266,7 +266,7 @@ jobs:
           report_type: test_results
           flags: phpunit
           fail_ci_if_error: true
-          slug: max-shamaev-php/healthcheck-bundle
+          slug: msstc4symfony/healthcheck-bundle
           token: ${{ secrets.CODECOV_TOKEN }}
 
   bc-check:

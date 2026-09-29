@@ -24,7 +24,7 @@ deptrac:
         - name: BundleRoot
           collectors:
               - type: classLike
-                value: MaxShamaev\\HealthCheckBundle\\HealthCheckBundle
+                value: Msstc4Symfony\\HealthCheckBundle\\HealthCheckBundle
 
     ruleset:
         # Domain core must never reach back into Presentation or wiring layers.

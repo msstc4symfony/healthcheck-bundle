@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace MaxShamaev\HealthCheckBundle\Presentation\Controller;
+namespace Msstc4Symfony\HealthCheckBundle\Presentation\Controller;
 
-use MaxShamaev\HealthCheckBundle\Application\Health\Check;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\ActionInterface;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\ActionInterface;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;

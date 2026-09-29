@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace MaxShamaev\HealthCheckBundle\Test\Unit\DependencyInjection\Detector;
+namespace Msstc4Symfony\HealthCheckBundle\Test\Unit\DependencyInjection\Detector;
 
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\MailerChecker;
-use MaxShamaev\HealthCheckBundle\DependencyInjection\Detector\MailerDetector;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\MailerChecker;
+use Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector\MailerDetector;
 use PHPUnit\Framework\TestCase;
 use stdClass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;

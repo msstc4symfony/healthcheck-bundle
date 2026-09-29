@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace MaxShamaev\HealthCheckBundle\Test\Unit\Application\Health\Check\Event;
+namespace Msstc4Symfony\HealthCheckBundle\Test\Unit\Application\Health\Check\Event;
 
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Event\SafeEventDispatcher;
-use MaxShamaev\HealthCheckBundle\Test\Mock\Application\Health\Check\Event\RecordingDispatcherFixture;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Event\SafeEventDispatcher;
+use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Event\RecordingDispatcherFixture;
 use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use RuntimeException;

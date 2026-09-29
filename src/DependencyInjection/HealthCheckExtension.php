@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace MaxShamaev\HealthCheckBundle\DependencyInjection;
+namespace Msstc4Symfony\HealthCheckBundle\DependencyInjection;
 
 use Exception;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Action;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\ActionInterface;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\CachedActionDecorator;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\ParallelAction;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Action;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\ActionInterface;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\CachedActionDecorator;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\ParallelAction;
 use Override;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -19,19 +19,19 @@ use Symfony\Component\DependencyInjection\Reference;
 
 final class HealthCheckExtension extends Extension
 {
-    public const string ALIAS = 'maxshamaev_healthcheck';
+    public const string ALIAS = 'msstc4symfony_healthcheck';
 
-    public const string PARAM_HTTP_CLIENT_TARGETS = 'maxshamaev_healthcheck.http_client_targets';
+    public const string PARAM_HTTP_CLIENT_TARGETS = 'msstc4symfony_healthcheck.http_client_targets';
 
-    public const string PARAM_DEFAULT_TIMEOUT_MS = 'maxshamaev_healthcheck.default_timeout_ms';
+    public const string PARAM_DEFAULT_TIMEOUT_MS = 'msstc4symfony_healthcheck.default_timeout_ms';
 
-    public const string PARAM_TIMEOUT_OVERRIDES = 'maxshamaev_healthcheck.timeout_overrides';
+    public const string PARAM_TIMEOUT_OVERRIDES = 'msstc4symfony_healthcheck.timeout_overrides';
 
-    public const string PARAM_NON_CRITICAL_CHECKERS = 'maxshamaev_healthcheck.non_critical_checkers';
+    public const string PARAM_NON_CRITICAL_CHECKERS = 'msstc4symfony_healthcheck.non_critical_checkers';
 
-    public const string SERVICE_CACHED_ACTION = 'maxshamaev_healthcheck.action.cached';
+    public const string SERVICE_CACHED_ACTION = 'msstc4symfony_healthcheck.action.cached';
 
-    public const string SERVICE_PARALLEL_ACTION = 'maxshamaev_healthcheck.action.parallel';
+    public const string SERVICE_PARALLEL_ACTION = 'msstc4symfony_healthcheck.action.parallel';
 
     #[Override]
     public function getAlias(): string

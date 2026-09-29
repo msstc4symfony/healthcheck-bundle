@@ -138,6 +138,21 @@ derived from git tags). We dropped the field from both `composer.json`
 and `composer-ci.json`. Don't add it back when copy-pasting from older
 references.
 
+## DI extension alias renamed `maxshamaev_healthcheck` → `msstc4symfony_healthcheck`
+
+The Symfony DI extension alias (`HealthCheckExtension::ALIAS`), all
+`PARAM_*`/`SERVICE_*` container id constants, the `TreeBuilder` root
+name in `Configuration.php`, and the `CachedActionDecorator` cache-key
+prefix were renamed from `maxshamaev_healthcheck` to
+`msstc4symfony_healthcheck` to match the `Msstc4Symfony\*` namespace
+(the alias is snake_case, so it survived the earlier namespace/vendor
+rename untouched).
+
+**Breaking for consumers**: any `config/packages/maxshamaev_healthcheck.yaml`
+or `maxshamaev_healthcheck:` config key stops being recognized — must be
+renamed to `msstc4symfony_healthcheck`. Cached results under the old
+cache-key prefix are simply orphaned (new prefix, no migration needed).
+
 ## Deferred / on-demand work
 
 Tracked here so it doesn't get forgotten.

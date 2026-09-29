@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace MaxShamaev\HealthCheckBundle\Test\Unit\Application\Health\Check;
+namespace Msstc4Symfony\HealthCheckBundle\Test\Unit\Application\Health\Check;
 
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\ActionInterface;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\CachedActionDecorator;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\Request;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\DTO\Response;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\ActionInterface;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\CachedActionDecorator;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\Request;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\Response;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
 use PHPUnit\Framework\TestCase;
 use stdClass;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
@@ -92,7 +92,7 @@ final class CachedActionDecoratorTest extends TestCase
         $cache = new ArrayAdapter();
 
         // Seed the same cache key with a foreign value (simulates another consumer of the pool).
-        $polluted = $cache->getItem('maxshamaev_healthcheck.readiness.' . hash('sha256', json_encode([], JSON_THROW_ON_ERROR)));
+        $polluted = $cache->getItem('msstc4symfony_healthcheck.readiness.' . hash('sha256', json_encode([], JSON_THROW_ON_ERROR)));
         $polluted->set(new stdClass());
 
         $cache->save($polluted);

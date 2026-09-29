@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace MaxShamaev\HealthCheckBundle;
+namespace Msstc4Symfony\HealthCheckBundle;
 
-use MaxShamaev\HealthCheckBundle\DependencyInjection\HealthCheckerAutoDetectionPass;
-use MaxShamaev\HealthCheckBundle\DependencyInjection\HealthCheckerCriticalityDecorationPass;
-use MaxShamaev\HealthCheckBundle\DependencyInjection\HealthCheckerTimeoutDecorationPass;
-use MaxShamaev\HealthCheckBundle\DependencyInjection\HealthCheckExtension;
+use Msstc4Symfony\HealthCheckBundle\DependencyInjection\HealthCheckerAutoDetectionPass;
+use Msstc4Symfony\HealthCheckBundle\DependencyInjection\HealthCheckerCriticalityDecorationPass;
+use Msstc4Symfony\HealthCheckBundle\DependencyInjection\HealthCheckerTimeoutDecorationPass;
+use Msstc4Symfony\HealthCheckBundle\DependencyInjection\HealthCheckExtension;
 use Override;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\ExtensionInterface;

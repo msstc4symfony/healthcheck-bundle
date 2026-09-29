@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MaxShamaev\HealthCheckBundle\DependencyInjection\Detector;
+namespace Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector;
 
 use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 use Symfony\Component\DependencyInjection\ContainerBuilder;

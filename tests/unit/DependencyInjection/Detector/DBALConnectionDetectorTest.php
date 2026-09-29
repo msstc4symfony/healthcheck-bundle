@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace MaxShamaev\HealthCheckBundle\Test\Unit\DependencyInjection\Detector;
+namespace Msstc4Symfony\HealthCheckBundle\Test\Unit\DependencyInjection\Detector;
 
 use Doctrine\DBAL\Connection;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\DBALConnectionChecker;
-use MaxShamaev\HealthCheckBundle\DependencyInjection\Detector\DBALConnectionDetector;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\DBALConnectionChecker;
+use Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector\DBALConnectionDetector;
 use PHPUnit\Framework\TestCase;
 use stdClass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;

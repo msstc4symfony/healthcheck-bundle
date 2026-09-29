@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace MaxShamaev\HealthCheckBundle\DependencyInjection\Detector;
+namespace Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector;
 
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\MemcacheChecker;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\MemcachedChecker;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\PredisChecker;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\RedisChecker;
 use Memcache;
 use Memcached;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\MemcacheChecker;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\MemcachedChecker;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\PredisChecker;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\RedisChecker;
 use Predis\Client;
 use Redis;
 use Symfony\Component\DependencyInjection\ContainerBuilder;

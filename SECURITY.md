@@ -26,7 +26,7 @@ security problems.
 Use one of the following private channels:
 
 1. **GitHub Security Advisory** (preferred):
-   <https://github.com/max-shamaev-php/healthcheck-bundle/security/advisories/new>
+   <https://github.com/msstc4symfony/healthcheck-bundle/security/advisories/new>
 2. **Email**: `maxim.shamaev@gmail.com`
 
 Include, where possible:

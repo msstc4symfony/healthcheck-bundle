@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace MaxShamaev\HealthCheckBundle\Test\Unit\DependencyInjection\Detector;
+namespace Msstc4Symfony\HealthCheckBundle\Test\Unit\DependencyInjection\Detector;
 
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Checker\CacheChecker;
-use MaxShamaev\HealthCheckBundle\DependencyInjection\Detector\CachePoolDetector;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CacheChecker;
+use Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector\CachePoolDetector;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 use Symfony\Component\Cache\Adapter\RedisAdapter;

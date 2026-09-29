@@ -3,7 +3,7 @@ services:
     autowire: true
     autoconfigure: true
 
-  MaxShamaev\HealthCheckBundle\:
+  Msstc4Symfony\HealthCheckBundle\:
     resource: '../../../src/'
     exclude:
       - 'DependencyInjection/'
@@ -11,7 +11,7 @@ services:
 
   # Detectors are picked up via #[AutoconfigureTag('healthcheck.detector')] on the interface.
   # Listing the namespace explicitly because the parent block excludes DependencyInjection/.
-  MaxShamaev\HealthCheckBundle\DependencyInjection\Detector\:
+  Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector\:
     resource: '../../../src/DependencyInjection/Detector/'
     exclude:
       - '../../../src/DependencyInjection/Detector/CheckerDetectorInterface.php'

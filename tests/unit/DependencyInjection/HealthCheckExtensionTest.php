@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace MaxShamaev\HealthCheckBundle\Test\Unit\DependencyInjection;
+namespace Msstc4Symfony\HealthCheckBundle\Test\Unit\DependencyInjection;
 
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\Action;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\ActionInterface;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\CachedActionDecorator;
-use MaxShamaev\HealthCheckBundle\Application\Health\Check\ParallelAction;
-use MaxShamaev\HealthCheckBundle\DependencyInjection\HealthCheckExtension;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Action;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\ActionInterface;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\CachedActionDecorator;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\ParallelAction;
+use Msstc4Symfony\HealthCheckBundle\DependencyInjection\HealthCheckExtension;
 use PHPUnit\Framework\TestCase;
 use stdClass;
 use Symfony\Component\DependencyInjection\Alias;

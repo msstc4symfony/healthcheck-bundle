@@ -1,6 +1,6 @@
 ---
 name: new-checker
-description: Scaffold a new health checker in the MaxShamaev HealthCheckBundle — checker class, unit test, and (when needed) an auto-detection scan in `HealthCheckExtension::process()`. Trigger when the user asks to add support for a new infrastructure service (Pulsar, Kafka, ClickHouse, etc.), wants a custom application-level check, or types `/new-checker`. The slash-command argument, if any, is the base name (e.g. `/new-checker Pulsar`).
+description: Scaffold a new health checker in the Msstc4Symfony HealthCheckBundle — checker class, unit test, and (when needed) an auto-detection scan in `HealthCheckExtension::process()`. Trigger when the user asks to add support for a new infrastructure service (Pulsar, Kafka, ClickHouse, etc.), wants a custom application-level check, or types `/new-checker`. The slash-command argument, if any, is the base name (e.g. `/new-checker Pulsar`).
 ---
 
 The user wants a new checker scaffolded. The argument that followed `/new-checker` (if any) is the base name — e.g. `Pulsar` → `PulsarChecker`.

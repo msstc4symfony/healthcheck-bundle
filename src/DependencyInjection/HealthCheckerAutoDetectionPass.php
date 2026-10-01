@@ -55,17 +55,9 @@ final class HealthCheckerAutoDetectionPass implements CompilerPassInterface
      */
     private function targetsAbstractService(ContainerBuilder $container, Definition $checker): bool
     {
-        foreach ($checker->getArguments() as $argument) {
-            if (
-                $argument instanceof Reference
-                && $container->hasDefinition((string) $argument)
-                && $container->getDefinition((string) $argument)->isAbstract()
-            ) {
-                return true;
-            }
-        }
-
-        return false;
+        return array_any($checker->getArguments(), fn ($argument): bool => $argument instanceof Reference
+        && $container->hasDefinition((string) $argument)
+        && $container->getDefinition((string) $argument)->isAbstract());
     }
 
     private function register(ContainerBuilder $container, string $id, Definition $definition): void

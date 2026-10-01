@@ -399,6 +399,18 @@ final class HealthCheckerAutoDetectionPassTest extends TestCase
         self::assertSame('lock.default.store', $checker->getArgument(1));
     }
 
+    public function testProcessSkipsAbstractServiceTemplates(): void
+    {
+        $container = new ContainerBuilder();
+        $container->setDefinition('lock.store.combined.abstract', new Definition(InMemoryStore::class)->setAbstract(true));
+        $container->setDefinition('lock.default.store', new Definition(InMemoryStore::class));
+
+        $this->runPass($container);
+
+        self::assertFalse($container->hasDefinition('healthcheck.checker.lock.store.combined.abstract'));
+        self::assertTrue($container->hasDefinition('healthcheck.checker.lock.default.store'));
+    }
+
     public function testProcessRegistersHttpClientTargetsFromConfig(): void
     {
         $container = new ContainerBuilder();

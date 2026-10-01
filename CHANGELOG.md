@@ -1,5 +1,41 @@
 # Changelog
 
+## 1.1.3
+
+### Security
+
+- Failure messages no longer expose credentials: user info in URLs (`redis://user:pass@host` →
+  `redis://***@host`) and secret query parameters (`password`, `token`, `api_key`, …) are masked
+  in readiness output — client factories such as Lock's `StoreFactory` quote the full DSN.
+
+### Changed
+
+- A readiness checker whose client cannot be constructed now reports under the checker's own
+  label (`Lock store (.lock.default.store.<hash>) failed (…)`) instead of its service id
+  (`healthcheck.checker..lock.default.store.<hash> failed (…)`).
+
+### Known limitations
+
+- `HealthCheckerCompletedEvent::$checkerClass` names the outermost decorator, not the real
+  checker class (see 1.1.2); exposing the real class is planned.
+
+## 1.1.2
+
+### Fixed
+
+- Liveliness no longer fails when a readiness dependency cannot be constructed (e.g.
+  `SemaphoreStore` without ext-sysvsem threw while the checkers were instantiated, returning
+  HTTP 500 on `/_/healthcheck/liveliness`). Readiness-only checkers are now built inside the
+  readiness probe, and a construction failure becomes that check's failure.
+- Lock store detection probes only the stores of configured `framework.lock` resources and the
+  application's own stores, no longer FrameworkBundle 8.1's predefined `.lock.flock.store` /
+  `.lock.semaphore.store`.
+
+### Changed
+
+- `HealthCheckerCompletedEvent::$checkerClass` is `DeferredReadinessCheckerDecorator` for
+  readiness-only checkers (was `TimeoutCheckerDecorator`).
+
 ## 1.1.1
 
 ### Fixed

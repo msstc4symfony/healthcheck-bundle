@@ -61,7 +61,10 @@ fail a probe.
    `ElasticaConnectionChecker`; looks through the timeout decorator) in
    `DeferredReadinessCheckerDecorator`, which gets the rest of the chain as a
    `ServiceClosureArgument` and builds it only inside a readiness probe. A
-   target whose constructor throws becomes `<checker id> failed (<message>)`
+   target whose constructor throws becomes `<label> failed (<message>)`; the
+   label is the checker's own `label()`, read at compile time from a PHP 8.4
+   lazy ghost holding only the scalar constructor args (fallback
+   `<CheckerClass> (<service>)`). Messages go through `CredentialRedactor`
    on readiness and is never built for liveliness.
 4. **`HealthCheckerCriticalityDecorationPass`** — wraps in
    `NonCriticalCheckerDecorator` for checkers listed in

@@ -57,7 +57,7 @@ final class ReadinessDependencyIsolationTest extends TestCase
         $content = (string) $response->getContent();
         self::assertSame(Response::HTTP_NOT_ACCEPTABLE, $response->getStatusCode(), $content);
         self::assertStringContainsString(
-            sprintf('%s failed (%s)', DependentReadinessCheckerFixture::class, UnconstructibleDependencyFixture::FAILURE),
+            sprintf('Dependent failed (%s)', UnconstructibleDependencyFixture::FAILURE),
             $content,
         );
     }

@@ -56,9 +56,11 @@ The bundle automatically detects and registers health checkers for the following
 - **Kafka** — `RdKafka\Producer` / `RdKafka\KafkaConsumer`
 - **Symfony Messenger** — transports implementing `MessageCountAwareInterface`
 - **Symfony Mailer** — SMTP transports (`SmtpTransport` subclasses)
-- **Symfony Lock** — `PersistingStoreInterface` implementations
+- **Symfony Lock** — the stores behind configured `framework.lock` resources (tagged `lock.store`) and `PersistingStoreInterface` services registered by the application. Stores with hidden (dot-prefixed) ids that no `framework.lock` resource uses — e.g. FrameworkBundle 8.1's predefined `.lock.flock.store` / `.lock.semaphore.store` — are not probed
 - **Flysystem** — `flysystem.storage`-tagged services
 - **HTTP probes** — arbitrary configured URLs via `http_client` bundle config
+
+Readiness-only checkers are built inside the readiness probe: a client whose constructor throws (missing extension, invalid DSN) fails only its own check, e.g. `Lock store (…) failed (…)`, and never affects liveliness. Credentials in URLs (`scheme://user:pass@host`) and secret query parameters are masked in failure messages.
 
 All detections happen automatically when the relevant package is installed and a service is registered. Third-party packages can contribute their own detectors by implementing `CheckerDetectorInterface` and registering the service — the bundle picks them up via the `healthcheck.detector` tag.
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker;
 
 use Closure;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\CredentialRedactor;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\Context;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
@@ -26,11 +27,11 @@ final readonly class DeferredReadinessCheckerDecorator implements CheckInterface
 {
     /**
      * @param Closure(): CheckInterface $factory
-     * @param non-empty-string $name checker service id, reported when construction fails
+     * @param non-empty-string $label the checker's own label, reported when construction fails
      */
     public function __construct(
         private Closure $factory,
-        private string $name,
+        private string $label,
     ) {
     }
 
@@ -46,7 +47,7 @@ final readonly class DeferredReadinessCheckerDecorator implements CheckInterface
         try {
             $inner = ($this->factory)();
         } catch (Throwable $e) {
-            $result->addError(sprintf('%s failed (%s)', $this->name, $e->getMessage()));
+            $result->addError(sprintf('%s failed (%s)', $this->label, CredentialRedactor::redact($e->getMessage())));
 
             return $result;
         }

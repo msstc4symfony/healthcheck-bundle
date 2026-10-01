@@ -44,6 +44,17 @@ final class AbstractReadinessCheckerTest extends TestCase
         self::assertSame(['Probe (test) failed (database is gone)'], $result->errors);
     }
 
+    public function testCheckRedactsCredentialsInFailureMessage(): void
+    {
+        $checker = $this->makeChecker(static function (): never {
+            throw new RuntimeException('Connection to "redis://admin:s3cret@redis:6379/0" refused');
+        });
+
+        $result = $checker->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+
+        self::assertSame(['Probe (test) failed (Connection to "redis://***@redis:6379/0" refused)'], $result->errors);
+    }
+
     private function makeChecker(Closure $probe): AbstractReadinessChecker
     {
         return new readonly class($probe) extends AbstractReadinessChecker {

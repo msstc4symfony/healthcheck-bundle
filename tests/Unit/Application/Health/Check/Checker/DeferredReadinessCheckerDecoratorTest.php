@@ -22,7 +22,7 @@ final class DeferredReadinessCheckerDecoratorTest extends TestCase
             $built = true;
 
             return new SuccessChecker();
-        }, 'healthcheck.checker.store');
+        }, 'Store (main)');
 
         self::assertTrue($decorator->isSupport(new Context(CheckTypeEnum::READINESS)));
         self::assertFalse($decorator->isSupport(new Context(CheckTypeEnum::LIVELINESS)));
@@ -31,7 +31,7 @@ final class DeferredReadinessCheckerDecoratorTest extends TestCase
 
     public function testDelegatesToTheBuiltChecker(): void
     {
-        $decorator = new DeferredReadinessCheckerDecorator(static fn (): CheckInterface => new SuccessChecker(), 'healthcheck.checker.store');
+        $decorator = new DeferredReadinessCheckerDecorator(static fn (): CheckInterface => new SuccessChecker(), 'Store (main)');
 
         $result = $decorator->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
@@ -41,11 +41,20 @@ final class DeferredReadinessCheckerDecoratorTest extends TestCase
 
     public function testReportsConstructionFailureAsThisCheckFailing(): void
     {
-        $decorator = new DeferredReadinessCheckerDecorator(static fn (): CheckInterface => throw new RuntimeException('Semaphore extension (sysvsem) is required.'), 'healthcheck.checker..lock.semaphore.store');
+        $decorator = new DeferredReadinessCheckerDecorator(static fn (): CheckInterface => throw new RuntimeException('Semaphore extension (sysvsem) is required.'), 'Lock store (.lock.semaphore.store)');
 
         $result = $decorator->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
-        self::assertSame(['healthcheck.checker..lock.semaphore.store failed (Semaphore extension (sysvsem) is required.)'], $result->errors);
+        self::assertSame(['Lock store (.lock.semaphore.store) failed (Semaphore extension (sysvsem) is required.)'], $result->errors);
         self::assertSame([], $result->messages);
+    }
+
+    public function testRedactsCredentialsInConstructionFailure(): void
+    {
+        $decorator = new DeferredReadinessCheckerDecorator(static fn (): CheckInterface => throw new RuntimeException('Invalid DSN "redis://admin:s3cret@redis:6379/0"'), 'Lock store (.lock.default.store.abc)');
+
+        $result = $decorator->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+
+        self::assertSame(['Lock store (.lock.default.store.abc) failed (Invalid DSN "redis://***@redis:6379/0")'], $result->errors);
     }
 }

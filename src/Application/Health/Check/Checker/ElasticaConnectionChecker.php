@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker;
 
 use Elastica\Client;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\CredentialRedactor;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\Context;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
@@ -49,7 +50,7 @@ final readonly class ElasticaConnectionChecker implements CheckInterface
                 $status,
             ));
         } catch (Throwable $e) {
-            $result->addError(sprintf('Elastica connection (%s) failed. Reason: %s', $this->name, $e->getMessage()));
+            $result->addError(sprintf('Elastica connection (%s) failed. Reason: %s', $this->name, CredentialRedactor::redact($e->getMessage())));
         }
 
         return $result;

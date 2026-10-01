@@ -4,17 +4,21 @@ declare(strict_types=1);
 
 namespace Msstc4Symfony\HealthCheckBundle\DependencyInjection;
 
+use LogicException;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\AbstractReadinessChecker;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CheckInterface;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\DeferredReadinessCheckerDecorator;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\ElasticaConnectionChecker;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\TimeoutCheckerDecorator;
 use Override;
+use ReflectionClass;
+use ReflectionMethod;
 use Symfony\Component\DependencyInjection\Argument\ServiceClosureArgument;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
+use Throwable;
 
 /**
  * Wraps every readiness-only checker in DeferredReadinessCheckerDecorator so that constructing
@@ -36,6 +40,8 @@ final readonly class HealthCheckerDeferredConstructionPass implements CompilerPa
         ElasticaConnectionChecker::class,
     ];
 
+    private const string DETECTED_CHECKER_ID_PREFIX = 'healthcheck.checker.';
+
     #[Override]
     public function process(ContainerBuilder $container): void
     {
@@ -45,7 +51,8 @@ final readonly class HealthCheckerDeferredConstructionPass implements CompilerPa
             }
 
             $definition = $container->getDefinition($id);
-            if (!$this->isReadinessOnly($container, $definition)) {
+            $checker = $this->unwrapTimeout($container, $definition);
+            if (!$this->isReadinessOnly($container, $checker)) {
                 continue;
             }
 
@@ -56,15 +63,13 @@ final readonly class HealthCheckerDeferredConstructionPass implements CompilerPa
 
             $container->setDefinition($id, new Definition(DeferredReadinessCheckerDecorator::class)
                 ->addArgument(new ServiceClosureArgument(new Reference($innerId)))
-                ->addArgument($id)
+                ->addArgument($this->label($container, $checker, $id))
                 ->addTag(CheckInterface::class));
         }
     }
 
-    private function isReadinessOnly(ContainerBuilder $container, Definition $definition): bool
+    private function isReadinessOnly(ContainerBuilder $container, Definition $checker): bool
     {
-        $checker = $this->unwrapTimeout($container, $definition);
-
         return array_any(
             self::READINESS_ONLY_TYPES,
             static fn (string $type): bool => ServiceClass::is($container, $checker, $type),
@@ -82,5 +87,63 @@ final readonly class HealthCheckerDeferredConstructionPass implements CompilerPa
         return $inner instanceof Reference && $container->has((string) $inner)
             ? $container->findDefinition((string) $inner)
             : $definition;
+    }
+
+    /**
+     * The checker's own label() (e.g. "Lock store (x)"), read from a lazy ghost that holds only the
+     * scalar constructor arguments: a label never needs the target, and the target is exactly what
+     * may fail to construct. Labels that do need more fall back to "<checker class> (<service>)".
+     *
+     * @param non-empty-string $id
+     *
+     * @return non-empty-string
+     */
+    private function label(ContainerBuilder $container, Definition $checker, string $id): string
+    {
+        $fallback = sprintf('%s (%s)', basename(str_replace('\\', '/', (string) $checker->getClass())), $this->stripCheckerPrefix($id));
+
+        try {
+            $label = $this->labelFromGhost($container, $checker);
+        } catch (Throwable) {
+            return $fallback;
+        }
+
+        return $label !== '' ? $label : $fallback;
+    }
+
+    private function labelFromGhost(ContainerBuilder $container, Definition $checker): string
+    {
+        $class = $container->getParameterBag()->resolveValue($checker->getClass());
+        $reflection = is_string($class) ? $container->getReflectionClass($class, false) : null;
+        if (!$reflection instanceof ReflectionClass || !$reflection->hasMethod('label') || !$reflection->getConstructor() instanceof ReflectionMethod) {
+            return '';
+        }
+
+        $ghost = $reflection->newLazyGhost(static function (): never {
+            throw new LogicException('label() needs more than scalar constructor arguments');
+        });
+
+        $arguments = $checker->getArguments();
+        foreach ($reflection->getConstructor()->getParameters() as $position => $parameter) {
+            $value = $arguments[$position] ?? $arguments['$' . $parameter->getName()] ?? null;
+            if (!$parameter->isPromoted() || !is_scalar($value)) {
+                continue;
+            }
+
+            $reflection->getProperty($parameter->getName())
+                ->setRawValueWithoutLazyInitialization($ghost, $container->getParameterBag()->resolveValue($value))
+            ;
+        }
+
+        $label = $reflection->getMethod('label')->invoke($ghost);
+
+        return is_string($label) ? $label : '';
+    }
+
+    private function stripCheckerPrefix(string $id): string
+    {
+        return str_starts_with($id, self::DETECTED_CHECKER_ID_PREFIX)
+            ? substr($id, strlen(self::DETECTED_CHECKER_ID_PREFIX))
+            : $id;
     }
 }

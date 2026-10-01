@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker;
 
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\CredentialRedactor;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\Context;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
@@ -32,7 +33,7 @@ abstract readonly class AbstractReadinessChecker implements CheckInterface
             $this->doCheck();
             $result->addMessage(sprintf('%s passed', $this->label()));
         } catch (Throwable $e) {
-            $result->addError(sprintf('%s failed (%s)', $this->label(), $e->getMessage()));
+            $result->addError(sprintf('%s failed (%s)', $this->label(), CredentialRedactor::redact($e->getMessage())));
         }
 
         return $result;

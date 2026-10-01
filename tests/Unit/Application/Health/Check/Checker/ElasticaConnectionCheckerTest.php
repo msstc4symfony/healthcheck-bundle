@@ -86,4 +86,14 @@ final class ElasticaConnectionCheckerTest extends TestCase
         self::assertStringContainsString('main', $result->errors[0]);
         self::assertStringContainsString('boom', $result->errors[0]);
     }
+
+    public function testCheckRedactsCredentialsInFailureReason(): void
+    {
+        $client = self::createStub(Client::class);
+        $client->method('getConfig')->willThrowException(new RuntimeException('Unreachable "https://elastic:s3cret@es:9200"'));
+
+        $result = new ElasticaConnectionChecker($client, 'main')->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+
+        self::assertSame(['Elastica connection (main) failed. Reason: Unreachable "https://***@es:9200"'], $result->errors);
+    }
 }

@@ -204,7 +204,7 @@ readiness-зависимости роняло весь прогон, включ�
 Исправление: `HealthCheckerDeferredConstructionPass` оборачивает readiness-only чекеры в
 `DeferredReadinessCheckerDecorator` (цепочка передаётся как `ServiceClosureArgument`). Для
 liveliness клиент вообще не создаётся; на readiness ошибка конструктора становится
-`<id чекера> failed (<сообщение>)`. Публичные конструкторы чекеров не менялись (BC).
+`<label> failed (<сообщение>)` (с v1.1.3 — собственный label чекера; в v1.1.2 был id сервиса). Публичные конструкторы чекеров не менялись (BC).
 Побочный эффект: `HealthCheckerCompletedEvent::$checkerClass` для readiness-only чекеров теперь
 `DeferredReadinessCheckerDecorator` (раньше `TimeoutCheckerDecorator`). Чекер, который
 поддерживает liveliness (прямой `CheckInterface` без шаблона), по-прежнему конструируется
@@ -230,3 +230,28 @@ FrameworkBundle 8.1 (`Resources/config/lock.php`) всегда регистри�
 тегом `lock.store`; хранилища, зарегистрированные приложением под обычным id, проверяются
 как раньше. Если приложение передаёт свой сервис в `framework.lock` по id, он проверяется
 дважды (свой id + `.lock.<resource>.store.<hash>`) — было и до исправления.
+
+## Ревью v1.1.2 → v1.1.3 (2026-10-02 UTC)
+
+- **Пароли в выводе проб.** `StoreFactory` и другие фабрики кладут полный DSN в текст исключения,
+  а `AbstractReadinessChecker`/`DeferredReadinessCheckerDecorator`/`ElasticaConnectionChecker`
+  отдавали его как есть. Теперь всё идёт через `Application\Health\Check\CredentialRedactor`
+  (user info в URL и секретные query-параметры). `ParallelAction` (`parallel: X failed (...)` при
+  исключении из `check()`) пока не редактирует — встроенные чекеры туда не бросают.
+- **Label при ошибке конструирования** вычисляется в `HealthCheckerDeferredConstructionPass` через
+  `ReflectionClass::newLazyGhost()`: в «призрак» кладутся только скалярные promoted-аргументы
+  конструктора (с разрешёнными `%параметрами%`), затем вызывается `label()`. Если `label()` трогает
+  что-то ещё — инициализатор бросает, берётся fallback `<КороткийКлассЧекера> (<сервис>)`.
+- **`ElasticaConnectionChecker` оставлен вне шаблона** (CR-007): его вывод содержит статус кластера
+  в «passed»-сообщении, а readonly-шаблон с `doCheck(): void` не может передать деталь пробы без
+  смены сигнатуры абстрактного метода (BC-слом для сторонних наследников). Поэтому в pass остаётся
+  список readiness-only типов `[AbstractReadinessChecker, ElasticaConnectionChecker]`.
+- **Известно, отложено (этап B, CR-008):** `HealthCheckerCompletedEvent::$checkerClass` — класс
+  внешнего декоратора, а не реального чекера.
+- Пользовательский чекер, объявленный как `ChildDefinition` (без класса до `ResolveChildDefinitionsPass`), не распознаётся как readiness-only и создаётся сразу (eager).
+- В текстовом выводе HTTP-проб `warnings` не печатаются (только Errors/Messages) — предупреждения
+  non-critical чекеров видны только в JSON и логах. Тест non-critical читает `Response` через
+  `test.service_container`.
+- RED для `LockStoreSelectionTest` воспроизводится только на FrameworkBundle ≥ 8.1 (CI-lock сейчас
+  8.0.x — там предопределённых хранилищ нет): копия в `$TMPDIR` с минимальным профилем +
+  `composer require --dev symfony/lock:^8.1`.

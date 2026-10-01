@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector;
 
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\OpenSearchChecker;
+use Msstc4Symfony\HealthCheckBundle\DependencyInjection\ServiceClass;
 use OpenSearch\Client;
 use Override;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -20,8 +21,7 @@ final readonly class OpenSearchDetector implements CheckerDetectorInterface
     public function detect(ContainerBuilder $container): iterable
     {
         foreach ($container->getDefinitions() as $id => $definition) {
-            $class = $definition->getClass();
-            if ($class === null || ($class !== Client::class && !is_subclass_of($class, Client::class))) {
+            if (!ServiceClass::is($container, $definition, Client::class)) {
                 continue;
             }
 

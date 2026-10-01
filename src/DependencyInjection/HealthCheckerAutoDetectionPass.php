@@ -43,12 +43,14 @@ final class HealthCheckerAutoDetectionPass implements CompilerPassInterface
 
     private function instantiate(ContainerBuilder $container, string $serviceId): CheckerDetectorInterface
     {
-        $class = $container->getDefinition($serviceId)->getClass();
-        if ($class === null || !is_subclass_of($class, CheckerDetectorInterface::class)) {
+        $definition = $container->getDefinition($serviceId);
+        $class = $definition->getClass();
+        $detector = $class !== null && ServiceClass::is($container, $definition, CheckerDetectorInterface::class) ? new $class() : null;
+        if (!$detector instanceof CheckerDetectorInterface) {
             throw new RuntimeException(sprintf('Service "%s" is tagged "%s" but its class is missing or does not implement %s', $serviceId, CheckerDetectorInterface::TAG, CheckerDetectorInterface::class));
         }
 
-        return new $class();
+        return $detector;
     }
 
     /**

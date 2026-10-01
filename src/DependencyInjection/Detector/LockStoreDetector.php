@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector;
 
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\LockStoreChecker;
+use Msstc4Symfony\HealthCheckBundle\DependencyInjection\ServiceClass;
 use Override;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -20,11 +21,7 @@ final readonly class LockStoreDetector implements CheckerDetectorInterface
     public function detect(ContainerBuilder $container): iterable
     {
         foreach ($container->getDefinitions() as $id => $definition) {
-            $class = $definition->getClass();
-            if ($class === null) {
-                continue;
-            }
-            if ($class !== PersistingStoreInterface::class && !is_subclass_of($class, PersistingStoreInterface::class)) {
+            if (!ServiceClass::is($container, $definition, PersistingStoreInterface::class)) {
                 continue;
             }
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector;
 
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\KafkaChecker;
+use Msstc4Symfony\HealthCheckBundle\DependencyInjection\ServiceClass;
 use Override;
 use RdKafka\KafkaConsumer;
 use RdKafka\Producer;
@@ -21,16 +22,7 @@ final readonly class KafkaDetector implements CheckerDetectorInterface
     public function detect(ContainerBuilder $container): iterable
     {
         foreach ($container->getDefinitions() as $id => $definition) {
-            $class = $definition->getClass();
-            if ($class === null) {
-                continue;
-            }
-
-            $matches = $class === Producer::class
-                || $class === KafkaConsumer::class
-                || is_subclass_of($class, Producer::class)
-                || is_subclass_of($class, KafkaConsumer::class);
-            if (!$matches) {
+            if (!ServiceClass::is($container, $definition, Producer::class) && !ServiceClass::is($container, $definition, KafkaConsumer::class)) {
                 continue;
             }
 

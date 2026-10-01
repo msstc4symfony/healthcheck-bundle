@@ -180,3 +180,14 @@ Tracked here so it doesn't get forgotten.
 - **`prefer-lowest` matrix variant.** Would catch missing lower bounds in
   composer constraints; not currently wired.
 - **PHP version matrix.** Currently single 8.4. Add 8.5+ when those land.
+
+## Детекторы роняли компиляцию на классах с неустановленным родителем (2026-10-01 UTC)
+
+Детекторы проверяли класс **каждого** сервиса приложения через `is_subclass_of()`, который
+автозагружает класс. В реальном приложении (skeleton Symfony 8.1 + security-bundle без
+symfony/validator) это `UserPasswordValidator` из security-core, чей родитель
+`ConstraintValidator` не установлен → `cache:clear` падал с `ClassNotFoundError`. В тестовом ядре
+таких сервисов нет — нашлось только установкой в чистый skeleton. Все проверки теперь через
+`DependencyInjection\ServiceClass::is()` (`ContainerBuilder::getReflectionClass($class, false)`):
+переживает отсутствующего родителя и разрешает `%param%`-классы. Если искомого типа нет
+(например, нет ext-rdkafka), совпадает только точное имя класса — как раньше.

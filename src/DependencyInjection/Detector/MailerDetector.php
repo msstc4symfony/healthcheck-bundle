@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector;
 
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\MailerChecker;
+use Msstc4Symfony\HealthCheckBundle\DependencyInjection\ServiceClass;
 use Override;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -29,8 +30,7 @@ final readonly class MailerDetector implements CheckerDetectorInterface
         //       class: Symfony\Component\Mailer\Transport\Smtp\SmtpTransport
         //       arguments: ['$ssl://user:pass@smtp.example.com']
         foreach ($container->getDefinitions() as $id => $definition) {
-            $class = $definition->getClass();
-            if ($class === null || ($class !== SmtpTransport::class && !is_subclass_of($class, SmtpTransport::class))) {
+            if (!ServiceClass::is($container, $definition, SmtpTransport::class)) {
                 continue;
             }
 

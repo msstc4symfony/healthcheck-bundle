@@ -32,7 +32,7 @@ final class HealthCommandFunctionalTest extends KernelTestCase
 
     public function testReadinessCommandRunsToCompletion(): void
     {
-        $tester = $this->runCommand('healthcheck:readiness');
+        $tester = $this->executeCommand('healthcheck:readiness');
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode());
         self::assertStringContainsString('Result: success', $tester->getDisplay());
@@ -40,7 +40,7 @@ final class HealthCommandFunctionalTest extends KernelTestCase
 
     public function testLivelinessCommandRunsToCompletion(): void
     {
-        $tester = $this->runCommand('healthcheck:liveliness');
+        $tester = $this->executeCommand('healthcheck:liveliness');
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode());
         self::assertStringContainsString('Result: success', $tester->getDisplay());
@@ -62,7 +62,7 @@ final class HealthCommandFunctionalTest extends KernelTestCase
         self::assertSame('healthcheck:liveliness', $command->getName());
     }
 
-    private function runCommand(string $name): CommandTester
+    private function executeCommand(string $name): CommandTester
     {
         $kernel = self::bootKernel();
         $application = new Application($kernel);

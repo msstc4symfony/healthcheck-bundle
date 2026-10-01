@@ -30,7 +30,8 @@
     "psr/log": "^3.0",
     "symfony/framework-bundle": "^6.4|^7.0|^8.0",
     "symfony/http-foundation": "^6.4|^7.0|^8.0",
-    "symfony/console": "^6.4|^7.0|^8.0"
+    "symfony/console": "^6.4|^7.0|^8.0",
+    "symfony/yaml": "^6.4|^7.0|^8.0"
   },
   "require-dev": {
     "doctrine/dbal": "^3.0|^4.0",
@@ -70,6 +71,9 @@
     "symfony/monolog-bundle": "To upload the verification results to the logs"
   },
   "config": {
+    "platform": {
+      "ext-mongodb": "2.5.2"
+    },
     "allow-plugins": {
       "composer/package-versions-deprecated": true,
       "infection/extension-installer": true,

@@ -3,47 +3,34 @@
 Items that have bitten us once and might bite again. Living list — append,
 don't churn.
 
-## phpunit matrix conflicts with dev-only tools
+## phpunit matrix — now owned by `bundle-standard`
 
-Two dev-deps pin `symfony/console` ranges that block matrix variants:
+The matrix job lives in the shared reusable workflow (`bundle-standard`
+`php-bundle.yml`). Two quirks first found here are handled there for every
+bundle:
 
-- `roave/backward-compatibility-check` 8.x requires `symfony/console ^7.4.4`
-  → blocks the Symfony 6.4 matrix entry.
-- `deptrac/deptrac` 4.x requires `symfony/console ^6.4 || ^7.4 || ^8.0`
-  → blocks any Symfony 7.0–7.3 minor.
+- `roave/backward-compatibility-check` and `deptrac/deptrac` pin narrow
+  `symfony/console` ranges; the matrix job removes both before resolving.
+- `browser-kit` / `dom-crawler` must match `http-kernel` (a 7+ parent with a
+  6.4 child fatals `WebTestCase` with a signature mismatch). Since v1.6.0 the
+  job pins every lockstep `symfony/*` package listed in `composer-ci.json`,
+  adds `dom-crawler` whenever `browser-kit` is listed, and fails a cell whose
+  resolved `http-kernel` major differs from its label.
 
-Neither is exercised under the phpunit job (they have dedicated CI jobs
-on the locked Symfony version). The phpunit matrix step removes both
-before `composer update`:
+Adding a new dev tool with a narrow Symfony range: fix it in
+`bundle-standard`, not here.
 
-```yaml
-- name: Drop tools incompatible with the matrix Symfony version
-  run: |
-    composer remove --dev --no-update --no-interaction \
-      roave/backward-compatibility-check \
-      deptrac/deptrac
-```
+## Symfony 8 — `KernelTestCase::runCommand()` is now a static method
 
-If you add a new dev-tool that pins a narrow Symfony range, either:
-(a) ensure it supports all matrix variants, or (b) add it to this
-removal list. Don't loosen the matrix to "the lowest common denominator
-that satisfies dev tools" — the matrix tests the bundle's runtime
-compatibility, not dev-tooling's.
+A private `runCommand()` helper in a `KernelTestCase` subclass fatals on
+Symfony 8 ("Cannot make static method ... non static"). The helper in
+`HealthCommandFunctionalTest` is `executeCommand()`.
 
-## phpunit matrix — `browser-kit` / `dom-crawler` must match `http-kernel`
+## `symfony/yaml` is a runtime dependency
 
-`Symfony\Component\HttpKernel\HttpKernelBrowser` extends
-`Symfony\Component\BrowserKit\AbstractBrowser`. In Symfony 7+ the parent
-gained a `: object` return type on `doRequest()`; the 6.4 child doesn't
-declare it. If composer resolves browser-kit / dom-crawler to a higher
-major than http-kernel (which happens by default — they have no
-constraint locking them to the matrix-pinned major), PHP rejects the
-class with a signature compatibility fatal during `WebTestCase`
-autoload, manifesting as PHPUnit's "Premature end of PHP process".
-
-The phpunit matrix step pins both packages alongside framework-bundle,
-http-foundation, console. If you add another tightly-coupled
-`symfony/*` pair, pin them too.
+`HealthCheckExtension` loads `services.yaml` through `YamlFileLoader`. Until
+v1.1.0 `symfony/yaml` was not declared and only arrived transitively; an
+app without it failed at container build. `bundle-standard` v1.5.0 enforces it.
 
 ## phpunit matrix — `framework.handle_all_throwables`
 
@@ -95,11 +82,10 @@ bootstrap.
 
 ## Local `ext-mongodb` vs `mongodb/mongodb`
 
-The local dev box may have an `ext-mongodb` version older than what
-`mongodb/mongodb`'s composer constraint allows. `composer update` fails
-on platform req. Workaround for local commands:
-`--ignore-platform-req=ext-mongodb`. CI installs the right ext version,
-no flag needed.
+`composer-ci.json` pins `config.platform.ext-mongodb` to the CI runner's
+extension (2.5.2), so `composer-ci.lock` resolves `mongodb/mongodb` 2.x and
+installs on a dev box with an older extension without flags. Tests touching
+the driver need a matching extension locally.
 
 ## `_format=json` does not switch probe response
 

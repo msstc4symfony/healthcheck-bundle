@@ -23,18 +23,12 @@ A Symfony bundle for comprehensive health checking of your application and its e
 
 ## Installation
 
-The package lives in a private GitHub repository, so register it as a VCS
-repository first. `no-api` makes Composer clone over SSH instead of calling the
-GitHub API, which would need a token for a private repository:
+The package is not on Packagist yet, so register its GitHub repository first:
 
 ```bash
-composer config repositories.msstc4symfony-healthcheck '{"type": "vcs", "url": "git@github.com:msstc4symfony/healthcheck-bundle.git", "no-api": true}'
+composer config repositories.msstc4symfony-healthcheck vcs https://github.com/msstc4symfony/healthcheck-bundle
 composer require msstc4symfony/healthcheck-bundle
 ```
-
-Without a GitHub token Composer cannot download dist archives of a private
-repository; either add one (`composer config github-oauth.github.com <token>`)
-or install from source (`composer require --prefer-source ...`).
 
 If you're not using Symfony Flex, you'll need to manually enable the bundle in your `config/bundles.php`:
 

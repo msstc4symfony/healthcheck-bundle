@@ -17,6 +17,3 @@ ignore:
   - "tests/**"
   - "vendor/**"
   - "doc/**"
-  - "src/HealthCheckBundle.php"
-  - "src/DependencyInjection/**"
-  - "src/Application/Health/Check/Checker/**"

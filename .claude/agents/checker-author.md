@@ -24,7 +24,7 @@ If the user names a target library by ecosystem (e.g. "Pulsar", "Kafka"), grep `
 
 - Checker class: `src/Application/Health/Check/Checker/<Name>Checker.php`
   Namespace: `Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker`.
-- Unit test: `tests/unit/Application/Health/Check/Checker/<Name>CheckerTest.php`
+- Unit test: `tests/Unit/Application/Health/Check/Checker/<Name>CheckerTest.php`
   Namespace: `Msstc4Symfony\HealthCheckBundle\Test\Unit\Application\Health\Check\Checker`.
 - Compiler-pass scan (auto-detected mode only): a new private `defined<Name>Checkers(ContainerBuilder $container): void` method in `src/DependencyInjection/HealthCheckExtension.php`, plus a call from `process()` next to its siblings.
 
@@ -44,7 +44,7 @@ Do **not** edit `src/Resources/config/services.yaml` — it intentionally exclud
 - `final class <Name>CheckerTest extends TestCase`.
 - `use PHPUnit\Framework\Attributes\DataProvider;` — attributes, not docblock annotations. PHPUnit 10.
 - Required coverage: `isSupport()` for both `CheckTypeEnum` values, success path (probe returns), failure path (probe throws), correct push to `messages` vs `errors`.
-- Reuse mocks from `tests/mock/` when one exists; inline `createMock(...)` for single-use stubs.
+- Reuse mocks from `tests/Mock/` when one exists; inline `createMock(...)` for single-use stubs.
 - Zero output: no `echo`, no `var_dump`, no `print_r` — `beStrictAboutOutputDuringTests` will fail the suite.
 - No risky tests, no unsuppressed deprecations — `failOnRisky` and `failOnPhpunitDeprecation` are on.
 

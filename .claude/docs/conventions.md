@@ -19,10 +19,8 @@ The bundle hard-requires PHP 8.4. Don't propose downgrades.
 ## File / namespace conventions
 
 - PSR-4 root: `Msstc4Symfony\HealthCheckBundle\` → `src/`.
-- Test PSR-4 roots:
-  - `Msstc4Symfony\HealthCheckBundle\Test\Unit\` → `tests/unit/`
-  - `Msstc4Symfony\HealthCheckBundle\Test\Integration\` → `tests/integration/`
-  - `Msstc4Symfony\HealthCheckBundle\Test\Mock\` → `tests/mock/`
+- Test PSR-4 root: `Msstc4Symfony\HealthCheckBundle\Test\` → `tests/` (`Unit/`,
+  `Integration/`, `Mock/`; layout shared by every bundle, `bundle-standard` 1.7).
 - One class per file. Classes are `final readonly` unless extension is part
   of the contract (`AbstractReadinessChecker`).
 - `#[Exclude]` on classes that are constructed by compiler passes as
@@ -63,7 +61,7 @@ sequence; their fixes are idempotent.
 
 ## Test conventions
 
-- Unit tests under `tests/unit/`, integration under `tests/integration/`.
+- Unit tests under `tests/Unit/`, integration under `tests/Integration/`.
   See `testing.md` for the suite split rationale.
 - `final class` + `extends TestCase` (or `KernelTestCase` / `WebTestCase`
   for integration).
@@ -71,7 +69,7 @@ sequence; their fixes are idempotent.
 - Use `#[DataProvider]` attributes for table-driven tests.
 - Test method names: `test<Behavior>` — full sentences in camelCase
   describing what is being asserted, not what is being called.
-- Mocks live under `tests/mock/`. `SuccessChecker` / `FailChecker` /
+- Mocks live under `tests/Mock/`. `SuccessChecker` / `FailChecker` /
   `RecordingDispatcherFixture` are reusable fixtures — prefer them over
   re-rolling mocks per test.
 

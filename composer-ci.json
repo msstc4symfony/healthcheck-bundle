@@ -10,7 +10,11 @@
   "type": "symfony-bundle",
   "description": "Health checks bundle (CI manifest with full optional dependencies)",
   "minimum-stability": "stable",
-  "keywords": ["php", "symfony", "healthcheck"],
+  "keywords": [
+    "php",
+    "symfony",
+    "healthcheck"
+  ],
   "prefer-stable": true,
   "autoload": {
     "psr-4": {
@@ -19,9 +23,7 @@
   },
   "autoload-dev": {
     "psr-4": {
-      "Msstc4Symfony\\HealthCheckBundle\\Test\\Integration\\": "tests/integration/",
-      "Msstc4Symfony\\HealthCheckBundle\\Test\\Mock\\": "tests/mock/",
-      "Msstc4Symfony\\HealthCheckBundle\\Test\\Unit\\": "tests/unit/"
+      "Msstc4Symfony\\HealthCheckBundle\\Test\\": "tests/"
     }
   },
   "require": {
@@ -63,7 +65,6 @@
     "symfony/lock": "^6.4|^7.0|^8.0",
     "symfony/mailer": "^6.4|^7.0|^8.0",
     "symfony/messenger": "^6.4|^7.0|^8.0",
-    "symfony/phpunit-bridge": "^7.0|^8.0",
     "symfony/browser-kit": "^6.4|^7.0|^8.0",
     "symfony/runtime": "^6.4|^7.0|^8.0"
   },

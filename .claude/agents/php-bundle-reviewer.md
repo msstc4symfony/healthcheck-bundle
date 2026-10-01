@@ -13,7 +13,7 @@ Default sources of diff: `git diff main...HEAD` for a branch, `git diff` + `git 
 
 ## Project facts you must hold in mind
 
-- Namespace root `Msstc4Symfony\HealthCheckBundle\` → `src/` (PSR-4). Tests: `Msstc4Symfony\HealthCheckBundle\Test\Unit\` → `tests/unit/`, `...\Test\Mock\` → `tests/mock/`.
+- Namespace root `Msstc4Symfony\HealthCheckBundle\` → `src/` (PSR-4). Tests: `Msstc4Symfony\HealthCheckBundle\Test\Unit\` → `tests/Unit/`, `...\Test\Mock\` → `tests/Mock/`.
 - Three layers under `src/`: `Application/Health/Check/` (use case `Action`, DTOs, `CheckTypeEnum`, `Checker/*`), `Presentation/` (`Controller/HealthController` + console commands), `DependencyInjection/` (`HealthCheckExtension` which is also a `CompilerPassInterface`). New files belong in the right layer.
 - `final` on classes by default. `AbstractHealthCommand` is the one inheritance point on purpose. DTOs use promoted `readonly` props; `CheckResult` is intentionally mutable (checkers push into `messages[]` / `errors[]`).
 - `CheckInterface` carries `#[AutoconfigureTag(CheckInterface::class)]`. Any user-side implementor in an autoconfigured service path is tagged automatically. `Action` consumes them via `#[AutowireIterator(CheckInterface::class)]`. A checker filters its participation with `isSupport(Context)`.
@@ -36,7 +36,7 @@ Default sources of diff: `git diff main...HEAD` for a branch, `git diff` + `git 
 3. **Exception discipline in `check()`** — broad try/catch around the underlying client call, errors translated into `$result->errors[]`. An exception escaping `check()` short-circuits every later checker in `Action`'s loop. Flag any uncaught path.
 4. **`isSupport()` correctness** — readiness-only for external infra; liveliness-only or both only when justified.
 5. **Public-API stability** — signatures of `CheckInterface`, `Action`, `ActionInterface`, the DTOs, command names / route paths, response shape.
-6. **Test depth** — new behavior comes with a `#[DataProvider]`-driven test covering both success and failure paths. Reused mocks in `tests/mock/`; one-shot `createMock` inline is fine. Zero output.
+6. **Test depth** — new behavior comes with a `#[DataProvider]`-driven test covering both success and failure paths. Reused mocks in `tests/Mock/`; one-shot `createMock` inline is fine. Zero output.
 7. **Composer hygiene** — runtime deps support the full Symfony 6.4|7.x|8.x range, dev deps don't leak into the runtime, `symfony/symfony` stays in `conflict`.
 8. **`declare(strict_types=1);` on every PHP file.**
 

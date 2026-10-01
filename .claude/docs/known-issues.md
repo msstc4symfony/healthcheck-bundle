@@ -65,11 +65,9 @@ app without it failed at container build. `bundle-standard` v1.5.0 enforces it.
 ## phpunit matrix — `framework.handle_all_throwables`
 
 Symfony 6.4 introduced a soft-deprecation asking apps to explicitly set
-`framework.handle_all_throwables: true` because 7.0+ defaults to it. The
-phpunit-bridge running under `SYMFONY_DEPRECATIONS_HELPER=max[direct]=0`
-promotes the deprecation to a fatal during integration test boots.
+`framework.handle_all_throwables: true` because 7.0+ defaults to it.
 
-`tests/integration/Kernel/TestKernel.php` sets the option explicitly
+`tests/Integration/Kernel/TestKernel.php` sets the option explicitly
 (harmless on 7+/8+).
 
 ## Roave BC check + `roave/security-advisories` recursion
@@ -88,19 +86,16 @@ Makefile — fix the env.
 
 By default `Kernel::initializeContainer()` installs an error handler under
 debug mode that survives kernel shutdown — PHPUnit reports the test as
-risky. Two mitigations in this project, both required:
+risky. Mitigations:
 
-1. `tests/bootstrap.php` defines `PHPUNIT_COMPOSER_INSTALL` before
-   loading the autoloader. The constant is a signal to Symfony that
-   PHPUnit is the runner; the framework skips the handler install.
+1. PHPUnit's binary defines `PHPUNIT_COMPOSER_INSTALL`; Symfony then skips the
+   handler install. (The former `tests/bootstrap.php` defined it too and was
+   removed as redundant on 2026-10-01 UTC.)
 2. `symfony/runtime` is a dev dependency (with its composer plugin
    disabled via `config.allow-plugins.symfony/runtime: false`).
    `FrameworkBundle::boot()` only registers an `ErrorHandler` if
    `SymfonyRuntime` class is absent — the dev-dep makes the absence
    branch unreachable.
-
-Without both, integration tests are flagged risky. Don't simplify the
-bootstrap.
 
 ## DEPTRAC composer name confusion
 
@@ -129,7 +124,7 @@ The bundle's `#[Route]` attributes don't declare `_format`. As a result,
 the JSON formatting path can only be exercised via direct
 `$request->setRequestFormat('json')` — which is what the unit
 `HealthControllerTest` does. Functional tests under
-`tests/integration/Functional/` deliberately skip the JSON branch with a
+`tests/Integration/Functional/` deliberately skip the JSON branch with a
 doc comment explaining this.
 
 If a host application wants JSON probes over HTTP, they must wire

@@ -27,12 +27,13 @@ All in `Makefile`:
 - `make regenerate-baseline` — regenerate `phpstan-baseline.neon` (only when
   intentionally accepting new findings).
 
-Run a single test: `vendor/bin/phpunit --filter testRun tests/unit/...`.
+Run a single test: `vendor/bin/phpunit --filter testRun tests/Unit/...`.
 Run a single suite: `vendor/bin/phpunit --testsuite=unit` (or `integration`).
 
 ## Quality gate notes
 
-- `phpunit.xml.dist` is **strict**: `failOnRisky`, `failOnWarning`,
+- `phpunit.xml.dist` is **strict** (shared `bundle-standard` template):
+  `failOnRisky`, `failOnWarning`, `failOnDeprecation` (own code only),
   `failOnPhpunitDeprecation`, `beStrictAboutOutputDuringTests`. Any new
   warning, deprecation, or stdout/stderr write fails the suite.
 - PHPStan baseline entries are **not** added automatically. `make check`

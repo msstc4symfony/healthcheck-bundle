@@ -6,12 +6,12 @@
 
 | Suite | Path | Purpose |
 |-------|------|---------|
-| `unit` | `tests/unit/` | Pure `TestCase`, no kernel. Fast (~0.4 s wall time). |
-| `integration` | `tests/integration/` | Boots `TestKernel`, exercises wiring + HTTP + CLI. ~2 s. |
+| `unit` | `tests/Unit/` | Pure `TestCase`, no kernel. Fast (~0.4 s wall time). |
+| `integration` | `tests/Integration/` | Boots `TestKernel`, exercises wiring + HTTP + CLI. ~2 s. |
 
 Run a single suite: `vendor/bin/phpunit --testsuite=unit` or
 `--testsuite=integration`. Run a single test:
-`vendor/bin/phpunit --filter testRun tests/unit/...`.
+`vendor/bin/phpunit --filter testRun tests/Unit/...`.
 
 `phpunit.xml.dist` is **strict** — `failOnRisky`, `failOnWarning`,
 `failOnPhpunitDeprecation`, `beStrictAboutOutputDuringTests`. Any new
@@ -19,7 +19,7 @@ warning, deprecation, or stdout/stderr write fails the suite.
 
 ## TestKernel pattern
 
-`tests/integration/Kernel/TestKernel.php` uses Symfony's
+`tests/Integration/Kernel/TestKernel.php` uses Symfony's
 `MicroKernelTrait`. It registers only `FrameworkBundle` + `HealthCheckBundle`
 and:
 
@@ -34,10 +34,10 @@ For HTTP functional tests, **override `createKernel()`** to force
 `debug=false`. Debug mode activates Symfony's debug logger and the
 `DebugHandlersListener`, which both interact badly with strict PHPUnit.
 
-`tests/bootstrap.php` defines `PHPUNIT_COMPOSER_INSTALL` before loading
-the autoloader. Without that constant, `Kernel::initializeContainer()`
-installs a deprecation-collecting error handler that survives test
-shutdown.
+PHPUnit's own binary defines `PHPUNIT_COMPOSER_INSTALL`, which tells
+`Kernel::initializeContainer()` not to install its deprecation-collecting
+error handler; no custom bootstrap is needed (`phpunit.xml.dist` is the shared
+`bundle-standard` template, bootstrap `vendor/autoload.php`).
 
 ## SafeEventDispatcher in tests
 
@@ -55,16 +55,11 @@ which is a silent no-op).
 
 ## Symfony deprecation tracking
 
-`SYMFONY_DEPRECATIONS_HELPER=max[direct]=0` is set in `phpunit.xml.dist`.
-The `symfony/phpunit-bridge` deprecation handler is auto-registered when
-the bridge package is installed (CI-only via `composer-ci.json`). On the
-local lightweight install where the bridge isn't present, the bootstrap is
-a no-op — tests still run.
-
-On the **Symfony 6.4 LTS matrix variant** in CI, the bridge may surface
-real deprecations introduced by us calling Symfony 8-isms. Fix the code or
-gate per-version with a documented exception; do not raise the
-threshold globally.
+`phpunit.xml.dist` sets `failOnDeprecation="true"` with
+`<source ignoreIndirectDeprecations="true">`: a deprecation triggered by this
+bundle's code fails the suite, deprecations raised inside dependencies do not.
+This replaced `symfony/phpunit-bridge` + `SYMFONY_DEPRECATIONS_HELPER=max[direct]=0`
+(2026-10-01 UTC) and is the same in every bundle.
 
 ## Roave BC check baseline
 

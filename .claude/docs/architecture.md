@@ -99,8 +99,8 @@ Conventions:
   (`$class === Target::class || is_subclass_of($class, Target::class)`); this
   is the canonical pattern for class-based detectors.
 
-The 17 built-in detectors are listed in `tests/unit/DependencyInjection/HealthCheckerAutoDetectionPassTest`
-and have per-detector unit tests under `tests/unit/DependencyInjection/Detector/`.
+The 17 built-in detectors are listed in `tests/Unit/DependencyInjection/HealthCheckerAutoDetectionPassTest`
+and have per-detector unit tests under `tests/Unit/DependencyInjection/Detector/`.
 
 Adding a third-party detector: register a service implementing
 `CheckerDetectorInterface`. Autoconfigure tags it

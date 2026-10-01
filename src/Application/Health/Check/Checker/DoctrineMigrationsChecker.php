@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker;
 
 use Doctrine\Migrations\DependencyFactory;
+use Override;
 use RuntimeException;
 use Symfony\Component\DependencyInjection\Attribute\Exclude;
 
@@ -16,6 +17,7 @@ final readonly class DoctrineMigrationsChecker extends AbstractReadinessChecker
     ) {
     }
 
+    #[Override]
     protected function doCheck(): void
     {
         $newMigrations = $this->dependencyFactory
@@ -29,6 +31,7 @@ final readonly class DoctrineMigrationsChecker extends AbstractReadinessChecker
         }
     }
 
+    #[Override]
     protected function label(): string
     {
         return 'Doctrine migrations';

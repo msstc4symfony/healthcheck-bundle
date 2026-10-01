@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker;
 
 use Memcached;
+use Override;
 use RuntimeException;
 use Symfony\Component\DependencyInjection\Attribute\Exclude;
 
@@ -16,6 +17,7 @@ final readonly class MemcachedChecker extends AbstractReadinessChecker
     ) {
     }
 
+    #[Override]
     protected function doCheck(): void
     {
         if (!$this->connection->set(CheckInterface::PROBE_KEY, time(), 1)) {
@@ -23,6 +25,7 @@ final readonly class MemcachedChecker extends AbstractReadinessChecker
         }
     }
 
+    #[Override]
     protected function label(): string
     {
         return 'Memcached connection';

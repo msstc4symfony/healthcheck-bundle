@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker;
 
+use Override;
 use RuntimeException;
 use Symfony\Component\Cache\Adapter\AdapterInterface;
 use Symfony\Component\Cache\Adapter\ApcuAdapter;
@@ -20,6 +21,7 @@ final readonly class CacheChecker extends AbstractReadinessChecker
     ) {
     }
 
+    #[Override]
     protected function doCheck(): void
     {
         $item = $this->connection->getItem(self::PROBE_KEY);
@@ -30,6 +32,7 @@ final readonly class CacheChecker extends AbstractReadinessChecker
         }
     }
 
+    #[Override]
     protected function label(): string
     {
         // The adapter implementation class is intentionally NOT included — exposing it leaks
@@ -40,6 +43,7 @@ final readonly class CacheChecker extends AbstractReadinessChecker
             : sprintf('Cache (%s) connection', $this->id);
     }
 
+    #[Override]
     protected function skipReason(): ?string
     {
         if ($this->connection instanceof NullAdapter) {

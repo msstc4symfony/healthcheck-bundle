@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker;
 
 use ClickHouseDB\Client;
+use Override;
 use RuntimeException;
 use Symfony\Component\DependencyInjection\Attribute\Exclude;
 
@@ -17,6 +18,7 @@ final readonly class ClickHouseChecker extends AbstractReadinessChecker
     ) {
     }
 
+    #[Override]
     protected function doCheck(): void
     {
         if (!$this->connection->ping()) {
@@ -24,6 +26,7 @@ final readonly class ClickHouseChecker extends AbstractReadinessChecker
         }
     }
 
+    #[Override]
     protected function label(): string
     {
         return sprintf('ClickHouse (%s)', $this->name);

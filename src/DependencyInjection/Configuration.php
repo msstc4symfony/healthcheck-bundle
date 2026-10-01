@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Msstc4Symfony\HealthCheckBundle\DependencyInjection;
 
+use Override;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 
 final readonly class Configuration implements ConfigurationInterface
 {
+    #[Override]
     public function getConfigTreeBuilder(): TreeBuilder
     {
         $treeBuilder = new TreeBuilder('msstc4symfony_healthcheck');

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker;
 
 use League\Flysystem\FilesystemOperator;
+use Override;
 use Symfony\Component\DependencyInjection\Attribute\Exclude;
 
 #[Exclude]
@@ -18,6 +19,7 @@ final readonly class FlysystemChecker extends AbstractReadinessChecker
     ) {
     }
 
+    #[Override]
     protected function doCheck(): void
     {
         // fileExists() exercises auth + reachability against backends like S3 even when the file
@@ -26,6 +28,7 @@ final readonly class FlysystemChecker extends AbstractReadinessChecker
         $this->filesystem->fileExists(self::PROBE_PATH);
     }
 
+    #[Override]
     protected function label(): string
     {
         return sprintf('Flysystem (%s)', $this->name);

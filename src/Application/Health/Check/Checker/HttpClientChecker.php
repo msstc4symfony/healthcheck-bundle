@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker;
 
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\HttpProbeTarget;
+use Override;
 use RuntimeException;
 use Symfony\Component\DependencyInjection\Attribute\Exclude;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -21,6 +22,7 @@ final readonly class HttpClientChecker extends AbstractReadinessChecker
     ) {
     }
 
+    #[Override]
     protected function doCheck(): void
     {
         // The Symfony HttpClient throws TransportException whose message often contains the full
@@ -52,6 +54,7 @@ final readonly class HttpClientChecker extends AbstractReadinessChecker
         }
     }
 
+    #[Override]
     protected function label(): string
     {
         return sprintf('HTTP probe (%s)', $this->name);

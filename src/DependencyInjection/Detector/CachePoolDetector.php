@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector;
 
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CacheChecker;
+use Override;
 use Symfony\Component\DependencyInjection\ChildDefinition;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -15,6 +16,7 @@ final readonly class CachePoolDetector implements CheckerDetectorInterface
     /**
      * @return iterable<string, Definition>
      */
+    #[Override]
     public function detect(ContainerBuilder $container): iterable
     {
         /** @var list<array{name?: string}> $tags */

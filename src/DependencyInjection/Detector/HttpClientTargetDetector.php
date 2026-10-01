@@ -7,6 +7,7 @@ namespace Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\HttpClientChecker;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\HttpProbeTarget;
 use Msstc4Symfony\HealthCheckBundle\DependencyInjection\HealthCheckExtension;
+use Override;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
@@ -17,6 +18,7 @@ final readonly class HttpClientTargetDetector implements CheckerDetectorInterfac
     /**
      * @return iterable<string, Definition>
      */
+    #[Override]
     public function detect(ContainerBuilder $container): iterable
     {
         if (!$container->hasParameter(HealthCheckExtension::PARAM_HTTP_CLIENT_TARGETS)) {

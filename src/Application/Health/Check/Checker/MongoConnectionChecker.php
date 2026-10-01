@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker;
 
 use MongoDB\Client;
+use Override;
 use Symfony\Component\DependencyInjection\Attribute\Exclude;
 
 #[Exclude]
@@ -16,11 +17,13 @@ final readonly class MongoConnectionChecker extends AbstractReadinessChecker
     ) {
     }
 
+    #[Override]
     protected function doCheck(): void
     {
         $this->connection->listDatabaseNames();
     }
 
+    #[Override]
     protected function label(): string
     {
         return sprintf('Mongo connection (%s)', $this->name);

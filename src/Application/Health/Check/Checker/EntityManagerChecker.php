@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Override;
 use Symfony\Component\DependencyInjection\Attribute\Exclude;
 
 /**
@@ -24,6 +25,7 @@ final readonly class EntityManagerChecker extends AbstractReadinessChecker
     ) {
     }
 
+    #[Override]
     protected function doCheck(): void
     {
         $connection = $this->entityManager->getConnection();
@@ -31,6 +33,7 @@ final readonly class EntityManagerChecker extends AbstractReadinessChecker
         $connection->executeQuery($connection->getDatabasePlatform()->getDummySelectSQL());
     }
 
+    #[Override]
     protected function label(): string
     {
         return sprintf('EntityManager (%s)', $this->name);

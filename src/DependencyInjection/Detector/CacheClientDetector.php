@@ -10,6 +10,7 @@ use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\MemcacheChe
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\MemcachedChecker;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\PredisChecker;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\RedisChecker;
+use Override;
 use Predis\Client;
 use Redis;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -21,6 +22,7 @@ final readonly class CacheClientDetector implements CheckerDetectorInterface
     /**
      * @return iterable<string, Definition>
      */
+    #[Override]
     public function detect(ContainerBuilder $container): iterable
     {
         foreach ($container->getDefinitions() as $id => $definition) {

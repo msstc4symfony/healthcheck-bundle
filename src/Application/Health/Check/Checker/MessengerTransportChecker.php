@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker;
 
+use Override;
 use Symfony\Component\DependencyInjection\Attribute\Exclude;
 use Symfony\Component\Messenger\Transport\Receiver\MessageCountAwareInterface;
 use Symfony\Component\Messenger\Transport\TransportInterface;
@@ -27,17 +28,20 @@ final readonly class MessengerTransportChecker extends AbstractReadinessChecker
     ) {
     }
 
+    #[Override]
     protected function doCheck(): void
     {
         assert($this->transport instanceof MessageCountAwareInterface, 'skipReason() guards this');
         $this->transport->getMessageCount();
     }
 
+    #[Override]
     protected function label(): string
     {
         return sprintf('Messenger transport (%s)', $this->name);
     }
 
+    #[Override]
     protected function skipReason(): ?string
     {
         return $this->transport instanceof MessageCountAwareInterface

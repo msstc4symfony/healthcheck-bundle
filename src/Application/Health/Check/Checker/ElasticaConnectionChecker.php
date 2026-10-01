@@ -8,6 +8,7 @@ use Elastica\Client;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\Context;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
+use Override;
 use Symfony\Component\DependencyInjection\Attribute\Exclude;
 use Throwable;
 
@@ -20,11 +21,13 @@ final readonly class ElasticaConnectionChecker implements CheckInterface
     ) {
     }
 
+    #[Override]
     public function isSupport(Context $context): bool
     {
         return $context->type === CheckTypeEnum::READINESS;
     }
 
+    #[Override]
     public function check(CheckResult $result, Context $context): CheckResult
     {
         try {

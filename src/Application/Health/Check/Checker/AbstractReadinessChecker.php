@@ -7,15 +7,18 @@ namespace Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\Context;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
+use Override;
 use Throwable;
 
 abstract readonly class AbstractReadinessChecker implements CheckInterface
 {
+    #[Override]
     final public function isSupport(Context $context): bool
     {
         return $context->type === CheckTypeEnum::READINESS;
     }
 
+    #[Override]
     final public function check(CheckResult $result, Context $context): CheckResult
     {
         $skipReason = $this->skipReason();

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker;
 
+use Override;
 use PhpAmqpLib\Connection\AbstractConnection;
 use RuntimeException;
 use Symfony\Component\DependencyInjection\Attribute\Exclude;
@@ -16,6 +17,7 @@ final readonly class RabbitmqChecker extends AbstractReadinessChecker
     ) {
     }
 
+    #[Override]
     protected function doCheck(): void
     {
         $this->connection->reconnect();
@@ -25,6 +27,7 @@ final readonly class RabbitmqChecker extends AbstractReadinessChecker
         }
     }
 
+    #[Override]
     protected function label(): string
     {
         return 'RabbitMQ connection';

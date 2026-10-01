@@ -6,6 +6,7 @@ namespace Msstc4Symfony\HealthCheckBundle\DependencyInjection;
 
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CheckInterface;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\NonCriticalCheckerDecorator;
+use Override;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -20,6 +21,7 @@ use Symfony\Component\DependencyInjection\Reference;
  */
 final readonly class HealthCheckerCriticalityDecorationPass implements CompilerPassInterface
 {
+    #[Override]
     public function process(ContainerBuilder $container): void
     {
         if (!$container->hasParameter(HealthCheckExtension::PARAM_NON_CRITICAL_CHECKERS)) {

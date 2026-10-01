@@ -6,6 +6,7 @@ namespace Msstc4Symfony\HealthCheckBundle\Application\Health\Check;
 
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\Request;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\Response;
+use Override;
 use Psr\Cache\CacheItemPoolInterface;
 use Symfony\Component\DependencyInjection\Attribute\Exclude;
 
@@ -27,6 +28,7 @@ final readonly class CachedActionDecorator implements ActionInterface
     ) {
     }
 
+    #[Override]
     public function run(Request $request): Response
     {
         $key = $this->buildKey($request);

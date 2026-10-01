@@ -14,6 +14,7 @@ use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Event\HealthChecker
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Event\HealthCheckRunCompletedEvent;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Event\HealthCheckRunStartedEvent;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Event\SafeEventDispatcher;
+use Override;
 use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 use Symfony\Component\DependencyInjection\Attribute\Exclude;
 use Throwable;
@@ -40,6 +41,7 @@ final readonly class ParallelAction implements ActionInterface
     ) {
     }
 
+    #[Override]
     public function run(Request $request): Response
     {
         $this->eventDispatcher->dispatch(new HealthCheckRunStartedEvent($request));

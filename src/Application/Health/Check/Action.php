@@ -13,6 +13,7 @@ use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Event\HealthChecker
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Event\HealthCheckRunCompletedEvent;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Event\HealthCheckRunStartedEvent;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Event\SafeEventDispatcher;
+use Override;
 use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 
 final readonly class Action implements ActionInterface
@@ -27,6 +28,7 @@ final readonly class Action implements ActionInterface
     ) {
     }
 
+    #[Override]
     public function run(Request $request): Response
     {
         $this->eventDispatcher->dispatch(new HealthCheckRunStartedEvent($request));

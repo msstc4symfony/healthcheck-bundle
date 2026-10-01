@@ -6,6 +6,7 @@ namespace Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker;
 
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\Context;
+use Override;
 use Symfony\Component\DependencyInjection\Attribute\Exclude;
 
 /**
@@ -25,11 +26,13 @@ final readonly class TimeoutCheckerDecorator implements CheckInterface
     ) {
     }
 
+    #[Override]
     public function isSupport(Context $context): bool
     {
         return $this->inner->isSupport($context);
     }
 
+    #[Override]
     public function check(CheckResult $result, Context $context): CheckResult
     {
         $startedAt = microtime(true);

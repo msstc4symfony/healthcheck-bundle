@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker;
 
+use Override;
 use RuntimeException;
 use Symfony\Component\DependencyInjection\Attribute\Exclude;
 use Symfony\Component\Mailer\Transport\Smtp\SmtpTransport;
@@ -18,6 +19,7 @@ final readonly class MailerChecker extends AbstractReadinessChecker
     ) {
     }
 
+    #[Override]
     protected function doCheck(): void
     {
         // Mailer transport exceptions may carry DSN fragments (incl. credentials) in their message.
@@ -36,6 +38,7 @@ final readonly class MailerChecker extends AbstractReadinessChecker
         }
     }
 
+    #[Override]
     protected function label(): string
     {
         return sprintf('Mailer SMTP (%s)', $this->name);

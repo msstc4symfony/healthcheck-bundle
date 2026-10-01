@@ -6,6 +6,7 @@ namespace Msstc4Symfony\HealthCheckBundle;
 
 use Msstc4Symfony\HealthCheckBundle\DependencyInjection\HealthCheckerAutoDetectionPass;
 use Msstc4Symfony\HealthCheckBundle\DependencyInjection\HealthCheckerCriticalityDecorationPass;
+use Msstc4Symfony\HealthCheckBundle\DependencyInjection\HealthCheckerDeferredConstructionPass;
 use Msstc4Symfony\HealthCheckBundle\DependencyInjection\HealthCheckerTimeoutDecorationPass;
 use Msstc4Symfony\HealthCheckBundle\DependencyInjection\HealthCheckExtension;
 use Override;
@@ -26,9 +27,10 @@ final class HealthCheckBundle extends Bundle
         $container->addCompilerPass(new HealthCheckerAutoDetectionPass());
 
         // Order matters: Timeout MUST wrap first so the outermost decorator is Criticality.
-        // Final composition = NonCritical( Timeout( inner ) ). A non-critical checker that
-        // exceeds its budget then produces a warning, not an error.
+        // Final composition = NonCritical( Deferred( Timeout( inner ) ) ). A non-critical checker
+        // that exceeds its budget or cannot be constructed then produces a warning, not an error.
         $container->addCompilerPass(new HealthCheckerTimeoutDecorationPass());
+        $container->addCompilerPass(new HealthCheckerDeferredConstructionPass());
         $container->addCompilerPass(new HealthCheckerCriticalityDecorationPass());
     }
 

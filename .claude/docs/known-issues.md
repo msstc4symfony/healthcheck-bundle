@@ -191,3 +191,42 @@ symfony/validator) это `UserPasswordValidator` из security-core, чей р�
 `DependencyInjection\ServiceClass::is()` (`ContainerBuilder::getReflectionClass($class, false)`):
 переживает отсутствующего родителя и разрешает `%param%`-классы. Если искомого типа нет
 (например, нет ext-rdkafka), совпадает только точное имя класса — как раньше.
+
+## Liveliness падал из-за readiness-зависимостей (исправлено в v1.1.2, 2026-10-01 UTC)
+
+Реальное приложение (Symfony 8.1, PHP 8.4 без ext-sysvsem, `framework.lock: '%env(LOCK_DSN)%'`
+с redis): `GET /_/healthcheck/liveliness` → 500 `Semaphore extension (sysvsem) is required.` из
+`SemaphoreStore::__construct`. Причина: `Action`/`ParallelAction` получают чекеры через
+`#[AutowireIterator]`, и **каждый** чекер (вместе с целевым клиентом) конструируется при обходе
+итератора — до фильтра `isSupport()` по типу проверки. Исключение в конструкторе любой
+readiness-зависимости роняло весь прогон, включая liveliness (в Kubernetes — рестарты по кругу).
+
+Исправление: `HealthCheckerDeferredConstructionPass` оборачивает readiness-only чекеры в
+`DeferredReadinessCheckerDecorator` (цепочка передаётся как `ServiceClosureArgument`). Для
+liveliness клиент вообще не создаётся; на readiness ошибка конструктора становится
+`<id чекера> failed (<сообщение>)`. Публичные конструкторы чекеров не менялись (BC).
+Побочный эффект: `HealthCheckerCompletedEvent::$checkerClass` для readiness-only чекеров теперь
+`DeferredReadinessCheckerDecorator` (раньше `TimeoutCheckerDecorator`). Чекер, который
+поддерживает liveliness (прямой `CheckInterface` без шаблона), по-прежнему конструируется
+сразу — его зависимость обязана быть конструируемой.
+
+Регрессия: `tests/Integration/Functional/ReadinessDependencyIsolationTest` (фикстуры
+`UnconstructibleDependencyFixture` / `DependentReadinessCheckerFixture`; `TestKernel` принимает
+замыкание с доп. сервисами — каждому варианту своё окружение). Фикстура-зависимость должна
+реально использоваться в `doCheck()`: иначе Rector (`make fix`) удаляет «неиспользуемое»
+свойство вместе с конструктором и тест молча зеленеет без исправления.
+
+## LockStoreDetector проверял неиспользуемые хранилища FrameworkBundle (исправлено в v1.1.2, 2026-10-01 UTC)
+
+FrameworkBundle 8.1 (`Resources/config/lock.php`) всегда регистрирует `.lock.flock.store`
+(`FlockStore`) и `.lock.semaphore.store` (`SemaphoreStore`), даже если ресурс их не использует.
+Детектор брал любой `PersistingStoreInterface` и строил для них чекеры — отсюда
+`SemaphoreStore` без sysvsem. `FrameworkExtension::registerLockConfiguration` (6.4–8.1) вешает тег
+`lock.store` на каждое хранилище настроенного ресурса: DSN-хранилища —
+`.lock.<resource>.store.<hash>` (`Definition(PersistingStoreInterface)` + `StoreFactory::createStore`),
+в 8.1 `flock`/`semaphore` — тегом на предопределённый `.lock.flock.store`/`.lock.semaphore.store`.
+`CombinedStore` (`ChildDefinition` от `lock.store.combined.abstract`) тега не имеет, но его
+составные хранилища тегированы. Правило детектора: скрытые (`.`-префикс) сервисы — только с
+тегом `lock.store`; хранилища, зарегистрированные приложением под обычным id, проверяются
+как раньше. Если приложение передаёт свой сервис в `framework.lock` по id, он проверяется
+дважды (свой id + `.lock.<resource>.store.<hash>`) — было и до исправления.

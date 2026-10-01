@@ -51,7 +51,7 @@ Three layers under `src/`, enforced by DEPTRAC:
 - `Presentation/` — entry points (`HealthController` for
   `/_/healthcheck/{ping,readiness,liveliness}`, `healthcheck:liveliness` /
   `healthcheck:readiness` console commands).
-- `DependencyInjection/` — extension + 3 compiler passes + 17 detectors.
+- `DependencyInjection/` — extension + 4 compiler passes + 17 detectors.
 
 Single execution path: `ActionInterface::run(Request) -> Response`. Action
 runners (`Action` / `ParallelAction`) consume

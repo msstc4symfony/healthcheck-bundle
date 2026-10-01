@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Msstc4Symfony\HealthCheckBundle\Test\Integration\Kernel;
 
+use Closure;
 use Msstc4Symfony\HealthCheckBundle\HealthCheckBundle;
 use Override;
 use Psr\Log\NullLogger;
@@ -16,6 +17,17 @@ use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
 final class TestKernel extends Kernel
 {
     use MicroKernelTrait;
+
+    /**
+     * @param (Closure(ContainerConfigurator): void)|null $configureServices extra services; give each variant its own environment so compiled containers do not collide
+     */
+    public function __construct(
+        string $environment,
+        bool $debug,
+        private readonly ?Closure $configureServices = null,
+    ) {
+        parent::__construct($environment, $debug);
+    }
 
     public function registerBundles(): iterable
     {
@@ -58,6 +70,10 @@ final class TestKernel extends Kernel
             ->set('logger', NullLogger::class)
             ->public()
         ;
+
+        if ($this->configureServices instanceof Closure) {
+            ($this->configureServices)($container);
+        }
     }
 
     protected function configureRoutes(RoutingConfigurator $routes): void

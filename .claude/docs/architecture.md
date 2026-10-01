@@ -46,7 +46,7 @@ fail a probe.
 
 ## Compiler pass chain
 
-`HealthCheckBundle::build()` registers three passes in this order:
+`HealthCheckBundle::build()` registers four passes in this order:
 
 1. **`HealthCheckerAutoDetectionPass`** — discovers
    `CheckerDetectorInterface` services (tagged `healthcheck.detector` via
@@ -56,12 +56,22 @@ fail a probe.
 2. **`HealthCheckerTimeoutDecorationPass`** — wraps each
    `CheckInterface`-tagged service in `TimeoutCheckerDecorator`, retags the
    wrapper.
-3. **`HealthCheckerCriticalityDecorationPass`** — wraps in
+3. **`HealthCheckerDeferredConstructionPass`** (`@internal`) — wraps every
+   readiness-only checker (`AbstractReadinessChecker` subclasses,
+   `ElasticaConnectionChecker`; looks through the timeout decorator) in
+   `DeferredReadinessCheckerDecorator`, which gets the rest of the chain as a
+   `ServiceClosureArgument` and builds it only inside a readiness probe. A
+   target whose constructor throws becomes `<checker id> failed (<message>)`
+   on readiness and is never built for liveliness.
+4. **`HealthCheckerCriticalityDecorationPass`** — wraps in
    `NonCriticalCheckerDecorator` for checkers listed in
    `non_critical` config, retags the wrapper.
 
 Order matters: timeout is the **innermost** decorator. Final composition is
-`NonCritical(Timeout(inner))`. A non-critical checker that exceeds its budget
+`NonCritical(Deferred(Timeout(inner)))` (Deferred only for readiness-only
+checkers). Deferred sits outside Timeout so the timeout message still names
+the real checker class, and inside NonCritical so a construction failure of a
+non-critical checker stays a warning. A non-critical checker that exceeds its budget
 yields a warning (not an error) — without this order it would be flipped.
 
 ## Checker registration

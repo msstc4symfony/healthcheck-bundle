@@ -15,6 +15,8 @@ use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\Lock\PersistingStoreInterface;
 use Symfony\Component\Lock\Store\FlockStore;
 use Symfony\Component\Lock\Store\InMemoryStore;
+use Symfony\Component\Lock\Store\SemaphoreStore;
+use Symfony\Component\Lock\Store\StoreFactory;
 
 final class LockStoreDetectorTest extends TestCase
 {
@@ -54,6 +56,47 @@ final class LockStoreDetectorTest extends TestCase
         $detected = iterator_to_array(new LockStoreDetector()->detect($container));
 
         self::assertArrayHasKey('healthcheck.checker.lock.iface', $detected);
+    }
+
+    /**
+     * FrameworkBundle 8.1 predefines ".lock.flock.store" and ".lock.semaphore.store" in lock.php and
+     * tags a store "lock.store" only when a resource is configured with it; DSN stores become
+     * ".lock.<resource>.store.<hash>" factory definitions tagged the same way.
+     */
+    #[RequiresMethod(PersistingStoreInterface::class, 'save')]
+    public function testDetectSkipsFrameworkPredefinedStoresThatNoResourceUses(): void
+    {
+        $container = new ContainerBuilder();
+        $container->setDefinition('.lock.flock.store', new Definition(FlockStore::class));
+        $container->setDefinition('.lock.semaphore.store', new Definition(SemaphoreStore::class));
+        $container->setDefinition('.lock.default.store.abc123', new Definition(PersistingStoreInterface::class)
+            ->setFactory([StoreFactory::class, 'createStore'])
+            ->setArguments(['redis://redis:6379/0'])
+            ->addTag('lock.store'));
+
+        $detected = iterator_to_array(new LockStoreDetector()->detect($container));
+
+        self::assertSame(['healthcheck.checker..lock.default.store.abc123'], array_keys($detected));
+    }
+
+    #[RequiresMethod(PersistingStoreInterface::class, 'save')]
+    public function testDetectProbesPredefinedStoreOnceAResourceUsesIt(): void
+    {
+        $container = new ContainerBuilder();
+        $container->setDefinition('.lock.flock.store', new Definition(FlockStore::class));
+        $container->setDefinition('.lock.semaphore.store', new Definition(SemaphoreStore::class)->addTag('lock.store'));
+
+        $detected = iterator_to_array(new LockStoreDetector()->detect($container));
+
+        self::assertSame(['healthcheck.checker..lock.semaphore.store'], array_keys($detected));
+    }
+
+    public function testDetectSkipsHiddenStoreWithoutLockStoreTag(): void
+    {
+        $container = new ContainerBuilder();
+        $container->setDefinition('.some.internal.store', new Definition(PersistingStoreInterface::class));
+
+        self::assertSame([], iterator_to_array(new LockStoreDetector()->detect($container)));
     }
 
     public function testDetectIgnoresUnrelatedAndClasslessDefinitions(): void

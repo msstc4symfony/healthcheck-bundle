@@ -8,9 +8,9 @@ use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\MessengerTr
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\Context;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
+use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\CountableMessengerTransportFixture;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
-use Symfony\Component\Messenger\Transport\Receiver\MessageCountAwareInterface;
 use Symfony\Component\Messenger\Transport\TransportInterface;
 
 final class MessengerTransportCheckerTest extends TestCase
@@ -67,8 +67,4 @@ final class MessengerTransportCheckerTest extends TestCase
         self::assertStringContainsString('async', $result->errors[0]);
         self::assertStringContainsString('broker offline', $result->errors[0]);
     }
-}
-
-interface CountableMessengerTransportFixture extends TransportInterface, MessageCountAwareInterface
-{
 }

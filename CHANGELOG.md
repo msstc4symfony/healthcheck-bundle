@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.1.1
+
+### Fixed
+
+- Container compilation crashed (`ClassNotFoundError`) in applications containing a service
+  whose class extends a class from a package that is not installed — e.g. Symfony 8.1 with
+  security-bundle but without symfony/validator (`UserPasswordValidator`). Detectors now check
+  service classes through container reflection; classes given as `%parameters%` are detected too.
+
+### Changed
+
+- Tests follow the shared `bundle-standard` 1.7 layout and configuration; CI also runs the suite
+  without optional libraries.
+
 ## 1.1.0
 
 First release under `msstc4symfony/healthcheck-bundle` / `Msstc4Symfony\HealthCheckBundle`

@@ -6,6 +6,7 @@ namespace Msstc4Symfony\HealthCheckBundle\Test\Unit\DependencyInjection\Detector
 
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\LockStoreChecker;
 use Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector\LockStoreDetector;
+use PHPUnit\Framework\Attributes\RequiresMethod;
 use PHPUnit\Framework\TestCase;
 use stdClass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -17,6 +18,7 @@ use Symfony\Component\Lock\Store\InMemoryStore;
 
 final class LockStoreDetectorTest extends TestCase
 {
+    #[RequiresMethod(PersistingStoreInterface::class, 'save')]
     public function testDetectYieldsCheckerForPersistingStoreSubclass(): void
     {
         $container = new ContainerBuilder();
@@ -30,6 +32,7 @@ final class LockStoreDetectorTest extends TestCase
         self::assertSame('lock.default.store', $checker->getArgument(1));
     }
 
+    #[RequiresMethod(PersistingStoreInterface::class, 'save')]
     public function testDetectMatchesMultipleStoreImplementations(): void
     {
         $container = new ContainerBuilder();

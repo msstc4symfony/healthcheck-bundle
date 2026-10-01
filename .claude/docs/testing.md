@@ -39,6 +39,27 @@ PHPUnit's own binary defines `PHPUNIT_COMPOSER_INSTALL`, which tells
 error handler; no custom bootstrap is needed (`phpunit.xml.dist` is the shared
 `bundle-standard` template, bootstrap `vendor/autoload.php`).
 
+## Minimal install (no optional libraries)
+
+CI job "PHPUnit without optional libraries" (bundle-standard v1.7.x) installs
+only `composer.json` (no `composer-ci.json` extras: doctrine/*, symfony/lock,
+mailer, messenger, browser-kit, http-client, predis, elastica, ...) and runs
+`vendor/bin/phpunit`. Every test needing an optional package must SKIP there:
+
+- Whole-class dependency → `setUp()` guard
+  `if (!class_exists(X::class)) { self::markTestSkipped('vendor/pkg is not installed'); }`.
+- Only some methods depend on it (detector/pass tests where exact-class-name
+  matching works without the library, subclass matching does not) →
+  `#[RequiresMethod(PersistingStoreInterface::class, 'save')]` per method.
+- Named fixture types extending optional types must live in their own file
+  (`tests/Mock/...`, e.g. `CountableMessengerTransportFixture`) — declared at
+  test-file scope they fatal on file load and abort the whole run.
+
+Local repro: rsync repo (without vendor/.git) to `$TMPDIR/minimal/...`,
+`rm composer.lock`, `composer update`, run `vendor/bin/phpunit` (2026-10-01 UTC:
+230 tests, 78 skipped). Note `--do-not-record-test-run-history` exits 1 there
+because `executionOrder="depends,defects"` emits a runner warning.
+
 ## SafeEventDispatcher in tests
 
 Tests wishing to assert event emission should:

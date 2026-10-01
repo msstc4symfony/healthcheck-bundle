@@ -7,6 +7,7 @@ namespace Msstc4Symfony\HealthCheckBundle\Test\Integration\Functional;
 use Msstc4Symfony\HealthCheckBundle\Test\Integration\Kernel\TestKernel;
 use Override;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\BrowserKit\AbstractBrowser;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -26,6 +27,10 @@ final class HealthControllerFunctionalTest extends WebTestCase
 {
     protected function setUp(): void
     {
+        if (!class_exists(AbstractBrowser::class)) {
+            self::markTestSkipped('symfony/browser-kit is not installed');
+        }
+
         new Filesystem()->remove(sys_get_temp_dir() . '/msstc4symfony-healthcheck-bundle-test');
     }
 

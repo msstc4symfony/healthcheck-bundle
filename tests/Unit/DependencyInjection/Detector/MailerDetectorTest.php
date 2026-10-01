@@ -6,6 +6,7 @@ namespace Msstc4Symfony\HealthCheckBundle\Test\Unit\DependencyInjection\Detector
 
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\MailerChecker;
 use Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector\MailerDetector;
+use PHPUnit\Framework\Attributes\RequiresMethod;
 use PHPUnit\Framework\TestCase;
 use stdClass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -29,6 +30,7 @@ final class MailerDetectorTest extends TestCase
         self::assertSame('mailer.smtp', $checker->getArgument(1));
     }
 
+    #[RequiresMethod(EsmtpTransport::class, 'setUsername')]
     public function testDetectMatchesSmtpTransportSubclass(): void
     {
         // EsmtpTransport extends SmtpTransport in symfony/mailer.

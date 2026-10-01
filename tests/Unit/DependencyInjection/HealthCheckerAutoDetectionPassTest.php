@@ -54,6 +54,7 @@ use Msstc4Symfony\HealthCheckBundle\DependencyInjection\HealthCheckerAutoDetecti
 use Msstc4Symfony\HealthCheckBundle\DependencyInjection\HealthCheckExtension;
 use OpenSearch\Client as OpenSearchClient;
 use PhpAmqpLib\Connection\AbstractConnection;
+use PHPUnit\Framework\Attributes\RequiresMethod;
 use PHPUnit\Framework\TestCase;
 use Predis\Client;
 use RdKafka\Producer as KafkaProducer;
@@ -64,6 +65,7 @@ use Symfony\Component\DependencyInjection\ChildDefinition;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
+use Symfony\Component\Lock\PersistingStoreInterface;
 use Symfony\Component\Lock\Store\InMemoryStore;
 use Symfony\Component\Mailer\Transport\Smtp\SmtpTransport;
 use Symfony\Component\Messenger\Transport\TransportInterface;
@@ -388,6 +390,7 @@ final class HealthCheckerAutoDetectionPassTest extends TestCase
         self::assertSame('clickhouse.analytics', $checker->getArgument(1));
     }
 
+    #[RequiresMethod(PersistingStoreInterface::class, 'save')]
     public function testProcessRegistersLockStoreCheckers(): void
     {
         $container = new ContainerBuilder();
@@ -400,6 +403,7 @@ final class HealthCheckerAutoDetectionPassTest extends TestCase
         self::assertSame('lock.default.store', $checker->getArgument(1));
     }
 
+    #[RequiresMethod(PersistingStoreInterface::class, 'save')]
     public function testProcessSkipsAbstractServiceTemplates(): void
     {
         $container = new ContainerBuilder();
@@ -412,6 +416,7 @@ final class HealthCheckerAutoDetectionPassTest extends TestCase
         self::assertTrue($container->hasDefinition('healthcheck.checker.lock.default.store'));
     }
 
+    #[RequiresMethod(PersistingStoreInterface::class, 'save')]
     public function testProcessSkipsAbstractTemplatesReachedThroughAnAlias(): void
     {
         $container = new ContainerBuilder();

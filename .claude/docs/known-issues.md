@@ -26,10 +26,22 @@ Recent FrameworkBundle releases (6.4.x latest, 7.4, 8.1) register abstract
 templates such as `lock.store.combined.abstract`. Detectors match by class, so
 a checker pointing at one failed container compilation ("reference to an
 abstract definition"). `HealthCheckerAutoDetectionPass` now drops any detected
-checker whose arguments reference an abstract definition. The lock file pinned
+checker whose arguments reference an abstract definition (aliases resolved).
+`HttpClientTargetDetector` is exempt: its targets come from explicit config, and a
+bad `client` reference there must fail compilation rather than silently drop the probe. The lock file pinned
 an older FrameworkBundle (roave/backward-compatibility-check caps
 `symfony/console`), so only the CI matrix — which removes roave and resolves
 the latest framework — exposed it.
+
+## Lock store check names contain the container hash (open)
+
+FrameworkBundle registers lock stores as hidden `.lock.<resource>.store.<hash>`
+services, so the checker id is `healthcheck.checker..lock.default.store.<hash>`
+and the label `Lock store (.lock.default.store.<hash>)`. The hash follows the DSN,
+so dashboards keyed by the check name break when the DSN changes. Not fixed yet:
+a combined store yields several hidden services per resource (stripping the hash
+collides) and the DSN may contain credentials (unusable as a label). Candidate
+fix: `lock.<resource>` plus a positional index for combined stores.
 
 ## PHPUnit deprecations from `MemcacheCheckerTest` (pecl memcache)
 

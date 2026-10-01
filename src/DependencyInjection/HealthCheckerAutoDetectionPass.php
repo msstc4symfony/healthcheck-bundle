@@ -6,6 +6,7 @@ namespace Msstc4Symfony\HealthCheckBundle\DependencyInjection;
 
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CheckInterface;
 use Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector\CheckerDetectorInterface;
+use Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector\HttpClientTargetDetector;
 use Override;
 use RuntimeException;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
@@ -30,7 +31,8 @@ final class HealthCheckerAutoDetectionPass implements CompilerPassInterface
             $detector = $this->instantiate($container, $id);
 
             foreach ($detector->detect($container) as $checkerId => $checkerDefinition) {
-                if ($this->targetsAbstractService($container, $checkerDefinition)) {
+                // Explicitly configured targets must still fail loudly on a bad reference.
+                if (!$detector instanceof HttpClientTargetDetector && $this->targetsAbstractService($container, $checkerDefinition)) {
                     continue;
                 }
 
@@ -55,9 +57,17 @@ final class HealthCheckerAutoDetectionPass implements CompilerPassInterface
      */
     private function targetsAbstractService(ContainerBuilder $container, Definition $checker): bool
     {
-        return array_any($checker->getArguments(), fn ($argument): bool => $argument instanceof Reference
-        && $container->hasDefinition((string) $argument)
-        && $container->getDefinition((string) $argument)->isAbstract());
+        return array_any(
+            $checker->getArguments(),
+            fn (mixed $argument): bool => $this->isAbstractReference($container, $argument),
+        );
+    }
+
+    private function isAbstractReference(ContainerBuilder $container, mixed $argument): bool
+    {
+        return $argument instanceof Reference
+            && $container->has((string) $argument)
+            && $container->findDefinition((string) $argument)->isAbstract();
     }
 
     private function register(ContainerBuilder $container, string $id, Definition $definition): void

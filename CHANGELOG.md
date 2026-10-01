@@ -16,4 +16,8 @@ First release under `msstc4symfony/healthcheck-bundle` / `Msstc4Symfony\HealthCh
 
 ### Fixed
 
+- Container compilation failed on recent FrameworkBundle releases (6.4.x latest, 7.4, 8.1),
+  which register abstract templates such as `lock.store.combined.abstract`; auto-detected
+  checkers now skip abstract services. Explicitly configured HTTP targets still fail loudly
+  on a bad client reference.
 - Test suite compatibility with Symfony 8 (`KernelTestCase::runCommand()` became static).

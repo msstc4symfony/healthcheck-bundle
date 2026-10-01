@@ -67,6 +67,7 @@ use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\Lock\Store\InMemoryStore;
 use Symfony\Component\Mailer\Transport\Smtp\SmtpTransport;
 use Symfony\Component\Messenger\Transport\TransportInterface;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 final class HealthCheckerAutoDetectionPassTest extends TestCase
 {
@@ -409,6 +410,39 @@ final class HealthCheckerAutoDetectionPassTest extends TestCase
 
         self::assertFalse($container->hasDefinition('healthcheck.checker.lock.store.combined.abstract'));
         self::assertTrue($container->hasDefinition('healthcheck.checker.lock.default.store'));
+    }
+
+    public function testProcessSkipsAbstractTemplatesReachedThroughAnAlias(): void
+    {
+        $container = new ContainerBuilder();
+        $container->setDefinition('lock.store.combined.abstract', new Definition(InMemoryStore::class)->setAbstract(true));
+        $container->setAlias('lock.combined.alias', 'lock.store.combined.abstract');
+        $container->setDefinition('custom.store', new Definition(InMemoryStore::class));
+
+        $this->runPass($container);
+
+        self::assertFalse($container->hasDefinition('healthcheck.checker.lock.store.combined.abstract'));
+        self::assertTrue($container->hasDefinition('healthcheck.checker.custom.store'));
+    }
+
+    public function testProcessKeepsConfiguredHttpTargetEvenWithAnAbstractClient(): void
+    {
+        $container = new ContainerBuilder();
+        $container->setDefinition('my.client', new Definition(HttpClientInterface::class)->setAbstract(true));
+        $container->setParameter(HealthCheckExtension::PARAM_HTTP_CLIENT_TARGETS, [
+            'api' => [
+                'url' => 'https://api.example.com/health',
+                'method' => 'GET',
+                'expected_status_codes' => [200],
+                'client' => 'my.client',
+                'timeout_seconds' => 3,
+            ],
+        ]);
+
+        $this->runPass($container);
+
+        // Kept so that container compilation reports the misconfiguration instead of dropping the probe.
+        self::assertTrue($container->hasDefinition('healthcheck.checker.http_client.api'));
     }
 
     public function testProcessRegistersHttpClientTargetsFromConfig(): void

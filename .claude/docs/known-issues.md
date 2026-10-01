@@ -20,6 +20,24 @@ bundle:
 Adding a new dev tool with a narrow Symfony range: fix it in
 `bundle-standard`, not here.
 
+## Auto-detection skips abstract service templates
+
+Recent FrameworkBundle releases (6.4.x latest, 7.4, 8.1) register abstract
+templates such as `lock.store.combined.abstract`. Detectors match by class, so
+a checker pointing at one failed container compilation ("reference to an
+abstract definition"). `HealthCheckerAutoDetectionPass` now drops any detected
+checker whose arguments reference an abstract definition. The lock file pinned
+an older FrameworkBundle (roave/backward-compatibility-check caps
+`symfony/console`), so only the CI matrix — which removes roave and resolves
+the latest framework — exposed it.
+
+## PHPUnit deprecations from `MemcacheCheckerTest` (pecl memcache)
+
+Stubbing `Memcache` makes PHPUnit generate a class from the extension's
+signatures, which use implicitly nullable parameters — deprecated since PHP 8.4.
+The 38 deprecations in CI come from the extension, not the bundle; they do not
+fail the run. They disappear when pecl memcache ships explicit nullable types.
+
 ## Symfony 8 — `KernelTestCase::runCommand()` is now a static method
 
 A private `runCommand()` helper in a `KernelTestCase` subclass fatals on

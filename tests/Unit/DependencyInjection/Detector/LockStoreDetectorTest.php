@@ -110,12 +110,13 @@ final class LockStoreDetectorTest extends TestCase
         $container = new ContainerBuilder();
         $container->setDefinition('.lock.invoice.store.aaa', $this->frameworkStore());
         $container->setDefinition('.lock.invoice.store.bbb', $this->frameworkStore());
-        $container->setDefinition('.lock.invoice.store.combined', new ChildDefinition('lock.store.combined.abstract')
+        $container->setDefinition('.lock.invoice.store.ccc', new ChildDefinition('lock.store.combined.abstract')
             ->replaceArgument(0, [new Reference('.lock.invoice.store.aaa'), new Reference('.lock.invoice.store.bbb')]));
-        $container->setDefinition('lock.invoice.factory', $this->resourceFactory('.lock.invoice.store.combined'));
+        $container->setDefinition('lock.invoice.factory', $this->resourceFactory('.lock.invoice.store.ccc'));
 
         $detected = iterator_to_array(new LockStoreDetector()->detect($container));
 
+        self::assertSame(['healthcheck.checker..lock.invoice.store.aaa', 'healthcheck.checker..lock.invoice.store.bbb'], array_keys($detected), 'the untagged combined store itself is not probed');
         self::assertSame('lock.invoice[0]', $detected['healthcheck.checker..lock.invoice.store.aaa']->getArgument(1));
         self::assertSame('lock.invoice[1]', $detected['healthcheck.checker..lock.invoice.store.bbb']->getArgument(1));
     }

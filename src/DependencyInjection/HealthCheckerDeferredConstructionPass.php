@@ -102,29 +102,71 @@ final readonly class HealthCheckerDeferredConstructionPass implements CompilerPa
     /**
      * Child definitions get their class and parent arguments only in ResolveChildDefinitionsPass,
      * which runs after this pass; merge the chain the same way (child wins) to classify them now.
+     * A circular chain is left as is for ResolveChildDefinitionsPass to report.
      */
     private function flatten(ContainerBuilder $container, Definition $definition): Definition
     {
         $chain = [$definition];
-        while ($definition instanceof ChildDefinition && $container->has($definition->getParent())) {
-            $definition = $container->findDefinition($definition->getParent());
-            $chain[] = $definition;
+        $visited = [];
+        $current = $definition;
+        while ($current instanceof ChildDefinition && $container->has($current->getParent())) {
+            if (isset($visited[$current->getParent()])) {
+                return $definition;
+            }
+
+            $visited[$current->getParent()] = true;
+            $current = $container->findDefinition($current->getParent());
+            $chain[] = $current;
         }
 
         if (count($chain) === 1) {
-            return $chain[0];
+            return $definition;
         }
 
         $class = null;
+        foreach ($chain as $link) {
+            $class ??= $link->getClass();
+        }
+
+        $flattened = new Definition($class);
+        $positions = $this->constructorPositions($container, $flattened);
         $arguments = [];
         foreach (array_reverse($chain) as $link) {
-            $class = $link->getClass() ?? $class;
             foreach ($link->getArguments() as $key => $value) {
-                $arguments[is_string($key) && str_starts_with($key, 'index_') ? (int) substr($key, 6) : $key] = $value;
+                $arguments[$this->argumentPosition($key, $positions)] = $value;
             }
         }
 
-        return new Definition($class, $arguments);
+        return $flattened->setArguments($arguments);
+    }
+
+    /**
+     * @return array<string, non-negative-int> "$parameter" => constructor position
+     */
+    private function constructorPositions(ContainerBuilder $container, Definition $checker): array
+    {
+        $positions = [];
+        foreach ($this->reflection($container, $checker)?->getConstructor()?->getParameters() ?? [] as $position => $parameter) {
+            $positions['$' . $parameter->getName()] = $position;
+        }
+
+        return $positions;
+    }
+
+    /**
+     * @param array<string, non-negative-int> $positions
+     */
+    private function argumentPosition(int|string $key, array $positions): int|string
+    {
+        if (is_int($key)) {
+            return $key;
+        }
+
+        if (str_starts_with($key, 'index_')) {
+            return (int) substr($key, 6);
+        }
+
+        return $positions[$key] ?? $key;
     }
 
     private function unwrapTimeout(ContainerBuilder $container, Definition $definition): Definition

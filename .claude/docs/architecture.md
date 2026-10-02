@@ -61,9 +61,12 @@ fail a probe.
    `CheckerDetectorInterface` services (tagged `healthcheck.detector` via
    `#[AutoconfigureTag]`), instantiates each via `new $class()`, calls
    `detect($container)`, registers yielded checker `Definition`s with the
-   `CheckInterface::class` tag. Drops a checker whose target is a
-   `StoreFactory::createStore` lock store wrapping a service another detected
-   checker already probes (`framework.lock` given a connection id).
+   `CheckInterface::class` tag. Drops a checker whose detector implements
+   `WrappedTargetDetectorInterface` (`@internal`, only `LockStoreDetector`:
+   a `StoreFactory::createStore` store around a connection id) when the
+   wrapped service is probed by a checker not listed in `non_critical`, and
+   the dropped checker's id is in neither `non_critical` nor
+   `timeouts.overrides` (since 1.3.1; the pass reads both parameters).
 2. **`HealthCheckerTimeoutDecorationPass`** — wraps each
    `CheckInterface`-tagged service in `TimeoutCheckerDecorator`, retags the
    wrapper.

@@ -13,6 +13,7 @@ use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\HttpKernel\Kernel;
 use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
+use Throwable;
 
 final class TestKernel extends Kernel
 {
@@ -31,22 +32,6 @@ final class TestKernel extends Kernel
         private readonly ?Closure $configureServices = null,
     ) {
         parent::__construct($environment, $debug);
-    }
-
-    private function topErrorHandler(): ?callable
-    {
-        $handler = set_error_handler(null);
-        restore_error_handler();
-
-        return $handler;
-    }
-
-    private function topExceptionHandler(): ?callable
-    {
-        $handler = set_exception_handler(null);
-        restore_exception_handler();
-
-        return $handler;
     }
 
     /**
@@ -138,5 +123,27 @@ final class TestKernel extends Kernel
             \dirname(__DIR__, 3) . '/src/Presentation/Controller/',
             'attribute',
         );
+    }
+
+    /**
+     * @return (callable(int, string, string, int): bool)|null
+     */
+    private function topErrorHandler(): ?callable
+    {
+        $handler = set_error_handler(null);
+        restore_error_handler();
+
+        return $handler;
+    }
+
+    /**
+     * @return (callable(Throwable): void)|null
+     */
+    private function topExceptionHandler(): ?callable
+    {
+        $handler = set_exception_handler(null);
+        restore_exception_handler();
+
+        return $handler;
     }
 }

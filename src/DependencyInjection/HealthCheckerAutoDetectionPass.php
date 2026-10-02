@@ -7,13 +7,13 @@ namespace Msstc4Symfony\HealthCheckBundle\DependencyInjection;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CheckInterface;
 use Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector\CheckerDetectorInterface;
 use Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector\HttpClientTargetDetector;
+use Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector\WrappedTargetDetectorInterface;
 use Override;
 use RuntimeException;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
-use Symfony\Component\Lock\Store\StoreFactory;
 
 /**
  * Discovers checker-detector services tagged with `healthcheck.detector`, runs each one,
@@ -38,47 +38,63 @@ final class HealthCheckerAutoDetectionPass implements CompilerPassInterface
                     continue;
                 }
 
-                $detected[$checkerId] = $checkerDefinition;
+                $detected[$checkerId] = [$checkerDefinition, $detector];
             }
         }
 
-        $probedTargets = [];
-        foreach ($detected as $checkerDefinition) {
+        $nonCritical = $this->configuredIds($container, HealthCheckExtension::PARAM_NON_CRITICAL_CHECKERS, false);
+        $configured = $nonCritical + $this->configuredIds($container, HealthCheckExtension::PARAM_TIMEOUT_OVERRIDES, true);
+
+        $criticallyProbed = [];
+        foreach ($detected as $checkerId => [$checkerDefinition]) {
             $target = $this->target($checkerDefinition);
-            if ($target !== null) {
-                $probedTargets[$this->resolveAlias($container, $target)] = true;
+            if ($target !== null && !isset($nonCritical[$checkerId])) {
+                $criticallyProbed[$this->resolveAlias($container, $target)] = true;
             }
         }
 
-        foreach ($detected as $checkerId => $checkerDefinition) {
-            if (!$this->wrapsProbedConnection($container, $checkerDefinition, $probedTargets)) {
+        foreach ($detected as $checkerId => [$checkerDefinition, $detector]) {
+            if (isset($configured[$checkerId]) || !$this->wrapsCriticallyProbedService($container, $detector, $checkerDefinition, $criticallyProbed)) {
                 $this->register($container, $checkerId, $checkerDefinition);
             }
         }
     }
 
     /**
-     * framework.lock given a connection service id (a \Redis or DBAL connection, …) builds a hidden
-     * StoreFactory store around it; the connection already has its own probe.
+     * Skipping is safe only while a critical checker still fails readiness when the wrapped service is down;
+     * a checker id named in non_critical / timeouts is always kept so that configuration stays effective.
      *
-     * @param array<string, true> $probedTargets
+     * @param array<string, true> $criticallyProbed
      */
-    private function wrapsProbedConnection(ContainerBuilder $container, Definition $checker, array $probedTargets): bool
+    private function wrapsCriticallyProbedService(ContainerBuilder $container, CheckerDetectorInterface $detector, Definition $checker, array $criticallyProbed): bool
     {
-        $store = $this->target($checker);
-        if ($store === null || !$container->has($store)) {
+        if (!$detector instanceof WrappedTargetDetectorInterface) {
             return false;
         }
 
-        $storeDefinition = $container->findDefinition($store);
-        $factory = $storeDefinition->getFactory();
-        if (!is_array($factory) || $factory[0] !== StoreFactory::class || $factory[1] !== 'createStore') {
-            return false;
+        $wrapped = $detector->wrappedTarget($container, $checker);
+
+        return $wrapped !== null && isset($criticallyProbed[$this->resolveAlias($container, $wrapped)]);
+    }
+
+    /**
+     * @return array<string, true>
+     */
+    private function configuredIds(ContainerBuilder $container, string $parameter, bool $asKeys): array
+    {
+        $value = $container->hasParameter($parameter) ? $container->getParameter($parameter) : [];
+        if (!is_array($value)) {
+            return [];
         }
 
-        $connection = $storeDefinition->getArguments()[0] ?? null;
+        $ids = [];
+        foreach ($asKeys ? array_keys($value) : $value as $id) {
+            if (is_string($id)) {
+                $ids[$id] = true;
+            }
+        }
 
-        return $connection instanceof Reference && isset($probedTargets[$this->resolveAlias($container, (string) $connection)]);
+        return $ids;
     }
 
     private function target(Definition $checker): ?string

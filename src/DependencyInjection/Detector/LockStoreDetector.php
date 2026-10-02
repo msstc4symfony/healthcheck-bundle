@@ -12,6 +12,7 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\Lock\PersistingStoreInterface;
+use Symfony\Component\Lock\Store\StoreFactory;
 
 /**
  * Probes the stores the application uses: every store FrameworkBundle builds for a configured
@@ -23,7 +24,7 @@ use Symfony\Component\Lock\PersistingStoreInterface;
  * combined store): their ids end in a hash of the DSN, which may also carry credentials. The
  * checker ids stay "healthcheck.checker.<store id>" for the non_critical / timeouts keys.
  */
-final readonly class LockStoreDetector implements CheckerDetectorInterface
+final readonly class LockStoreDetector implements CheckerDetectorInterface, WrappedTargetDetectorInterface
 {
     private const string FRAMEWORK_STORE_TAG = 'lock.store';
 
@@ -56,6 +57,30 @@ final readonly class LockStoreDetector implements CheckerDetectorInterface
     }
 
     /**
+     * framework.lock given a connection service id (a \Redis or DBAL connection, …) builds a hidden
+     * StoreFactory store around it.
+     */
+    #[Override]
+    public function wrappedTarget(ContainerBuilder $container, Definition $checker): ?string
+    {
+        $store = $this->firstReference($checker);
+        if (!$store instanceof Reference || !$container->has((string) $store)) {
+            return null;
+        }
+
+        // Compared part by part: Rector turns an [X::class, 'method'] literal into a first-class callable.
+        $storeDefinition = $container->findDefinition((string) $store);
+        $factory = $storeDefinition->getFactory();
+        if (!is_array($factory) || $factory[0] !== StoreFactory::class || $factory[1] !== 'createStore') {
+            return null;
+        }
+
+        $connection = $this->firstReference($storeDefinition);
+
+        return $connection instanceof Reference ? (string) $connection : null;
+    }
+
+    /**
      * @return array<string, non-empty-list<string>> store id => labels of the resources using it
      */
     private function resourceLabels(ContainerBuilder $container): array
@@ -67,26 +92,24 @@ final readonly class LockStoreDetector implements CheckerDetectorInterface
             }
 
             $resource = 'lock.' . $match[1];
-            $store = $this->firstArgument($definition);
+            $store = $this->firstReference($definition);
             if (!$store instanceof Reference) {
                 continue;
             }
 
             $storeDefinition = $container->hasDefinition((string) $store) ? $container->getDefinition((string) $store) : null;
-            $combined = $storeDefinition instanceof Definition && $this->isChildOf($storeDefinition, self::FRAMEWORK_COMBINED_STORE_TEMPLATE)
-                ? $this->firstArgument($storeDefinition)
-                : null;
+            $members = $storeDefinition instanceof Definition && $this->isChildOf($storeDefinition, self::FRAMEWORK_COMBINED_STORE_TEMPLATE)
+                ? $this->firstReferenceList($storeDefinition)
+                : [];
 
-            if (!is_array($combined)) {
+            if ($members === []) {
                 $labels[(string) $store][] = $resource;
 
                 continue;
             }
 
-            foreach (array_values($combined) as $position => $member) {
-                if ($member instanceof Reference) {
-                    $labels[(string) $member][] = sprintf('%s[%d]', $resource, $position);
-                }
+            foreach ($members as $position => $member) {
+                $labels[(string) $member][] = sprintf('%s[%d]', $resource, $position);
             }
         }
 
@@ -98,10 +121,24 @@ final readonly class LockStoreDetector implements CheckerDetectorInterface
         return $definition instanceof ChildDefinition && $definition->getParent() === $parent;
     }
 
-    private function firstArgument(Definition $definition): mixed
+    private function firstReference(Definition $definition): ?Reference
     {
         $arguments = $definition->getArguments();
+        $argument = $arguments['index_0'] ?? $arguments[0] ?? null;
 
-        return $arguments['index_0'] ?? $arguments[0] ?? null;
+        return $argument instanceof Reference ? $argument : null;
+    }
+
+    /**
+     * @return array<non-negative-int, Reference> position in the list => reference
+     */
+    private function firstReferenceList(Definition $definition): array
+    {
+        $arguments = $definition->getArguments();
+        $argument = $arguments['index_0'] ?? $arguments[0] ?? null;
+
+        return is_array($argument)
+            ? array_filter(array_values($argument), static fn (mixed $member): bool => $member instanceof Reference)
+            : [];
     }
 }

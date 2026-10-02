@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.3.1
+
+### Fixed
+
+- A `framework.lock` store wrapping an already probed connection (1.3.0) is skipped only while a critical
+  checker still probes that connection, and never when its own checker id is listed in `non_critical` or
+  `timeouts.overrides`. In 1.3.0 the store disappeared even then: its configuration was silently ignored,
+  and with a `non_critical` connection a lock-store outage no longer failed readiness.
+- `DBALConnectionChecker` always runs the platform's dummy `SELECT`: a connection that reports itself
+  connected after the server went away (long-running workers) passed readiness.
+- A checker declared as a child of a `parent` service: a named argument (`$name`) of the child overrides
+  the parent's positional one in the failure label too; circular `parent` chains no longer exhaust memory
+  at container build (Symfony reports the cycle).
+
 ## 1.3.0
 
 ### Fixed

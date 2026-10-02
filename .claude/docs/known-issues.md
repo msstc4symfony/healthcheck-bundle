@@ -313,3 +313,33 @@ Rector превращает литерал `[StoreFactory::class, 'createStore']
 - `symfony/*-contracts`: в `require` объявлять нечего — из контрактов код использует только
   `HttpClient`, а он нужен лишь опциональному `HttpClientChecker` (приходит с `symfony/http-client`
   из `composer-ci.json`).
+
+## Ревью v1.2.0 → v1.3.0, фиксы в v1.3.1 (2026-10-02 UTC)
+
+- **M1 — пропуск lock store поверх проверяемого соединения.** `LockStoreChecker` делает
+  `save()`/`delete()` (EVAL на Redis, INSERT в `lock_keys` на DBAL), т.е. проверяет больше, чем
+  PING/`SELECT 1` соединения. С 1.3.1 store пропускается, только если цель проверяет хотя бы один
+  чекер не из `non_critical`, и id чекера store не упомянут ни в `non_critical`, ни в
+  `timeouts.overrides` (`HealthCheckerAutoDetectionPass` читает оба параметра расширения сам).
+  Решение «переносить критичность» вместо «не пропускать вообще»: дубль на одном и том же Redis
+  был причиной фичи 1.3.0.
+- **m4.** Знание о форме `framework.lock` ушло в `LockStoreDetector::wrappedTarget()` через
+  `@internal WrappedTargetDetectorInterface`; pass больше не импортирует `StoreFactory`.
+  Интерфейс `@internal` — не обещаем сторонним детекторам API в патч-релизе.
+- **m1/m2 `flatten()`.** Цикл `parent` (pass стоит до `ResolveChildDefinitionsPass`) раньше
+  съедал память — теперь определение возвращается как есть, ошибку даёт Symfony. Именованные
+  аргументы (`$name`) сводятся к позиции через reflection конструктора итогового класса, иначе
+  позиционный аргумент родителя побеждал именованный у потомка.
+- **s1.** `DBALConnectionChecker` всегда шлёт dummy SELECT: `isConnected()` остаётся `true`, когда
+  сервер закрыл долгоживущее соединение (worker mode).
+- **Отклонено s2** (поднять `symfony/framework-bundle` до `^6.4.13` вместо `conflict` на
+  `symfony/error-handler`): верификатор `bundle-standard` требует в `require` ровно
+  `^6.4|^7.0|^8.0`; к тому же `conflict` уже, чем такое ограничение (бьёт только по сломанным
+  релизам error-handler), а «потребитель молча остаётся на 1.2.x» верно для обоих вариантов.
+- **Отклонено s3** (label вместо FQCN в `NonCriticalCheckerDecorator`): у `CheckInterface` нет
+  публичного `label()` (он `protected` в `AbstractReadinessChecker`, а такие чекеры исключения
+  не бросают); новый публичный контракт — материал минорного релиза. FQCN совпадает с форматом
+  `parallel: X failed (…)` и сообщений `TimeoutCheckerDecorator`.
+- **s5** уже покрыт: `HealthCheckerAutoDetectionPassTest::testProcessPreservesChildCachePoolNameOverParent`.
+- **m5.** Порядок элементов класса `TestKernel` выправлен вручную; правило `ordered_class_elements`
+  в `.php-cs-fixer.dist.php` включить нельзя — файл `ExactFileRule` в `bundle-standard` (follow-up).

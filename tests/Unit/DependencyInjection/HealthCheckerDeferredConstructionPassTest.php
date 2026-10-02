@@ -86,6 +86,34 @@ final class HealthCheckerDeferredConstructionPassTest extends TestCase
         self::assertSame('Lock store (child-name)', $container->getDefinition('app.lock')->getArgument(1));
     }
 
+    public function testLabelsAChildDefinitionWhoseNamedArgumentReplacesAPositionalParentArgument(): void
+    {
+        $container = new ContainerBuilder();
+        $container->setDefinition('app.lock.template', new Definition(LockStoreChecker::class, [new Reference('app.store'), 'parent-name'])->setAbstract(true));
+        $container->setDefinition('app.lock', new ChildDefinition('app.lock.template')
+            ->setArgument('$name', 'child-name')
+            ->addTag(CheckInterface::class));
+
+        new HealthCheckerDeferredConstructionPass()->process($container);
+
+        self::assertSame('Lock store (child-name)', $container->getDefinition('app.lock')->getArgument(1));
+    }
+
+    /**
+     * ResolveChildDefinitionsPass reports the cycle later; this pass must not loop over it.
+     */
+    public function testLeavesAChildDefinitionWithCircularParentsUntouched(): void
+    {
+        $container = new ContainerBuilder();
+        $container->setDefinition('app.a', new ChildDefinition('app.b')->addTag(CheckInterface::class));
+        $container->setDefinition('app.b', new ChildDefinition('app.a'));
+
+        new HealthCheckerDeferredConstructionPass()->process($container);
+
+        self::assertInstanceOf(ChildDefinition::class, $container->getDefinition('app.a'));
+        self::assertFalse($container->hasDefinition('app.a.deferred_inner'));
+    }
+
     public function testLeavesAChildDefinitionWithAMissingParentUntouched(): void
     {
         $container = new ContainerBuilder();

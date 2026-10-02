@@ -434,6 +434,38 @@ final class HealthCheckerAutoDetectionPassTest extends TestCase
         self::assertTrue($container->hasDefinition('healthcheck.checker..lock.direct.store.stu'), 'a store the app builds itself is probed');
     }
 
+    /**
+     * In 1.2 the store kept readiness failing when the connection was non-critical.
+     */
+    public function testProcessKeepsLockStoreWrappingAConnectionProbedOnlyByANonCriticalChecker(): void
+    {
+        $container = new ContainerBuilder();
+        $container->setParameter(HealthCheckExtension::PARAM_NON_CRITICAL_CHECKERS, ['healthcheck.checker.app.redis']);
+        $container->setDefinition('app.redis', new Definition('Redis'));
+        $container->setDefinition('.lock.default.store.abc', $this->frameworkLockStore(new Reference('app.redis')));
+
+        $this->runPass($container);
+
+        self::assertTrue($container->hasDefinition('healthcheck.checker..lock.default.store.abc'));
+    }
+
+    public function testProcessKeepsLockStoreWhoseCheckerIdIsConfigured(): void
+    {
+        $container = new ContainerBuilder();
+        $container->setParameter(HealthCheckExtension::PARAM_NON_CRITICAL_CHECKERS, ['healthcheck.checker..lock.lenient.store.abc']);
+        $container->setParameter(HealthCheckExtension::PARAM_TIMEOUT_OVERRIDES, ['healthcheck.checker..lock.slow.store.def' => 500]);
+        $container->setDefinition('app.redis', new Definition('Redis'));
+        $container->setDefinition('.lock.lenient.store.abc', $this->frameworkLockStore(new Reference('app.redis')));
+        $container->setDefinition('.lock.slow.store.def', $this->frameworkLockStore(new Reference('app.redis')));
+        $container->setDefinition('.lock.plain.store.ghi', $this->frameworkLockStore(new Reference('app.redis')));
+
+        $this->runPass($container);
+
+        self::assertTrue($container->hasDefinition('healthcheck.checker..lock.lenient.store.abc'));
+        self::assertTrue($container->hasDefinition('healthcheck.checker..lock.slow.store.def'));
+        self::assertFalse($container->hasDefinition('healthcheck.checker..lock.plain.store.ghi'));
+    }
+
     #[RequiresMethod(PersistingStoreInterface::class, 'save')]
     public function testProcessSkipsAbstractServiceTemplates(): void
     {

@@ -44,6 +44,13 @@ abstract class AbstractHealthCommand extends Command
             }
         }
 
+        if ($result->warnings !== []) {
+            $output->writeln('Warnings:');
+            foreach ($result->warnings as $message) {
+                $output->writeln('	<comment>' . $message . '</comment>');
+            }
+        }
+
         return $result->success ? Command::SUCCESS : Command::FAILURE;
     }
 }

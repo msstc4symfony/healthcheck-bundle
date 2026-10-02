@@ -52,7 +52,8 @@ final readonly class HealthCheckerDeferredConstructionPass implements CompilerPa
 
             $definition = $container->getDefinition($id);
             $checker = $this->unwrapTimeout($container, $definition);
-            if (!$this->isReadinessOnly($container, $checker)) {
+            $checkerClass = $this->checkerClass($container, $checker);
+            if ($checkerClass === null || !$this->isReadinessOnly($container, $checker)) {
                 continue;
             }
 
@@ -64,8 +65,20 @@ final readonly class HealthCheckerDeferredConstructionPass implements CompilerPa
             $container->setDefinition($id, new Definition(DeferredReadinessCheckerDecorator::class)
                 ->addArgument(new ServiceClosureArgument(new Reference($innerId)))
                 ->addArgument($this->label($container, $checker, $id))
+                ->addArgument($checkerClass)
                 ->addTag(CheckInterface::class));
         }
+    }
+
+    /**
+     * @return class-string<CheckInterface>|null
+     */
+    private function checkerClass(ContainerBuilder $container, Definition $checker): ?string
+    {
+        $class = $container->getParameterBag()->resolveValue($checker->getClass());
+        $name = is_string($class) ? $container->getReflectionClass($class, false)?->getName() : null;
+
+        return $name !== null && is_a($name, CheckInterface::class, true) ? $name : null;
     }
 
     private function isReadinessOnly(ContainerBuilder $container, Definition $checker): bool

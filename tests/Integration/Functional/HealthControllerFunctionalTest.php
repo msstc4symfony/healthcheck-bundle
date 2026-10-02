@@ -17,11 +17,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
  * End-to-end HTTP probe tests against a real Symfony kernel.
  *
  * Asserts each probe endpoint resolves through routing → controller → action pipeline
- * and produces the right status code + content-type in text format. The JSON output
- * path is exhaustively covered by the unit HealthControllerTest, which calls
- * setRequestFormat('json') directly — there is no public route attribute that triggers
- * JSON via URL, so functional tests of that branch require an out-of-bundle format
- * listener and would test the listener, not the controller.
+ * and produces the right status code + content-type in text and JSON formats.
  */
 final class HealthControllerFunctionalTest extends WebTestCase
 {
@@ -85,6 +81,40 @@ final class HealthControllerFunctionalTest extends WebTestCase
         self::assertStringContainsString('Result: up', (string) $response->getContent());
     }
 
+    public function testReadinessDefaultsToPlainText(): void
+    {
+        $client = self::createClient();
+        $client->request(Request::METHOD_GET, '/_/healthcheck/readiness', server: ['HTTP_ACCEPT' => '*/*']);
+
+        $response = $client->getResponse();
+        self::assertStringStartsWith('text/plain', (string) $response->headers->get('Content-Type'));
+        self::assertStringStartsWith('Result: up', (string) $response->getContent());
+    }
+
+    public function testReadinessReturnsJsonForFormatQueryParameter(): void
+    {
+        $client = self::createClient();
+        $client->request(Request::METHOD_GET, '/_/healthcheck/readiness?_format=json');
+
+        $this->assertJsonProbe($client->getResponse());
+    }
+
+    public function testLivelinessReturnsJsonForAcceptHeader(): void
+    {
+        $client = self::createClient();
+        $client->request(Request::METHOD_GET, '/_/healthcheck/liveliness', server: ['HTTP_ACCEPT' => 'application/json']);
+
+        $this->assertJsonProbe($client->getResponse());
+    }
+
+    public function testFormatQueryParameterWinsOverAcceptHeader(): void
+    {
+        $client = self::createClient();
+        $client->request(Request::METHOD_GET, '/_/healthcheck/readiness?_format=txt', server: ['HTTP_ACCEPT' => 'application/json']);
+
+        self::assertStringStartsWith('Result: up', (string) $client->getResponse()->getContent());
+    }
+
     public function testUnknownProbeEndpointReturns404(): void
     {
         $client = self::createClient();
@@ -92,5 +122,15 @@ final class HealthControllerFunctionalTest extends WebTestCase
 
         $this->expectException(NotFoundHttpException::class);
         $client->request(Request::METHOD_GET, '/_/healthcheck/unknown');
+    }
+
+    private function assertJsonProbe(Response $response): void
+    {
+        self::assertSame(Response::HTTP_OK, $response->getStatusCode());
+        self::assertSame('application/json', $response->headers->get('Content-Type'));
+        $payload = json_decode((string) $response->getContent(), true, flags: JSON_THROW_ON_ERROR);
+        self::assertIsArray($payload);
+        self::assertTrue($payload['success']);
+        self::assertArrayHasKey('warnings', $payload);
     }
 }

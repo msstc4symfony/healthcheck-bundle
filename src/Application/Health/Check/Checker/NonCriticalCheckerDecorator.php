@@ -19,7 +19,7 @@ use Symfony\Component\DependencyInjection\Attribute\Exclude;
  * report "checker A passed (message)" and "checker A failed (warning)" for the same run.
  */
 #[Exclude]
-final readonly class NonCriticalCheckerDecorator implements CheckInterface
+final readonly class NonCriticalCheckerDecorator implements CheckInterface, CheckerDecoratorInterface
 {
     public function __construct(
         private CheckInterface $inner,
@@ -52,5 +52,14 @@ final readonly class NonCriticalCheckerDecorator implements CheckInterface
         }
 
         return $result;
+    }
+
+    /**
+     * @internal
+     */
+    #[Override]
+    public function decoratedCheckerClass(): string
+    {
+        return CheckerClass::of($this->inner);
     }
 }

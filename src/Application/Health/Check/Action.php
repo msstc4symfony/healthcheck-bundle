@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Msstc4Symfony\HealthCheckBundle\Application\Health\Check;
 
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CheckerClass;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CheckInterface;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\Context;
@@ -48,7 +49,7 @@ final readonly class Action implements ActionInterface
             $result = $checker->check($result, $context);
 
             $this->eventDispatcher->dispatch(new HealthCheckerCompletedEvent(
-                $checker::class,
+                CheckerClass::of($checker),
                 (microtime(true) - $checkerStartedAt) * 1000,
                 count($result->errors) === $errorsBefore,
             ));

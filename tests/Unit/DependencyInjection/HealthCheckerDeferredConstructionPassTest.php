@@ -31,6 +31,7 @@ final class HealthCheckerDeferredConstructionPassTest extends TestCase
         self::assertSame(DeferredReadinessCheckerDecorator::class, $outer->getClass());
         self::assertEquals(new ServiceClosureArgument(new Reference('healthcheck.checker.store.deferred_inner')), $outer->getArgument(0));
         self::assertSame('Dependent', $outer->getArgument(1));
+        self::assertSame(DependentReadinessCheckerFixture::class, $outer->getArgument(2));
         self::assertTrue($outer->hasTag(CheckInterface::class));
 
         $inner = $container->getDefinition('healthcheck.checker.store.deferred_inner');
@@ -50,6 +51,7 @@ final class HealthCheckerDeferredConstructionPassTest extends TestCase
 
         self::assertSame(DeferredReadinessCheckerDecorator::class, $container->getDefinition('healthcheck.checker.store')->getClass());
         self::assertSame(TimeoutCheckerDecorator::class, $container->getDefinition('healthcheck.checker.store.deferred_inner')->getClass());
+        self::assertSame(DependentReadinessCheckerFixture::class, $container->getDefinition('healthcheck.checker.store')->getArgument(2));
     }
 
     public function testLeavesCheckersThatMaySupportLivelinessUntouched(): void

@@ -57,7 +57,7 @@ mailer, messenger, browser-kit, http-client, predis, elastica, ...) and runs
 
 Local repro: rsync repo (without vendor/.git) to `$TMPDIR/minimal/...`,
 `rm composer.lock`, `composer update`, run `vendor/bin/phpunit` (2026-10-01 UTC:
-230 tests, 78 skipped). Note `--do-not-record-test-run-history` exits 1 there
+230 tests, 78 skipped; 2026-10-02 UTC: 295 tests, 87 skipped). Note `--do-not-record-test-run-history` exits 1 there
 because `executionOrder="depends,defects"` emits a runner warning.
 
 ## SafeEventDispatcher in tests

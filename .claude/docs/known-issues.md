@@ -112,24 +112,14 @@ extension (2.5.2), so `composer-ci.lock` resolves `mongodb/mongodb` 2.x and
 installs on a dev box with an older extension without flags. Tests touching
 the driver need a matching extension locally.
 
-## `_format=json` does not switch probe response
+## Probe output format negotiation (since v1.2.0)
 
-`HealthController::formatOutput()` checks `$request->getRequestFormat()`,
-which reads from request **attributes** (set by the router from route
-attribute `_format` or path placeholder). `_format` as a query parameter
-or in the path extension (`.json`) is NOT auto-translated to the request
-format without an attribute on the route.
-
-The bundle's `#[Route]` attributes don't declare `_format`. As a result,
-the JSON formatting path can only be exercised via direct
-`$request->setRequestFormat('json')` — which is what the unit
-`HealthControllerTest` does. Functional tests under
-`tests/Integration/Functional/` deliberately skip the JSON branch with a
-doc comment explaining this.
-
-If a host application wants JSON probes over HTTP, they must wire
-content-negotiation themselves (e.g., a `kernel.request` listener that
-sets the format from `Accept`).
+`HealthController::responseFormat()`: `Request::getRequestFormat(null)` (explicit
+`setRequestFormat()` or a route `_format` attribute — the bundle's routes declare none) →
+`_format` query parameter (read via `query->all()`: `InputBag::get()` throws a 400 on
+`?_format[]=…`) → `Request::getPreferredFormat(null)` (Accept header). Only `json` switches
+output; anything else (incl. `*/*`, `text/html` — Kubernetes sends `*/*`) stays text. Before
+1.2.0 only the route attribute counted, so `?_format=json` and `Accept` were ignored.
 
 ## `CacheChecker` skip semantics changed in v1.1.0 (forthcoming)
 
@@ -236,8 +226,8 @@ FrameworkBundle 8.1 (`Resources/config/lock.php`) всегда регистри�
 - **Пароли в выводе проб.** `StoreFactory` и другие фабрики кладут полный DSN в текст исключения,
   а `AbstractReadinessChecker`/`DeferredReadinessCheckerDecorator`/`ElasticaConnectionChecker`
   отдавали его как есть. Теперь всё идёт через `Application\Health\Check\CredentialRedactor`
-  (user info в URL и секретные query-параметры). `ParallelAction` (`parallel: X failed (...)` при
-  исключении из `check()`) пока не редактирует — встроенные чекеры туда не бросают.
+  (user info в URL и секретные query-параметры); с v1.2.0 — и `ParallelAction`
+  (`parallel: X failed (...)`).
 - **Label при ошибке конструирования** вычисляется в `HealthCheckerDeferredConstructionPass` через
   `ReflectionClass::newLazyGhost()`: в «призрак» кладутся только скалярные promoted-аргументы
   конструктора (с разрешёнными `%параметрами%`), затем вызывается `label()`. Если `label()` трогает
@@ -246,12 +236,35 @@ FrameworkBundle 8.1 (`Resources/config/lock.php`) всегда регистри�
   в «passed»-сообщении, а readonly-шаблон с `doCheck(): void` не может передать деталь пробы без
   смены сигнатуры абстрактного метода (BC-слом для сторонних наследников). Поэтому в pass остаётся
   список readiness-only типов `[AbstractReadinessChecker, ElasticaConnectionChecker]`.
-- **Известно, отложено (этап B, CR-008):** `HealthCheckerCompletedEvent::$checkerClass` — класс
-  внешнего декоратора, а не реального чекера.
+- `HealthCheckerCompletedEvent::$checkerClass` был классом внешнего декоратора (CR-008) — исправлено
+  в v1.2.0, см. раздел ниже.
 - Пользовательский чекер, объявленный как `ChildDefinition` (без класса до `ResolveChildDefinitionsPass`), не распознаётся как readiness-only и создаётся сразу (eager).
-- В текстовом выводе HTTP-проб `warnings` не печатаются (только Errors/Messages) — предупреждения
-  non-critical чекеров видны только в JSON и логах. Тест non-critical читает `Response` через
-  `test.service_container`.
+- В текстовом выводе HTTP-проб `warnings` не печатались — с v1.2.0 есть секция `Warnings:` (в конце,
+  после `Messages:`, чтобы не сдвигать строки для существующих парсеров); консольные команды печатают
+  `Warnings:` только если они есть.
 - RED для `LockStoreSelectionTest` воспроизводится только на FrameworkBundle ≥ 8.1 (CI-lock сейчас
   8.0.x — там предопределённых хранилищ нет): копия в `$TMPDIR` с минимальным профилем +
   `composer require --dev symfony/lock:^8.1`.
+
+## Этап B → v1.2.0 (2026-10-02 UTC)
+
+- **Реальный класс чекера в событиях.** Декораторы бандла (`TimeoutCheckerDecorator`,
+  `NonCriticalCheckerDecorator`, `DeferredReadinessCheckerDecorator`) реализуют `@internal`
+  `Checker\CheckerDecoratorInterface::decoratedCheckerClass()`; `Checker\CheckerClass::of()` разворачивает
+  цепочку. `Deferred` не может спросить ещё не построенный чекер, поэтому класс передаёт
+  `HealthCheckerDeferredConstructionPass` третьим аргументом (класс внутреннего определения за
+  Timeout, с разрешёнными `%параметрами%`). Пользовательские декораторы интерфейс не реализуют —
+  для них событие по-прежнему называет сам декоратор.
+- **Кеш-пулы.** `CachePoolDetector` идёт по цепочке `ChildDefinition` (как `CachePoolPass`):
+  локальные адаптеры (Array, Apcu, Filesystem, FilesystemTagAware, PhpFiles, PhpArray, Null, включая
+  подклассы) и `cache.adapter.system` — он объявлен как `AdapterInterface` с фабрикой
+  `AbstractAdapter::createSystemCache`, класс ничего не говорит, поэтому признак — имя метода
+  фабрики — пропускаются. `ChainAdapter` локален, только если локальны все звенья; аргумент 0 до
+  `CachePoolPass` — id сервисов, после — inline `ChildDefinition` (наш pass идёт после, priority 0 <
+  32). Неизвестные/сторонние адаптеры, `ProxyAdapter`, `Psr16Adapter`, `TagAwareAdapter`,
+  помеченный `cache.pool` вручную, проверяются как раньше (лучше лишняя проба, чем пропущенная
+  зависимость). Несколько пулов на одном Redis (`cache.app` + наследники `cache.rate_limiter`,
+  `cache.scheduler`, …) дают по пробе на пул — дедупликации по провайдеру нет.
+- RED для `CachePoolSelectionTest::testAppPoolOnRedis…` использует `redis://127.0.0.1:1`
+  (мгновенный отказ соединения) — Redis-сервер не нужен, но нужен ext-redis или predis (иначе skip).
+

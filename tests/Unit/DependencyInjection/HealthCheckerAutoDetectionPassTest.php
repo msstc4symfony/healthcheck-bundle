@@ -186,7 +186,7 @@ final class HealthCheckerAutoDetectionPassTest extends TestCase
     public function testProcessRegistersCachePoolChecker(): void
     {
         $container = new ContainerBuilder();
-        $pool = new Definition(FilesystemAdapter::class);
+        $pool = new Definition(RedisAdapter::class);
         $pool->addTag('cache.pool', ['name' => 'my_pool']);
 
         $container->setDefinition('cache.app', $pool);

@@ -47,7 +47,7 @@ The bundle automatically detects and registers health checkers for the following
 - **Doctrine ORM** — entity managers (`doctrine.orm.*_entity_manager`)
 - **Doctrine MongoDB ODM** — MongoDB connections + document managers
 - **Doctrine Migrations** — schema-status probe
-- **Symfony Cache Pools** — all `cache.pool`-tagged services
+- **Symfony Cache Pools** — `cache.pool`-tagged services backed by infrastructure: Redis/Valkey, Memcached, PDO, Doctrine DBAL, Couchbase, third-party adapters, and chains containing one of them. Pools that live in memory or on the local disk (Array, APCu, Filesystem, PhpFiles, PhpArray, Null) — including FrameworkBundle's system pools `cache.system`, `cache.validator`, `cache.serializer`, … and a filesystem `cache.app` — are not probed
 - **Redis** / **Predis** / **Memcached** / **Memcache** — cache clients detected by class
 - **RabbitMQ** — `old_sound_rabbit_mq.connection`-tagged services
 - **Elastica** — Elasticsearch clients
@@ -85,20 +85,29 @@ Checks all external connections and dependencies.
 Result: up
 Errors: none
 Messages:
-    Redis connection passed
-    Database connection passed
-    Cache pool 'app' connection passed
+Redis connection passed
+	Database connection passed
+Warnings:
+Cache (cache.app) connection failed (Connection refused)
 ```
 
-**JSON Response Example** (send `Content-Type: application/json` header):
+`Warnings` lists failures of checkers configured as `non_critical`: they are reported but do not fail the probe.
+
+**JSON Response Example** — request `?_format=json` or send an `Accept: application/json` header (the query parameter wins over the header):
+```bash
+curl 'http://localhost/_/healthcheck/readiness?_format=json'
+curl -H 'Accept: application/json' http://localhost/_/healthcheck/readiness
+```
 ```json
 {
     "success": true,
     "errors": [],
     "messages": [
         "Redis connection passed",
-        "Database connection passed",
-        "Cache pool 'app' connection passed"
+        "Database connection passed"
+    ],
+    "warnings": [
+        "Cache (cache.app) connection failed (Connection refused)"
     ]
 }
 ```
@@ -111,7 +120,8 @@ Messages:
         "Redis connection failed",
         "Database connection timeout"
     ],
-    "messages": []
+    "messages": [],
+    "warnings": []
 }
 ```
 
@@ -127,7 +137,7 @@ Checks only the application itself without testing external dependencies.
 - `200` - Application is running correctly
 - `406` - Application has internal problems
 
-**Response Format:** Same as readiness check (text or JSON based on `Content-Type` header)
+**Response Format:** Same as readiness check (text by default, JSON via `?_format=json` or `Accept: application/json`)
 
 #### Ping Endpoint
 
@@ -151,13 +161,14 @@ Check all connections via command line.
 - `0` - Everything is working correctly
 - `1` - Something is wrong
 
-**Example Output:**
+**Example Output** (messages are shown with `-v` or when the check fails; errors and warnings always):
 ```
-Result: up
-Errors: none
+Result: success
 Messages:
     Redis connection passed
     Database connection passed
+Warnings:
+    Cache (cache.app) connection failed (Connection refused)
 ```
 
 #### Liveness Check

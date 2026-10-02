@@ -39,6 +39,15 @@ Per-checker step:
    / `warnings[]`) via `check()`.
 4. Final `Response` has `success = (errors === [])`.
 
+`HealthCheckerCompletedEvent::$checkerClass` and `ParallelAction`'s
+`parallel: X failed (…)` name the checker behind the bundle's decorators:
+`CheckerClass::of()` follows `CheckerDecoratorInterface::decoratedCheckerClass()`
+(both `@internal`, implemented by Timeout / Deferred / NonCritical decorators).
+
+`HealthController` answers in text unless the format resolves to `json`:
+request/route format → `?_format=` → `Accept` header. Text output sections:
+`Result`, `Errors`, `Messages`, `Warnings`.
+
 `Action` and `ParallelAction` compose `SafeEventDispatcher`
 (`Application/Health/Check/Event/`), which wraps the optional PSR-14
 dispatcher and swallows listener exceptions — a buggy listener must never
@@ -65,7 +74,8 @@ fail a probe.
    label is the checker's own `label()`, read at compile time from a PHP 8.4
    lazy ghost holding only the scalar constructor args (fallback
    `<CheckerClass> (<service>)`). Messages go through `CredentialRedactor`
-   on readiness and is never built for liveliness.
+   on readiness and is never built for liveliness. The pass also hands over the
+   checker class (third argument) so events can name it without building it.
 4. **`HealthCheckerCriticalityDecorationPass`** — wraps in
    `NonCriticalCheckerDecorator` for checkers listed in
    `non_critical` config, retags the wrapper.
@@ -111,6 +121,10 @@ Conventions:
 - Detectors may implement subclass detection
   (`$class === Target::class || is_subclass_of($class, Target::class)`); this
   is the canonical pattern for class-based detectors.
+
+`CachePoolDetector` skips pools whose adapter is local (in-memory / local disk /
+FrameworkBundle system cache, chains of only such adapters) — see
+`known-issues.md` "Этап B → v1.2.0".
 
 The 17 built-in detectors are listed in `tests/Unit/DependencyInjection/HealthCheckerAutoDetectionPassTest`
 and have per-detector unit tests under `tests/Unit/DependencyInjection/Detector/`.

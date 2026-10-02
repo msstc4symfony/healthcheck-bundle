@@ -6,6 +6,7 @@ namespace Msstc4Symfony\HealthCheckBundle\Test\Unit\Application\Health\Check\Che
 
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CheckInterface;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\DeferredReadinessCheckerDecorator;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\LockStoreChecker;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\Context;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
@@ -22,7 +23,7 @@ final class DeferredReadinessCheckerDecoratorTest extends TestCase
             $built = true;
 
             return new SuccessChecker();
-        }, 'Store (main)');
+        }, 'Store (main)', SuccessChecker::class);
 
         self::assertTrue($decorator->isSupport(new Context(CheckTypeEnum::READINESS)));
         self::assertFalse($decorator->isSupport(new Context(CheckTypeEnum::LIVELINESS)));
@@ -31,7 +32,7 @@ final class DeferredReadinessCheckerDecoratorTest extends TestCase
 
     public function testDelegatesToTheBuiltChecker(): void
     {
-        $decorator = new DeferredReadinessCheckerDecorator(static fn (): CheckInterface => new SuccessChecker(), 'Store (main)');
+        $decorator = new DeferredReadinessCheckerDecorator(static fn (): CheckInterface => new SuccessChecker(), 'Store (main)', SuccessChecker::class);
 
         $result = $decorator->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
@@ -41,7 +42,7 @@ final class DeferredReadinessCheckerDecoratorTest extends TestCase
 
     public function testReportsConstructionFailureAsThisCheckFailing(): void
     {
-        $decorator = new DeferredReadinessCheckerDecorator(static fn (): CheckInterface => throw new RuntimeException('Semaphore extension (sysvsem) is required.'), 'Lock store (.lock.semaphore.store)');
+        $decorator = new DeferredReadinessCheckerDecorator(static fn (): CheckInterface => throw new RuntimeException('Semaphore extension (sysvsem) is required.'), 'Lock store (.lock.semaphore.store)', LockStoreChecker::class);
 
         $result = $decorator->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
@@ -51,10 +52,17 @@ final class DeferredReadinessCheckerDecoratorTest extends TestCase
 
     public function testRedactsCredentialsInConstructionFailure(): void
     {
-        $decorator = new DeferredReadinessCheckerDecorator(static fn (): CheckInterface => throw new RuntimeException('Invalid DSN "redis://admin:s3cret@redis:6379/0"'), 'Lock store (.lock.default.store.abc)');
+        $decorator = new DeferredReadinessCheckerDecorator(static fn (): CheckInterface => throw new RuntimeException('Invalid DSN "redis://admin:s3cret@redis:6379/0"'), 'Lock store (.lock.default.store.abc)', LockStoreChecker::class);
 
         $result = $decorator->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
         self::assertSame(['Lock store (.lock.default.store.abc) failed (Invalid DSN "redis://***@redis:6379/0")'], $result->errors);
+    }
+
+    public function testNamesTheDeferredCheckerWithoutBuildingIt(): void
+    {
+        $decorator = new DeferredReadinessCheckerDecorator(static fn (): CheckInterface => throw new RuntimeException('must not be built'), 'Lock store (x)', LockStoreChecker::class);
+
+        self::assertSame(LockStoreChecker::class, $decorator->decoratedCheckerClass());
     }
 }

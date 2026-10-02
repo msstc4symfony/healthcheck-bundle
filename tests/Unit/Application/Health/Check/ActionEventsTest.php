@@ -5,6 +5,10 @@ declare(strict_types=1);
 namespace Msstc4Symfony\HealthCheckBundle\Test\Unit\Application\Health\Check;
 
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Action;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CheckInterface;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\DeferredReadinessCheckerDecorator;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\NonCriticalCheckerDecorator;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\TimeoutCheckerDecorator;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\Request;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Event\HealthCheckerCompletedEvent;
@@ -49,6 +53,25 @@ final class ActionEventsTest extends TestCase
         self::assertInstanceOf(HealthCheckerCompletedEvent::class, $checkerEvent);
         self::assertSame(FailChecker::class, $checkerEvent->checkerClass);
         self::assertFalse($checkerEvent->success);
+    }
+
+    public function testCheckerEventNamesTheCheckerBehindTheBundleDecorators(): void
+    {
+        $dispatcher = new RecordingDispatcherFixture();
+        $decorated = new NonCriticalCheckerDecorator(new DeferredReadinessCheckerDecorator(
+            static fn (): CheckInterface => new TimeoutCheckerDecorator(new SuccessChecker(), 60_000),
+            'Success',
+            SuccessChecker::class,
+        ));
+        $action = new Action([$decorated, new TimeoutCheckerDecorator(new FailChecker(), 60_000)], new SafeEventDispatcher($dispatcher));
+
+        $action->run(new Request(CheckTypeEnum::READINESS));
+
+        $classes = array_map(
+            static fn (object $event): ?string => $event instanceof HealthCheckerCompletedEvent ? $event->checkerClass : null,
+            $dispatcher->events,
+        );
+        self::assertSame([null, SuccessChecker::class, FailChecker::class, null], $classes);
     }
 
     public function testNoDispatchWhenDispatcherNull(): void

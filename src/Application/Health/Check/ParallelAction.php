@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Msstc4Symfony\HealthCheckBundle\Application\Health\Check;
 
 use Fiber;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CheckerClass;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CheckInterface;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\Context;
@@ -75,7 +76,7 @@ final readonly class ParallelAction implements ActionInterface
             // Synchronous fibers terminate on start(); no scheduling needed. When async-aware
             // checkers land, replace this drain with an actual loop (Suspension/Revolt).
             if ($entry['startError'] !== null) {
-                $combined->addError(sprintf('parallel: %s failed (%s)', $entry['checker']::class, $entry['startError']->getMessage()));
+                $combined->addError($this->failure($entry['checker'], $entry['startError']));
                 $success = false;
             } else {
                 try {
@@ -92,13 +93,13 @@ final readonly class ParallelAction implements ActionInterface
                     }
                     $success = $partial->errors === [];
                 } catch (Throwable $e) {
-                    $combined->addError(sprintf('parallel: %s failed (%s)', $entry['checker']::class, $e->getMessage()));
+                    $combined->addError($this->failure($entry['checker'], $e));
                     $success = false;
                 }
             }
 
             $this->eventDispatcher->dispatch(new HealthCheckerCompletedEvent(
-                $entry['checker']::class,
+                CheckerClass::of($entry['checker']),
                 (microtime(true) - $entry['startedAt']) * 1000,
                 $success,
             ));
@@ -111,5 +112,10 @@ final readonly class ParallelAction implements ActionInterface
         ));
 
         return $response;
+    }
+
+    private function failure(CheckInterface $checker, Throwable $e): string
+    {
+        return sprintf('parallel: %s failed (%s)', CheckerClass::of($checker), CredentialRedactor::redact($e->getMessage()));
     }
 }

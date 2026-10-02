@@ -6,6 +6,7 @@ namespace Msstc4Symfony\HealthCheckBundle\Test\Unit\Presentation\Command;
 
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Action;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CheckInterface;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\NonCriticalCheckerDecorator;
 use Msstc4Symfony\HealthCheckBundle\Presentation\Command\HealthReadinessCommand;
 use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\FailChecker;
 use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\SuccessChecker;
@@ -55,6 +56,13 @@ final class HealthReadinessCommandTest extends TestCase
                     new FailChecker(),
                 ],
                 'expect' => "Result: failed\nErrors:\n\tfail dump check\n",
+            ],
+            'warning' => [
+                'checkers' => [
+                    new SuccessChecker(),
+                    new NonCriticalCheckerDecorator(new FailChecker()),
+                ],
+                'expect' => "Result: success\nMessages:\n\tsuccess dump check\nWarnings:\n\tfail dump check\n",
             ],
         ];
     }

@@ -6,6 +6,7 @@ namespace Msstc4Symfony\HealthCheckBundle\Test\Unit\Presentation\Controller;
 
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Action;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CheckInterface;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\NonCriticalCheckerDecorator;
 use Msstc4Symfony\HealthCheckBundle\Presentation\Controller\HealthController;
 use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\FailChecker;
 use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\SuccessChecker;
@@ -66,6 +67,48 @@ final class HealthControllerTest extends TestCase
 
         self::assertSame(Response::HTTP_OK, $response->getStatusCode());
         self::assertSame('{"success":true,"errors":[],"messages":["success dump check"],"warnings":[]}', $response->getContent());
+    }
+
+    public function testTextOutputListsWarnings(): void
+    {
+        $controller = new HealthController(
+            new Action([new SuccessChecker(), new NonCriticalCheckerDecorator(new FailChecker())]),
+            new NullLogger(),
+        );
+
+        $response = $controller->readiness(Request::create('http://localhost'));
+
+        self::assertSame(Response::HTTP_OK, $response->getStatusCode());
+        self::assertSame(
+            "Result: up\nErrors: none\nMessages: \nsuccess dump check\nWarnings: \nfail dump check\n",
+            $response->getContent(),
+        );
+    }
+
+    public function testTextOutputReportsNoWarnings(): void
+    {
+        $controller = new HealthController(new Action([new SuccessChecker()]), new NullLogger());
+
+        self::assertStringEndsWith("Warnings: none\n", (string) $controller->readiness(Request::create('http://localhost'))->getContent());
+    }
+
+    public function testRouteFormatWinsOverQueryAndAcceptHeader(): void
+    {
+        $controller = new HealthController(new Action([new SuccessChecker()]), new NullLogger());
+
+        $request = Request::create('http://localhost/?_format=json', server: ['HTTP_ACCEPT' => 'application/json']);
+        $request->attributes->set('_format', 'txt');
+
+        self::assertStringStartsWith('Result: up', (string) $controller->readiness($request)->getContent());
+    }
+
+    public function testNonStringFormatQueryParameterFallsBackToAcceptHeader(): void
+    {
+        $controller = new HealthController(new Action([new SuccessChecker()]), new NullLogger());
+
+        $request = Request::create('http://localhost/?_format[]=json', server: ['HTTP_ACCEPT' => 'application/json']);
+
+        self::assertSame('application/json', $controller->readiness($request)->headers->get('Content-Type'));
     }
 
     /**

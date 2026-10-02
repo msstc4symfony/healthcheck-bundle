@@ -23,15 +23,17 @@ use Throwable;
  * @internal wired by HealthCheckerDeferredConstructionPass
  */
 #[Exclude]
-final readonly class DeferredReadinessCheckerDecorator implements CheckInterface
+final readonly class DeferredReadinessCheckerDecorator implements CheckInterface, CheckerDecoratorInterface
 {
     /**
      * @param Closure(): CheckInterface $factory
      * @param non-empty-string $label the checker's own label, reported when construction fails
+     * @param class-string<CheckInterface> $checkerClass known at compile time, so events name the checker even when it cannot be built
      */
     public function __construct(
         private Closure $factory,
         private string $label,
+        private string $checkerClass,
     ) {
     }
 
@@ -53,5 +55,11 @@ final readonly class DeferredReadinessCheckerDecorator implements CheckInterface
         }
 
         return $inner->check($result, $context);
+    }
+
+    #[Override]
+    public function decoratedCheckerClass(): string
+    {
+        return $this->checkerClass;
     }
 }

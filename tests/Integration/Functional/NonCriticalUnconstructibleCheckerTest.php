@@ -6,8 +6,10 @@ namespace Msstc4Symfony\HealthCheckBundle\Test\Integration\Functional;
 
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\ActionInterface;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CheckInterface;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\NonCriticalCheckerDecorator;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\Request as CheckRequest;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Event\HealthCheckerCompletedEvent;
 use Msstc4Symfony\HealthCheckBundle\DependencyInjection\HealthCheckExtension;
 use Msstc4Symfony\HealthCheckBundle\Test\Integration\Kernel\TestKernel;
 use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\DependentReadinessCheckerFixture;
@@ -16,13 +18,15 @@ use Override;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Pins the decorator order NonCritical( Deferred( Timeout( inner ) ) ): a non-critical checker that
- * cannot be constructed degrades readiness to a warning instead of failing it.
+ * cannot be constructed degrades readiness to a warning instead of failing it, and events still name
+ * the checker rather than its outermost decorator.
  */
 final class NonCriticalUnconstructibleCheckerTest extends TestCase
 {
@@ -62,5 +66,20 @@ final class NonCriticalUnconstructibleCheckerTest extends TestCase
 
         self::assertTrue($result->success);
         self::assertSame([sprintf('Dependent failed (%s)', UnconstructibleDependencyFixture::FAILURE)], $result->warnings);
+    }
+
+    public function testCheckerEventNamesTheRealCheckerClass(): void
+    {
+        $eventDispatcher = $this->kernel->getContainer()->get('event_dispatcher');
+        self::assertInstanceOf(EventDispatcherInterface::class, $eventDispatcher);
+        $checkerClasses = [];
+        $eventDispatcher->addListener(HealthCheckerCompletedEvent::class, static function (HealthCheckerCompletedEvent $event) use (&$checkerClasses): void {
+            $checkerClasses[] = $event->checkerClass;
+        });
+
+        $this->kernel->handle(Request::create('/_/healthcheck/readiness'));
+
+        self::assertContains(DependentReadinessCheckerFixture::class, $checkerClasses);
+        self::assertNotContains(NonCriticalCheckerDecorator::class, $checkerClasses);
     }
 }

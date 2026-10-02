@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Msstc4Symfony\HealthCheckBundle\Test\Unit\Application\Health\Check;
 
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CheckInterface;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\NonCriticalCheckerDecorator;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\TimeoutCheckerDecorator;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\Context;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\Request;
@@ -16,6 +18,7 @@ use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Event\SafeEventDisp
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\ParallelAction;
 use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\FailChecker;
 use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\SuccessChecker;
+use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\ThrowingChecker;
 use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Event\RecordingDispatcherFixture;
 use PHPUnit\Framework\TestCase;
 
@@ -72,6 +75,34 @@ final class ParallelActionTest extends TestCase
         $checkerEvent = $dispatcher->events[1];
         self::assertInstanceOf(HealthCheckerCompletedEvent::class, $checkerEvent);
         self::assertFalse($checkerEvent->success);
+    }
+
+    public function testRedactsCredentialsInThrownCheckerFailures(): void
+    {
+        $action = new ParallelAction([new ThrowingChecker('Connection to redis://app:s3cret@redis:6379 refused')]);
+
+        $response = $action->run(new Request(CheckTypeEnum::READINESS));
+
+        self::assertSame(
+            [sprintf('parallel: %s failed (Connection to redis://***@redis:6379 refused)', ThrowingChecker::class)],
+            $response->errors,
+        );
+    }
+
+    public function testCheckerEventAndFailureNameTheCheckerBehindTheBundleDecorators(): void
+    {
+        $dispatcher = new RecordingDispatcherFixture();
+        $action = new ParallelAction(
+            [new NonCriticalCheckerDecorator(new TimeoutCheckerDecorator(new ThrowingChecker('boom'), 60_000))],
+            new SafeEventDispatcher($dispatcher),
+        );
+
+        $response = $action->run(new Request(CheckTypeEnum::READINESS));
+
+        self::assertSame([sprintf('parallel: %s failed (boom)', ThrowingChecker::class)], $response->errors);
+        $checkerEvent = $dispatcher->events[1];
+        self::assertInstanceOf(HealthCheckerCompletedEvent::class, $checkerEvent);
+        self::assertSame(ThrowingChecker::class, $checkerEvent->checkerClass);
     }
 
     public function testDispatchesEvents(): void

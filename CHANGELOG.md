@@ -1,5 +1,31 @@
 # Changelog
 
+## 1.2.0
+
+### Added
+
+- JSON probe output over HTTP: `?_format=json` or an `Accept: application/json` header (a route-level
+  `_format` still wins, then the query parameter, then the header). Text stays the default.
+- Text output of `/_/healthcheck/{readiness,liveliness}` ends with a `Warnings:` section (failures of
+  `non_critical` checkers); the console commands print `Warnings:` when there are any.
+
+### Fixed
+
+- `HealthCheckerCompletedEvent::$checkerClass` (and the `parallel: X failed (…)` message) names the
+  real checker class again instead of the bundle's `TimeoutCheckerDecorator` /
+  `DeferredReadinessCheckerDecorator` / `NonCriticalCheckerDecorator`.
+- `ParallelAction` masks credentials in `parallel: X failed (…)` messages, like every other failure
+  message since 1.1.3.
+
+### Changed
+
+- Readiness probes only cache pools backed by infrastructure (Redis/Valkey, Memcached, PDO,
+  Doctrine DBAL, Couchbase, third-party adapters, chains containing one of them). Pools in memory or
+  on the local disk are no longer listed — FrameworkBundle's `cache.system`, `cache.validator`,
+  `cache.serializer`, `cache.property_info`, expression-language pools, and a filesystem `cache.app`.
+  Dashboards matching those check names lose them; `healthcheck.checker.cache.pool.<name>` ids of
+  local pools no longer exist; entries for them in `non_critical` / `timeouts` are ignored.
+
 ## 1.1.3
 
 ### Security
@@ -17,7 +43,7 @@
 ### Known limitations
 
 - `HealthCheckerCompletedEvent::$checkerClass` names the outermost decorator, not the real
-  checker class (see 1.1.2); exposing the real class is planned.
+  checker class (see 1.1.2); fixed in 1.2.0.
 
 ## 1.1.2
 

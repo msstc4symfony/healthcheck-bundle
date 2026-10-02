@@ -23,6 +23,8 @@ final class HealthController extends AbstractController
 
     private const string FORMAT_JSON = 'json';
 
+    private const string FORMAT_PARAMETER = '_format';
+
     private const string RESULT_UP = 'up';
 
     private const string RESULT_DOWN = 'down';
@@ -87,16 +89,37 @@ final class HealthController extends AbstractController
     {
         $code = $result->success ? Response::HTTP_OK : Response::HTTP_NOT_ACCEPTABLE;
 
-        if ($request->getRequestFormat() === self::FORMAT_JSON) {
+        if ($this->responseFormat($request) === self::FORMAT_JSON) {
             return new JsonResponse($result, $code, [self::STATUS_HEADER => $code]);
         }
 
         return new Response(
             'Result: ' . ($result->success ? self::RESULT_UP : self::RESULT_DOWN) . PHP_EOL
-            . 'Errors: ' . ($result->errors !== [] ? PHP_EOL . implode(PHP_EOL . "\t", $result->errors) : 'none') . PHP_EOL
-            . 'Messages: ' . ($result->messages !== [] ? PHP_EOL . implode(PHP_EOL . "\t", $result->messages) : 'none') . PHP_EOL,
+            . $this->textSection('Errors', $result->errors)
+            . $this->textSection('Messages', $result->messages)
+            . $this->textSection('Warnings', $result->warnings),
             $code,
             [self::STATUS_HEADER => $code, 'Content-Type' => self::CONTENT_TYPE_PLAIN],
         );
+    }
+
+    /**
+     * @param array<string> $lines
+     */
+    private function textSection(string $title, array $lines): string
+    {
+        return $title . ': ' . ($lines !== [] ? PHP_EOL . implode(PHP_EOL . "\t", $lines) : 'none') . PHP_EOL;
+    }
+
+    /**
+     * A route-level format wins, then the "_format" query parameter, then the Accept header.
+     */
+    private function responseFormat(Request $request): ?string
+    {
+        $queryFormat = $request->query->all()[self::FORMAT_PARAMETER] ?? null;
+
+        return $request->getRequestFormat(null)
+            ?? (is_string($queryFormat) ? $queryFormat : null)
+            ?? $request->getPreferredFormat(null);
     }
 }

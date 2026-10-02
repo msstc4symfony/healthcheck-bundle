@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Msstc4Symfony\HealthCheckBundle\Test\Integration\Functional;
 
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CacheChecker;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CheckInterface;
 use Msstc4Symfony\HealthCheckBundle\Test\Integration\Kernel\TestKernel;
 use PHPUnit\Framework\TestCase;
 use Predis\Client;
@@ -11,6 +13,8 @@ use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigura
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+
+use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
 /**
  * Readiness probes cache pools backed by infrastructure only, not FrameworkBundle's local system
@@ -52,6 +56,21 @@ final class CachePoolSelectionTest extends TestCase
         foreach (self::SYSTEM_POOLS as $pool) {
             self::assertStringNotContainsString($pool . ')', $content);
         }
+    }
+
+    public function testLocalPoolCanBeProbedByRegisteringCacheCheckerExplicitly(): void
+    {
+        $kernel = new TestKernel('cache_explicit', false, static function (ContainerConfigurator $container): void {
+            $container->services()
+                ->set('app.cache_app_checker', CacheChecker::class)
+                ->args([service('cache.app'), 'cache.app'])
+                ->tag(CheckInterface::class)
+            ;
+        });
+
+        $content = $this->readiness($kernel, Response::HTTP_OK);
+
+        self::assertStringContainsString('Cache (cache.app) connection passed', $content);
     }
 
     private function readiness(TestKernel $kernel, int $expectedStatus): string

@@ -122,8 +122,9 @@ Conventions:
   (`$class === Target::class || is_subclass_of($class, Target::class)`); this
   is the canonical pattern for class-based detectors.
 
-`CachePoolDetector` skips pools whose adapter is local (in-memory / local disk /
-FrameworkBundle system cache, chains of only such adapters) — see
+`CachePoolDetector` skips pools that `CachePoolLocality` (`@internal`,
+`DependencyInjection/`) classifies as local (in-memory / local disk / FrameworkBundle
+system cache, chains of only such adapters) — see
 `known-issues.md` "Этап B → v1.2.0".
 
 The 17 built-in detectors are listed in `tests/Unit/DependencyInjection/HealthCheckerAutoDetectionPassTest`

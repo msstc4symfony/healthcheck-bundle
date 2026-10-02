@@ -31,6 +31,8 @@ final class HealthController extends AbstractController
 
     private const string CONTENT_TYPE_PLAIN = 'text/plain';
 
+    private const array NEGOTIATED_HEADERS = ['Vary' => 'Accept'];
+
     public function __construct(
         private readonly ActionInterface $action,
         private readonly LoggerInterface $logger,
@@ -90,7 +92,7 @@ final class HealthController extends AbstractController
         $code = $result->success ? Response::HTTP_OK : Response::HTTP_NOT_ACCEPTABLE;
 
         if ($this->responseFormat($request) === self::FORMAT_JSON) {
-            return new JsonResponse($result, $code, [self::STATUS_HEADER => $code]);
+            return new JsonResponse($result, $code, [self::STATUS_HEADER => $code, ...self::NEGOTIATED_HEADERS]);
         }
 
         return new Response(
@@ -99,7 +101,7 @@ final class HealthController extends AbstractController
             . $this->textSection('Messages', $result->messages)
             . $this->textSection('Warnings', $result->warnings),
             $code,
-            [self::STATUS_HEADER => $code, 'Content-Type' => self::CONTENT_TYPE_PLAIN],
+            [self::STATUS_HEADER => $code, 'Content-Type' => self::CONTENT_TYPE_PLAIN, ...self::NEGOTIATED_HEADERS],
         );
     }
 

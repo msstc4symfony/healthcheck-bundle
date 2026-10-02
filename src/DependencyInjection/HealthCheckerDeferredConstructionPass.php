@@ -75,10 +75,19 @@ final readonly class HealthCheckerDeferredConstructionPass implements CompilerPa
      */
     private function checkerClass(ContainerBuilder $container, Definition $checker): ?string
     {
-        $class = $container->getParameterBag()->resolveValue($checker->getClass());
-        $name = is_string($class) ? $container->getReflectionClass($class, false)?->getName() : null;
+        $name = $this->reflection($container, $checker)?->getName();
 
         return $name !== null && is_a($name, CheckInterface::class, true) ? $name : null;
+    }
+
+    /**
+     * @return ReflectionClass<object>|null
+     */
+    private function reflection(ContainerBuilder $container, Definition $checker): ?ReflectionClass
+    {
+        $class = $container->getParameterBag()->resolveValue($checker->getClass());
+
+        return is_string($class) ? $container->getReflectionClass($class, false) : null;
     }
 
     private function isReadinessOnly(ContainerBuilder $container, Definition $checker): bool
@@ -126,8 +135,7 @@ final readonly class HealthCheckerDeferredConstructionPass implements CompilerPa
 
     private function labelFromGhost(ContainerBuilder $container, Definition $checker): string
     {
-        $class = $container->getParameterBag()->resolveValue($checker->getClass());
-        $reflection = is_string($class) ? $container->getReflectionClass($class, false) : null;
+        $reflection = $this->reflection($container, $checker);
         if (!$reflection instanceof ReflectionClass || !$reflection->hasMethod('label') || !$reflection->getConstructor() instanceof ReflectionMethod) {
             return '';
         }

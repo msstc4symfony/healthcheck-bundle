@@ -6,6 +6,7 @@ namespace Msstc4Symfony\HealthCheckBundle\Test\Integration\Functional;
 
 use Msstc4Symfony\HealthCheckBundle\Test\Integration\Kernel\TestKernel;
 use Override;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\BrowserKit\AbstractBrowser;
 use Symfony\Component\Filesystem\Filesystem;
@@ -89,6 +90,7 @@ final class HealthControllerFunctionalTest extends WebTestCase
         $response = $client->getResponse();
         self::assertStringStartsWith('text/plain', (string) $response->headers->get('Content-Type'));
         self::assertStringStartsWith('Result: up', (string) $response->getContent());
+        self::assertSame('Accept', $response->headers->get('Vary'));
     }
 
     public function testReadinessReturnsJsonForFormatQueryParameter(): void
@@ -99,12 +101,23 @@ final class HealthControllerFunctionalTest extends WebTestCase
         $this->assertJsonProbe($client->getResponse());
     }
 
-    public function testLivelinessReturnsJsonForAcceptHeader(): void
+    #[DataProvider('provideProbes')]
+    public function testProbeReturnsJsonForAcceptHeader(string $probe): void
     {
         $client = self::createClient();
-        $client->request(Request::METHOD_GET, '/_/healthcheck/liveliness', server: ['HTTP_ACCEPT' => 'application/json']);
+        $client->request(Request::METHOD_GET, '/_/healthcheck/' . $probe, server: ['HTTP_ACCEPT' => 'application/json']);
 
         $this->assertJsonProbe($client->getResponse());
+        self::assertSame('Accept', $client->getResponse()->headers->get('Vary'));
+    }
+
+    /**
+     * @return iterable<string, array{non-empty-string}>
+     */
+    public static function provideProbes(): iterable
+    {
+        yield 'readiness' => ['readiness'];
+        yield 'liveliness' => ['liveliness'];
     }
 
     public function testFormatQueryParameterWinsOverAcceptHeader(): void

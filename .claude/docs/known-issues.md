@@ -255,7 +255,10 @@ FrameworkBundle 8.1 (`Resources/config/lock.php`) всегда регистри�
   `HealthCheckerDeferredConstructionPass` третьим аргументом (класс внутреннего определения за
   Timeout, с разрешёнными `%параметрами%`). Пользовательские декораторы интерфейс не реализуют —
   для них событие по-прежнему называет сам декоратор.
-- **Кеш-пулы.** `CachePoolDetector` идёт по цепочке `ChildDefinition` (как `CachePoolPass`):
+- **Кеш-пулы.** Классификация вынесена в `@internal DependencyInjection\CachePoolLocality`
+  (не в `Detector/` — тот каталог грузится как сервисы). Идёт по цепочке `ChildDefinition` (как `CachePoolPass`),
+  класс и фабрика берутся первые непустые от ребёнка к родителю (как в DI: фабрика ребёнка
+  перекрывает `createSystemCache` родителя):
   локальные адаптеры (Array, Apcu, Filesystem, FilesystemTagAware, PhpFiles, PhpArray, Null, включая
   подклассы) и `cache.adapter.system` — он объявлен как `AdapterInterface` с фабрикой
   `AbstractAdapter::createSystemCache`, класс ничего не говорит, поэтому признак — имя метода
@@ -265,6 +268,18 @@ FrameworkBundle 8.1 (`Resources/config/lock.php`) всегда регистри�
   помеченный `cache.pool` вручную, проверяются как раньше (лучше лишняя проба, чем пропущенная
   зависимость). Несколько пулов на одном Redis (`cache.app` + наследники `cache.rate_limiter`,
   `cache.scheduler`, …) дают по пробе на пул — дедупликации по провайдеру нет.
+- **Неровный отступ текстового вывода** (`Messages: \nfirst\n\tsecond`) — старое
+  `implode(PHP_EOL . "\t", …)`, сохранён ради существующих парсеров; секция `Warnings` идёт тем же
+  форматом. Выравнивать — только в 2.0. Ответы проб несут `Vary: Accept` (формат зависит от Accept).
+- **Non-critical + исключение = error.** `NonCriticalCheckerDecorator` понижает только добавленные
+  ошибки; исключение из `check()` он не ловит: в `ParallelAction` оно становится
+  `parallel: X failed (…)` в `errors` (readiness падает), в последовательном `Action` — пролетает
+  наружу. Встроенные чекеры не бросают (шаблон ловит `Throwable`). Ловить `Throwable` в декораторе —
+  кандидат на отдельное изменение (меняет поведение).
+- README до 1.2.0 советовал тег `healthcheck.checker` и `$result->messages[] = …` для своего
+  чекера — оба не работают (тег — FQCN `CheckInterface`, свойства `private(set)`); исправлено.
+  Ручная регистрация `CacheChecker` (README «Probing a Local Cache Pool») закреплена тестом
+  `CachePoolSelectionTest::testLocalPoolCanBeProbedByRegisteringCacheCheckerExplicitly`.
 - RED для `CachePoolSelectionTest::testAppPoolOnRedis…` использует `redis://127.0.0.1:1`
   (мгновенный отказ соединения) — Redis-сервер не нужен, но нужен ext-redis или predis (иначе skip).
 

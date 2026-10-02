@@ -91,7 +91,7 @@ Warnings:
 Cache (cache.app) connection failed (Connection refused)
 ```
 
-`Warnings` lists failures of checkers configured as `non_critical`: they are reported but do not fail the probe.
+`Warnings` lists failures of checkers configured as `non_critical`: they are reported but do not fail the probe. The first entry of each section is not indented and the rest are tab-indented; the layout is kept as is for existing parsers. Responses carry `Vary: Accept`.
 
 **JSON Response Example** — request `?_format=json` or send an `Accept: application/json` header (the query parameter wins over the header):
 ```bash
@@ -219,9 +219,9 @@ class CustomServiceChecker implements CheckInterface
     {
         try {
             $this->service->ping();
-            $result->messages[] = 'Custom service connection passed';
+            $result->addMessage('Custom service connection passed');
         } catch (\Exception $e) {
-            $result->errors[] = 'Custom service connection failed: ' . $e->getMessage();
+            $result->addError('Custom service connection failed: ' . $e->getMessage());
         }
 
         return $result;
@@ -239,7 +239,20 @@ Alternatively, you can manually tag your service in `services.yaml`:
 services:
     App\HealthCheck\CustomServiceChecker:
         tags:
-            - { name: 'healthcheck.checker' }
+            - 'Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CheckInterface'
+```
+
+### Probing a Local Cache Pool
+
+Pools on local adapters (e.g. `cache.app` on the filesystem) are not probed automatically. If such a pool is a real dependency — a filesystem cache on a shared volume — register a `CacheChecker` for it:
+
+```yaml
+services:
+    app.healthcheck.cache_app:
+        class: Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CacheChecker
+        arguments: ['@cache.app', 'cache.app']
+        tags:
+            - 'Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CheckInterface'
 ```
 
 ### Checker for Both Liveness and Readiness

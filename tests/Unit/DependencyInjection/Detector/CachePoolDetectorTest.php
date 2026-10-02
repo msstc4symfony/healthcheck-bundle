@@ -6,6 +6,7 @@ namespace Msstc4Symfony\HealthCheckBundle\Test\Unit\DependencyInjection\Detector
 
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CacheChecker;
 use Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector\CachePoolDetector;
+use Msstc4Symfony\HealthCheckBundle\Test\Mock\Cache\FilesystemAdapterSubclassFixture;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use stdClass;
@@ -172,6 +173,7 @@ final class CachePoolDetectorTest extends TestCase
         yield 'php files' => [PhpFilesAdapter::class];
         yield 'php array' => [PhpArrayAdapter::class];
         yield 'null' => [NullAdapter::class];
+        yield 'subclass of a local adapter' => [FilesystemAdapterSubclassFixture::class];
     }
 
     public function testDetectSkipsSystemCacheAndPoolsInheritingFromIt(): void
@@ -188,8 +190,22 @@ final class CachePoolDetectorTest extends TestCase
         self::assertSame([], iterator_to_array(new CachePoolDetector()->detect($container)));
     }
 
+    public function testDetectProbesChildWhoseOwnFactoryOverridesTheSystemCacheFactory(): void
+    {
+        $container = new ContainerBuilder();
+        $container->setDefinition('cache.adapter.system', new Definition(AdapterInterface::class)
+            ->setAbstract(true)
+            ->setFactory([AbstractAdapter::class, 'createSystemCache'])
+            ->addTag('cache.pool'));
+        $container->setDefinition('app.remote_pool', new ChildDefinition('cache.adapter.system')
+            ->setFactory([RedisAdapter::class, 'createConnection'])
+            ->addTag('cache.pool'));
+
+        self::assertArrayHasKey('healthcheck.checker.cache.pool.app.remote_pool', iterator_to_array(new CachePoolDetector()->detect($container)));
+    }
+
     /**
-     * @param list<string|ChildDefinition> $chained
+     * @param list<string|Reference|ChildDefinition> $chained
      */
     #[DataProvider('provideChains')]
     public function testDetectProbesChainOnlyWhenAMemberIsRemote(array $chained, bool $probed): void
@@ -204,12 +220,15 @@ final class CachePoolDetectorTest extends TestCase
     }
 
     /**
-     * @return iterable<string, array{list<string|ChildDefinition>, bool}>
+     * @return iterable<string, array{list<string|Reference|ChildDefinition>, bool}>
      */
     public static function provideChains(): iterable
     {
         yield 'configured ids, all local' => [['cache.adapter.array', 'cache.adapter.filesystem'], false];
         yield 'configured ids, one remote' => [['cache.adapter.array', 'cache.adapter.redis'], true];
+        yield 'references, all local' => [[new Reference('cache.adapter.array'), new Reference('cache.adapter.filesystem')], false];
+        yield 'references, one remote' => [[new Reference('cache.adapter.array'), new Reference('cache.adapter.redis')], true];
+        yield 'unknown member' => [['cache.adapter.array', 'app.missing_adapter'], true];
         // CachePoolPass (runs before detection) replaces the ids with inline child definitions.
         yield 'compiled children, all local' => [[new ChildDefinition('cache.adapter.array'), new ChildDefinition('cache.adapter.filesystem')], false];
         yield 'compiled children, one remote' => [[new ChildDefinition('cache.adapter.array'), new ChildDefinition('cache.adapter.redis')], true];

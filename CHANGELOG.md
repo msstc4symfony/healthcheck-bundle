@@ -8,6 +8,7 @@
   `_format` still wins, then the query parameter, then the header). Text stays the default.
 - Text output of `/_/healthcheck/{readiness,liveliness}` ends with a `Warnings:` section (failures of
   `non_critical` checkers); the console commands print `Warnings:` when there are any.
+- Probe responses carry `Vary: Accept`.
 
 ### Fixed
 
@@ -24,7 +25,11 @@
   on the local disk are no longer listed — FrameworkBundle's `cache.system`, `cache.validator`,
   `cache.serializer`, `cache.property_info`, expression-language pools, and a filesystem `cache.app`.
   Dashboards matching those check names lose them; `healthcheck.checker.cache.pool.<name>` ids of
-  local pools no longer exist; entries for them in `non_critical` / `timeouts` are ignored.
+  local pools no longer exist; entries for them in `non_critical` / `timeouts` are ignored. To keep
+  probing a local pool (e.g. a filesystem cache on a shared volume), register a `CacheChecker` for it
+  (see README, "Probing a Local Cache Pool").
+- README: the custom-checker example uses `CheckResult::addMessage()` / `addError()` and the real
+  `CheckInterface` tag (it showed `healthcheck.checker` and direct array writes, which do not work).
 
 ## 1.1.3
 

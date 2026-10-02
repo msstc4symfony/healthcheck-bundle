@@ -67,8 +67,7 @@ final class LockStoreSelectionTest extends TestCase
             static fn (string $line): bool => str_starts_with($line, 'Lock store ('),
         ));
 
-        self::assertCount(1, $lockLines, implode(PHP_EOL, $lockLines));
-        self::assertStringEndsWith(' passed', $lockLines[0]);
+        self::assertSame(['Lock store (lock.default) passed'], $lockLines);
         foreach ($unusedStores as $unused) {
             self::assertStringNotContainsString($unused . ')', $lockLines[0]);
         }

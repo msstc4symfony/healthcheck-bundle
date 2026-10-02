@@ -9,6 +9,7 @@ use Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector\LockStoreDetect
 use PHPUnit\Framework\Attributes\RequiresMethod;
 use PHPUnit\Framework\TestCase;
 use stdClass;
+use Symfony\Component\DependencyInjection\ChildDefinition;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
@@ -91,6 +92,87 @@ final class LockStoreDetectorTest extends TestCase
         self::assertSame(['healthcheck.checker..lock.semaphore.store'], array_keys($detected));
     }
 
+    public function testLabelsFrameworkStoreByItsLockResourceAndKeepsTheCheckerId(): void
+    {
+        $container = new ContainerBuilder();
+        $container->setDefinition('.lock.default.store.abc123', $this->frameworkStore());
+        $container->setDefinition('lock.default.factory', $this->resourceFactory('.lock.default.store.abc123'));
+
+        $detected = iterator_to_array(new LockStoreDetector()->detect($container));
+
+        self::assertSame(['healthcheck.checker..lock.default.store.abc123'], array_keys($detected));
+        self::assertEquals(new Reference('.lock.default.store.abc123'), $detected['healthcheck.checker..lock.default.store.abc123']->getArgument(0));
+        self::assertSame('lock.default', $detected['healthcheck.checker..lock.default.store.abc123']->getArgument(1));
+    }
+
+    public function testLabelsStoresOfACombinedResourceByPosition(): void
+    {
+        $container = new ContainerBuilder();
+        $container->setDefinition('.lock.invoice.store.aaa', $this->frameworkStore());
+        $container->setDefinition('.lock.invoice.store.bbb', $this->frameworkStore());
+        $container->setDefinition('.lock.invoice.store.combined', new ChildDefinition('lock.store.combined.abstract')
+            ->replaceArgument(0, [new Reference('.lock.invoice.store.aaa'), new Reference('.lock.invoice.store.bbb')]));
+        $container->setDefinition('lock.invoice.factory', $this->resourceFactory('.lock.invoice.store.combined'));
+
+        $detected = iterator_to_array(new LockStoreDetector()->detect($container));
+
+        self::assertSame('lock.invoice[0]', $detected['healthcheck.checker..lock.invoice.store.aaa']->getArgument(1));
+        self::assertSame('lock.invoice[1]', $detected['healthcheck.checker..lock.invoice.store.bbb']->getArgument(1));
+    }
+
+    #[RequiresMethod(PersistingStoreInterface::class, 'save')]
+    public function testLabelsAPredefinedStoreSharedByResourcesWithEveryResource(): void
+    {
+        $container = new ContainerBuilder();
+        $container->setDefinition('.lock.flock.store', new Definition(FlockStore::class)->addTag('lock.store'));
+        $container->setDefinition('lock.default.factory', $this->resourceFactory('.lock.flock.store'));
+        $container->setDefinition('lock.reports.factory', $this->resourceFactory('.lock.flock.store'));
+
+        $detected = iterator_to_array(new LockStoreDetector()->detect($container));
+
+        self::assertSame('lock.default, lock.reports', $detected['healthcheck.checker..lock.flock.store']->getArgument(1));
+    }
+
+    public function testReadsResourceFactoriesDeclaredWithPositionalArgumentsAndIgnoresLookalikeIds(): void
+    {
+        $container = new ContainerBuilder();
+        $container->setDefinition('.lock.default.store.abc123', $this->frameworkStore());
+        $container->setDefinition('lock.default.factory', new ChildDefinition('lock.factory.abstract')->setArguments([new Reference('.lock.default.store.abc123')]));
+        $container->setDefinition('app.lock.other.factory', $this->resourceFactory('.lock.default.store.abc123'));
+        $container->setDefinition('lock.other.factory.decorated', $this->resourceFactory('.lock.default.store.abc123'));
+        $container->setDefinition('lock.plain.factory', new ChildDefinition('app.factory')->replaceArgument(0, new Reference('.lock.default.store.abc123')));
+
+        $detected = iterator_to_array(new LockStoreDetector()->detect($container));
+
+        self::assertSame('lock.default', $detected['healthcheck.checker..lock.default.store.abc123']->getArgument(1));
+    }
+
+    public function testLabelsByPositionInTheCombinedStoreArgumentAndSkipsANonCombinedParent(): void
+    {
+        $container = new ContainerBuilder();
+        $container->setDefinition('.lock.invoice.store.aaa', $this->frameworkStore());
+        $container->setDefinition('.lock.invoice.store.combined', new ChildDefinition('lock.store.combined.abstract')
+            ->replaceArgument(0, [5 => new Reference('.lock.invoice.store.aaa')]));
+        $container->setDefinition('lock.invoice.factory', $this->resourceFactory('.lock.invoice.store.combined'));
+        $container->setDefinition('.lock.other.store.ccc', new ChildDefinition('app.store.template')->replaceArgument(0, [new Reference('.lock.invoice.store.aaa')])->addTag('lock.store'));
+        $container->setDefinition('lock.other.factory', $this->resourceFactory('.lock.other.store.ccc'));
+
+        $detected = iterator_to_array(new LockStoreDetector()->detect($container));
+
+        self::assertSame('lock.invoice[0]', $detected['healthcheck.checker..lock.invoice.store.aaa']->getArgument(1));
+    }
+
+    public function testFallsBackToTheServiceIdForAStoreNoResourceFactoryReferences(): void
+    {
+        $container = new ContainerBuilder();
+        $container->setDefinition('.lock.default.store.abc123', $this->frameworkStore());
+        $container->setDefinition('lock.default.factory', new Definition(stdClass::class));
+
+        $detected = iterator_to_array(new LockStoreDetector()->detect($container));
+
+        self::assertSame('.lock.default.store.abc123', $detected['healthcheck.checker..lock.default.store.abc123']->getArgument(1));
+    }
+
     public function testDetectSkipsHiddenStoreWithoutLockStoreTag(): void
     {
         $container = new ContainerBuilder();
@@ -106,5 +188,19 @@ final class LockStoreDetectorTest extends TestCase
         $container->setDefinition('app.classless', new Definition());
 
         self::assertSame([], iterator_to_array(new LockStoreDetector()->detect($container)));
+    }
+
+    private function frameworkStore(): Definition
+    {
+        return new Definition(PersistingStoreInterface::class)
+            ->setFactory([StoreFactory::class, 'createStore'])
+            ->setArguments(['redis://redis:6379/0'])
+            ->addTag('lock.store')
+        ;
+    }
+
+    private function resourceFactory(string $storeId): ChildDefinition
+    {
+        return new ChildDefinition('lock.factory.abstract')->replaceArgument(0, new Reference($storeId));
     }
 }

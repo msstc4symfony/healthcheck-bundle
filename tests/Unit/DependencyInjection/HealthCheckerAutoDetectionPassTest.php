@@ -67,6 +67,7 @@ use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\Lock\PersistingStoreInterface;
 use Symfony\Component\Lock\Store\InMemoryStore;
+use Symfony\Component\Lock\Store\StoreFactory;
 use Symfony\Component\Mailer\Transport\Smtp\SmtpTransport;
 use Symfony\Component\Messenger\Transport\TransportInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -403,6 +404,36 @@ final class HealthCheckerAutoDetectionPassTest extends TestCase
         self::assertSame('lock.default.store', $checker->getArgument(1));
     }
 
+    /**
+     * framework.lock given a connection service id wraps it in a hidden StoreFactory-built store;
+     * the connection itself is already probed under its own id.
+     */
+    public function testProcessSkipsFrameworkLockStoreWrappingAnAlreadyProbedConnection(): void
+    {
+        $container = new ContainerBuilder();
+        $container->setDefinition('app.redis', new Definition('Redis'));
+        $container->setAlias('app.redis_alias', 'app.redis');
+        $container->setDefinition('.lock.default.store.abc', $this->frameworkLockStore(new Reference('app.redis')));
+        $container->setDefinition('.lock.other.store.def', $this->frameworkLockStore(new Reference('app.redis_alias')));
+        $container->setDefinition('.lock.dsn.store.ghi', $this->frameworkLockStore('redis://redis:6379'));
+        $container->setDefinition('.lock.unprobed.store.jkl', $this->frameworkLockStore(new Reference('app.unprobed')));
+        $container->setDefinition('app.unprobed', new Definition(stdClass::class));
+        $container->setDefinition('.lock.custom.store.mno', $this->frameworkLockStore(new Reference('app.redis'))->setFactory([stdClass::class, 'createStore']));
+        $container->setDefinition('.lock.method.store.pqr', $this->frameworkLockStore(new Reference('app.redis'))->setFactory([StoreFactory::class, 'other']));
+        $container->setDefinition('.lock.direct.store.stu', new Definition(PersistingStoreInterface::class, [new Reference('app.redis')])->addTag('lock.store'));
+
+        $this->runPass($container);
+
+        self::assertTrue($container->hasDefinition('healthcheck.checker.app.redis'));
+        self::assertFalse($container->hasDefinition('healthcheck.checker..lock.default.store.abc'));
+        self::assertFalse($container->hasDefinition('healthcheck.checker..lock.other.store.def'));
+        self::assertTrue($container->hasDefinition('healthcheck.checker..lock.dsn.store.ghi'));
+        self::assertTrue($container->hasDefinition('healthcheck.checker..lock.unprobed.store.jkl'));
+        self::assertTrue($container->hasDefinition('healthcheck.checker..lock.custom.store.mno'));
+        self::assertTrue($container->hasDefinition('healthcheck.checker..lock.method.store.pqr'));
+        self::assertTrue($container->hasDefinition('healthcheck.checker..lock.direct.store.stu'), 'a store the app builds itself is probed');
+    }
+
     #[RequiresMethod(PersistingStoreInterface::class, 'save')]
     public function testProcessSkipsAbstractServiceTemplates(): void
     {
@@ -476,6 +507,15 @@ final class HealthCheckerAutoDetectionPassTest extends TestCase
         self::assertSame('GET', $target->getArgument(1));
         self::assertSame([200], $target->getArgument(2));
         self::assertSame(3, $target->getArgument(3));
+    }
+
+    private function frameworkLockStore(Reference|string $connection): Definition
+    {
+        return new Definition(PersistingStoreInterface::class)
+            ->setFactory([StoreFactory::class, 'createStore'])
+            ->setArguments([$connection])
+            ->addTag('lock.store')
+        ;
     }
 
     private function runPass(ContainerBuilder $container): void

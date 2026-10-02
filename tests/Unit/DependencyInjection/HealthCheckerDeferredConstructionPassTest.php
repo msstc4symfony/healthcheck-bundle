@@ -14,6 +14,7 @@ use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\D
 use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\SuccessChecker;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\Argument\ServiceClosureArgument;
+use Symfony\Component\DependencyInjection\ChildDefinition;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
@@ -52,6 +53,62 @@ final class HealthCheckerDeferredConstructionPassTest extends TestCase
         self::assertSame(DeferredReadinessCheckerDecorator::class, $container->getDefinition('healthcheck.checker.store')->getClass());
         self::assertSame(TimeoutCheckerDecorator::class, $container->getDefinition('healthcheck.checker.store.deferred_inner')->getClass());
         self::assertSame(DependentReadinessCheckerFixture::class, $container->getDefinition('healthcheck.checker.store')->getArgument(2));
+    }
+
+    public function testResolvesTheClassOfAChildDefinitionThroughItsParents(): void
+    {
+        $container = new ContainerBuilder();
+        $container->setDefinition('app.checker.base', new Definition(DependentReadinessCheckerFixture::class)->setAbstract(true));
+        $container->setDefinition('app.checker.template', new ChildDefinition('app.checker.base')->setAbstract(true));
+        $container->setDefinition('app.checker.inner', new ChildDefinition('app.checker.template'));
+        $container->setDefinition('app.checker', new Definition(TimeoutCheckerDecorator::class)
+            ->setArguments([new Reference('app.checker.inner'), 2000])
+            ->addTag(CheckInterface::class));
+
+        new HealthCheckerDeferredConstructionPass()->process($container);
+
+        $outer = $container->getDefinition('app.checker');
+        self::assertSame(DeferredReadinessCheckerDecorator::class, $outer->getClass());
+        self::assertSame('Dependent', $outer->getArgument(1));
+        self::assertSame(DependentReadinessCheckerFixture::class, $outer->getArgument(2));
+    }
+
+    public function testLabelsAChildDefinitionWithItsOwnReplacedArguments(): void
+    {
+        $container = new ContainerBuilder();
+        $container->setDefinition('app.lock.template', new Definition(LockStoreChecker::class, [new Reference('app.store'), 'parent-name'])->setAbstract(true));
+        $container->setDefinition('app.lock', new ChildDefinition('app.lock.template')
+            ->replaceArgument(1, 'child-name')
+            ->addTag(CheckInterface::class));
+
+        new HealthCheckerDeferredConstructionPass()->process($container);
+
+        self::assertSame('Lock store (child-name)', $container->getDefinition('app.lock')->getArgument(1));
+    }
+
+    public function testLeavesAChildDefinitionWithAMissingParentUntouched(): void
+    {
+        $container = new ContainerBuilder();
+        $container->setDefinition('app.checker', new ChildDefinition('app.missing')->addTag(CheckInterface::class));
+
+        new HealthCheckerDeferredConstructionPass()->process($container);
+
+        self::assertInstanceOf(ChildDefinition::class, $container->getDefinition('app.checker'));
+        self::assertFalse($container->hasDefinition('app.checker.deferred_inner'));
+    }
+
+    public function testChildDefinitionClassOverridesItsParents(): void
+    {
+        $container = new ContainerBuilder();
+        $container->setDefinition('app.checker.template', new Definition(DependentReadinessCheckerFixture::class)->setAbstract(true));
+        $container->setDefinition('app.checker', new ChildDefinition('app.checker.template')
+            ->setClass(SuccessChecker::class)
+            ->addTag(CheckInterface::class));
+
+        new HealthCheckerDeferredConstructionPass()->process($container);
+
+        self::assertInstanceOf(ChildDefinition::class, $container->getDefinition('app.checker'));
+        self::assertFalse($container->hasDefinition('app.checker.deferred_inner'));
     }
 
     public function testLeavesCheckersThatMaySupportLivelinessUntouched(): void

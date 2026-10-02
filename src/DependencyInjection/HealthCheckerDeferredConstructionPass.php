@@ -14,6 +14,7 @@ use Override;
 use ReflectionClass;
 use ReflectionMethod;
 use Symfony\Component\DependencyInjection\Argument\ServiceClosureArgument;
+use Symfony\Component\DependencyInjection\ChildDefinition;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -51,7 +52,7 @@ final readonly class HealthCheckerDeferredConstructionPass implements CompilerPa
             }
 
             $definition = $container->getDefinition($id);
-            $checker = $this->unwrapTimeout($container, $definition);
+            $checker = $this->flatten($container, $this->unwrapTimeout($container, $definition));
             $checkerClass = $this->checkerClass($container, $checker);
             if ($checkerClass === null || !$this->isReadinessOnly($container, $checker)) {
                 continue;
@@ -96,6 +97,34 @@ final readonly class HealthCheckerDeferredConstructionPass implements CompilerPa
             self::READINESS_ONLY_TYPES,
             static fn (string $type): bool => ServiceClass::is($container, $checker, $type),
         );
+    }
+
+    /**
+     * Child definitions get their class and parent arguments only in ResolveChildDefinitionsPass,
+     * which runs after this pass; merge the chain the same way (child wins) to classify them now.
+     */
+    private function flatten(ContainerBuilder $container, Definition $definition): Definition
+    {
+        $chain = [$definition];
+        while ($definition instanceof ChildDefinition && $container->has($definition->getParent())) {
+            $definition = $container->findDefinition($definition->getParent());
+            $chain[] = $definition;
+        }
+
+        if (count($chain) === 1) {
+            return $chain[0];
+        }
+
+        $class = null;
+        $arguments = [];
+        foreach (array_reverse($chain) as $link) {
+            $class = $link->getClass() ?? $class;
+            foreach ($link->getArguments() as $key => $value) {
+                $arguments[is_string($key) && str_starts_with($key, 'index_') ? (int) substr($key, 6) : $key] = $value;
+            }
+        }
+
+        return new Definition($class, $arguments);
     }
 
     private function unwrapTimeout(ContainerBuilder $container, Definition $definition): Definition

@@ -93,13 +93,31 @@ final class ParallelActionTest extends TestCase
     {
         $dispatcher = new RecordingDispatcherFixture();
         $action = new ParallelAction(
-            [new NonCriticalCheckerDecorator(new TimeoutCheckerDecorator(new ThrowingChecker('boom'), 60_000))],
+            [new TimeoutCheckerDecorator(new ThrowingChecker('boom'), 60_000)],
             new SafeEventDispatcher($dispatcher),
         );
 
         $response = $action->run(new Request(CheckTypeEnum::READINESS));
 
         self::assertSame([sprintf('parallel: %s failed (boom)', ThrowingChecker::class)], $response->errors);
+        $checkerEvent = $dispatcher->events[1];
+        self::assertInstanceOf(HealthCheckerCompletedEvent::class, $checkerEvent);
+        self::assertSame(ThrowingChecker::class, $checkerEvent->checkerClass);
+    }
+
+    public function testNonCriticalCheckerExceptionBecomesAWarning(): void
+    {
+        $dispatcher = new RecordingDispatcherFixture();
+        $action = new ParallelAction(
+            [new NonCriticalCheckerDecorator(new TimeoutCheckerDecorator(new ThrowingChecker('boom'), 60_000))],
+            new SafeEventDispatcher($dispatcher),
+        );
+
+        $response = $action->run(new Request(CheckTypeEnum::READINESS));
+
+        self::assertTrue($response->success);
+        self::assertSame([], $response->errors);
+        self::assertSame([sprintf('%s failed (boom)', ThrowingChecker::class)], $response->warnings);
         $checkerEvent = $dispatcher->events[1];
         self::assertInstanceOf(HealthCheckerCompletedEvent::class, $checkerEvent);
         self::assertSame(ThrowingChecker::class, $checkerEvent->checkerClass);

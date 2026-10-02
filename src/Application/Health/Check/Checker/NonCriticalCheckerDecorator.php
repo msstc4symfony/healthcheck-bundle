@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker;
 
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\CredentialRedactor;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\Context;
 use Override;
 use Symfony\Component\DependencyInjection\Attribute\Exclude;
+use Throwable;
 
 /**
- * Demotes errors produced by the inner checker into warnings. Used for non-critical
+ * Demotes errors produced by the inner checker, and any exception it throws, into warnings.
+ * Used for non-critical
  * dependencies whose unavailability should not fail readiness (caches, analytics-only
  * stores, etc.).
  *
@@ -39,7 +42,18 @@ final readonly class NonCriticalCheckerDecorator implements CheckInterface, Chec
         $errorsBefore = count($result->errors);
         $warningsBefore = count($result->warnings);
 
-        $result = $this->inner->check($result, $context);
+        try {
+            $result = $this->inner->check($result, $context);
+        } catch (Throwable $e) {
+            $result->resetTrailing($messagesBefore, $errorsBefore, $warningsBefore);
+            $result->addWarning(sprintf(
+                '%s failed (%s)',
+                CheckerClass::of($this->inner),
+                CredentialRedactor::redact($e->getMessage()),
+            ));
+
+            return $result;
+        }
 
         if (count($result->errors) === $errorsBefore) {
             return $result;

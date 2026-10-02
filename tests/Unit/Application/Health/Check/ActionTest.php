@@ -6,12 +6,15 @@ namespace Msstc4Symfony\HealthCheckBundle\Test\Unit\Application\Health\Check;
 
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Action;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CheckInterface;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\NonCriticalCheckerDecorator;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\Request;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
 use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\FailChecker;
 use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\SuccessChecker;
+use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\ThrowingChecker;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 
 final class ActionTest extends TestCase
 {
@@ -29,6 +32,31 @@ final class ActionTest extends TestCase
         self::assertSame($response->success, $success);
         self::assertSame($response->messages, $messages);
         self::assertSame($response->errors, $errors);
+    }
+
+    public function testNonCriticalCheckerExceptionBecomesAWarningAndTheRunContinues(): void
+    {
+        $action = new Action([
+            new NonCriticalCheckerDecorator(new ThrowingChecker('boom')),
+            new SuccessChecker(),
+        ]);
+
+        $response = $action->run(new Request(CheckTypeEnum::READINESS));
+
+        self::assertTrue($response->success);
+        self::assertSame([], $response->errors);
+        self::assertSame(['success dump check'], $response->messages);
+        self::assertSame([sprintf('%s failed (boom)', ThrowingChecker::class)], $response->warnings);
+    }
+
+    public function testCriticalCheckerExceptionStillEscapesTheSequentialRun(): void
+    {
+        $action = new Action([new ThrowingChecker('boom'), new SuccessChecker()]);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('boom');
+
+        $action->run(new Request(CheckTypeEnum::READINESS));
     }
 
     /**

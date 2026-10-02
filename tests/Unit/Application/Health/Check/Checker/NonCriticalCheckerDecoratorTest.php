@@ -10,7 +10,9 @@ use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\NonCritical
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\Context;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
+use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\ThrowingChecker;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 
 final class NonCriticalCheckerDecoratorTest extends TestCase
 {
@@ -58,6 +60,43 @@ final class NonCriticalCheckerDecoratorTest extends TestCase
 
         self::assertSame(['earlier critical failure'], $result->errors);
         self::assertSame(['demoted error'], $result->warnings);
+    }
+
+    public function testDemotesThrownExceptionIntoRedactedWarningNamingTheChecker(): void
+    {
+        $result = new NonCriticalCheckerDecorator(new ThrowingChecker('Connection to redis://app:s3cret@redis:6379 refused'))
+            ->check(new CheckResult(), new Context(CheckTypeEnum::READINESS))
+        ;
+
+        self::assertSame([], $result->errors);
+        self::assertSame(
+            [sprintf('%s failed (Connection to redis://***@redis:6379 refused)', ThrowingChecker::class)],
+            $result->warnings,
+        );
+    }
+
+    public function testDiscardsPartialInnerOutputWhenTheInnerThrows(): void
+    {
+        $result = new CheckResult();
+        $result->addMessage('earlier message');
+        $result->addError('earlier critical failure');
+        $result->addWarning('earlier warning');
+
+        $inner = $this->makeInner(static function (CheckResult $r): never {
+            $r->addMessage('partial message');
+            $r->addError('partial error');
+            $r->addWarning('partial warning');
+
+            throw new RuntimeException('boom');
+        });
+
+        $result = new NonCriticalCheckerDecorator($inner)
+            ->check($result, new Context(CheckTypeEnum::READINESS))
+        ;
+
+        self::assertSame(['earlier message'], $result->messages);
+        self::assertSame(['earlier critical failure'], $result->errors);
+        self::assertSame(['earlier warning', sprintf('%s failed (boom)', $inner::class)], $result->warnings);
     }
 
     private function makeInner(Closure $body): CheckInterface

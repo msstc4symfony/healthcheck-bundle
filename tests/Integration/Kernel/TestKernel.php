@@ -18,6 +18,10 @@ final class TestKernel extends Kernel
 {
     use MicroKernelTrait;
 
+    private bool $bootPushedErrorHandler = false;
+
+    private bool $bootPushedExceptionHandler = false;
+
     /**
      * @param (Closure(ContainerConfigurator): void)|null $configureServices extra services; give each variant its own environment so compiled containers do not collide
      */
@@ -27,6 +31,58 @@ final class TestKernel extends Kernel
         private readonly ?Closure $configureServices = null,
     ) {
         parent::__construct($environment, $debug);
+    }
+
+    private function topErrorHandler(): ?callable
+    {
+        $handler = set_error_handler(null);
+        restore_error_handler();
+
+        return $handler;
+    }
+
+    private function topExceptionHandler(): ?callable
+    {
+        $handler = set_exception_handler(null);
+        restore_exception_handler();
+
+        return $handler;
+    }
+
+    /**
+     * FrameworkBundle before 6.4.13 registers its ErrorHandler on every boot (later releases skip it
+     * when symfony/runtime is installed); PHPUnit flags the handlers left behind as risky.
+     */
+    #[Override]
+    public function boot(): void
+    {
+        if ($this->booted) {
+            parent::boot();
+
+            return;
+        }
+
+        $errorHandler = $this->topErrorHandler();
+        $exceptionHandler = $this->topExceptionHandler();
+        parent::boot();
+        $this->bootPushedErrorHandler = $this->topErrorHandler() !== $errorHandler;
+        $this->bootPushedExceptionHandler = $this->topExceptionHandler() !== $exceptionHandler;
+    }
+
+    #[Override]
+    public function shutdown(): void
+    {
+        parent::shutdown();
+
+        if ($this->bootPushedErrorHandler) {
+            restore_error_handler();
+            $this->bootPushedErrorHandler = false;
+        }
+
+        if ($this->bootPushedExceptionHandler) {
+            restore_exception_handler();
+            $this->bootPushedExceptionHandler = false;
+        }
     }
 
     public function registerBundles(): iterable

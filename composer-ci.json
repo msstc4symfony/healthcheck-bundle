@@ -52,7 +52,7 @@
     "phpstan/phpstan-doctrine": "^2.0",
     "phpstan/phpstan-strict-rules": "^2.0",
     "phpstan/phpstan-symfony": "^2.0",
-    "phpunit/phpunit": ">=10.5",
+    "phpunit/phpunit": ">=11.5",
     "deptrac/deptrac": "^4.6",
     "predis/predis": "^2.0",
     "rector/rector": "^2.1",
@@ -84,6 +84,7 @@
     "sort-packages": true
   },
   "conflict": {
+    "symfony/error-handler": "<6.4.10|>=7.0,<7.0.10|>=7.1,<7.1.3",
     "symfony/symfony": "*"
   },
   "extra": {

@@ -255,6 +255,8 @@ services:
             - 'Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CheckInterface'
 ```
 
+If the pool later moves to a remote adapter, the bundle probes it on its own — drop the manual service then, or the pool is probed twice.
+
 ### Checker for Both Liveness and Readiness
 
 If your checker should run in both modes, return `true` for both types:

@@ -28,6 +28,9 @@
   local pools no longer exist; entries for them in `non_critical` / `timeouts` are ignored. To keep
   probing a local pool (e.g. a filesystem cache on a shared volume), register a `CacheChecker` for it
   (see README, "Probing a Local Cache Pool").
+
+### Documentation
+
 - README: the custom-checker example uses `CheckResult::addMessage()` / `addError()` and the real
   `CheckInterface` tag (it showed `healthcheck.checker` and direct array writes, which do not work).
 

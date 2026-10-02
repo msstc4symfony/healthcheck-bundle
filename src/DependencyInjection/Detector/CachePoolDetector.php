@@ -26,25 +26,22 @@ final readonly class CachePoolDetector implements CheckerDetectorInterface
     #[Override]
     public function detect(ContainerBuilder $container): iterable
     {
-        /** @var list<array{name?: string}> $tags */
-        foreach ($container->findTaggedServiceIds('cache.pool') as $id => $tags) {
+        foreach (array_keys($container->findTaggedServiceIds('cache.pool')) as $id) {
             $pool = $container->getDefinition($id);
             if ($pool->isAbstract() || CachePoolLocality::isLocal($container, $pool)) {
                 continue;
             }
             $class = $pool->getClass();
+            // The child's own "name" wins; a parent fills it in when the child has none.
+            $name = $this->poolName($pool);
             $parentName = null;
             while ($pool instanceof ChildDefinition) {
                 $pool = $container->findDefinition($pool->getParent());
                 $parentName = $pool->getClass();
                 $class ??= $pool->getClass();
-                $parentTags = $pool->getTag('cache.pool');
-                if ($parentTags !== []) {
-                    // Child's keys win, parent fills in the missing ones (e.g. inherited "name").
-                    $tags[0] = ($tags[0] ?? []) + $parentTags[0];
-                }
+                $name ??= $this->poolName($pool);
             }
-            $name = $tags[0]['name'] ?? $id;
+            $name ??= $id;
 
             if ($class === null) {
                 continue;
@@ -56,5 +53,13 @@ final readonly class CachePoolDetector implements CheckerDetectorInterface
                     ->addArgument($parentName)
             ;
         }
+    }
+
+    private function poolName(Definition $pool): ?string
+    {
+        $attributes = $pool->getTag('cache.pool')[0] ?? null;
+        $name = is_array($attributes) ? $attributes['name'] ?? null : null;
+
+        return is_string($name) ? $name : null;
     }
 }

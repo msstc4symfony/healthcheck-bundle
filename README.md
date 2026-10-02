@@ -19,7 +19,7 @@ A Symfony bundle for comprehensive health checking of your application and its e
 ## Requirements
 
 - PHP >= 8.4
-- Symfony 6.4 | 7.x | 8.x
+- Symfony 6.4 | 7.x | 8.x (on PHP 8.4, `symfony/error-handler` 6.4.10 / 7.1.3 or later — earlier releases emit `E_STRICT` deprecations)
 
 ## Installation
 
@@ -43,7 +43,7 @@ return [
 
 The bundle automatically detects and registers health checkers for the following services when their corresponding clients are present in the container:
 
-- **Doctrine DBAL** — database connections (`doctrine.dbal.*_connection`)
+- **Doctrine DBAL** (3.x and 4.x) — database connections (`doctrine.dbal.*_connection`)
 - **Doctrine ORM** — entity managers (`doctrine.orm.*_entity_manager`)
 - **Doctrine MongoDB ODM** — MongoDB connections + document managers
 - **Doctrine Migrations** — schema-status probe
@@ -56,7 +56,7 @@ The bundle automatically detects and registers health checkers for the following
 - **Kafka** — `RdKafka\Producer` / `RdKafka\KafkaConsumer`
 - **Symfony Messenger** — transports implementing `MessageCountAwareInterface`
 - **Symfony Mailer** — SMTP transports (`SmtpTransport` subclasses)
-- **Symfony Lock** — the stores behind configured `framework.lock` resources (tagged `lock.store`) and `PersistingStoreInterface` services registered by the application. Stores with hidden (dot-prefixed) ids that no `framework.lock` resource uses — e.g. FrameworkBundle 8.1's predefined `.lock.flock.store` / `.lock.semaphore.store` — are not probed
+- **Symfony Lock** — the stores behind configured `framework.lock` resources (tagged `lock.store`) and `PersistingStoreInterface` services registered by the application. Stores with hidden (dot-prefixed) ids that no `framework.lock` resource uses — e.g. FrameworkBundle 8.1's predefined `.lock.flock.store` / `.lock.semaphore.store` — are not probed. Stores built by FrameworkBundle are reported under the resource that uses them — `Lock store (lock.default)`, `Lock store (lock.invoice[1])` for the second store of a combined resource — instead of their hashed service id; the checker ids (`healthcheck.checker..lock.<resource>.store.<hash>`, used as `non_critical` / `timeouts` keys) are unchanged. When `framework.lock` names a connection service (e.g. a `\Redis` client or a DBAL connection) that the bundle already probes, the lock store built around it is not probed a second time
 - **Flysystem** — `flysystem.storage`-tagged services
 - **HTTP probes** — arbitrary configured URLs via `http_client` bundle config
 
@@ -91,7 +91,7 @@ Warnings:
 Cache (cache.app) connection failed (Connection refused)
 ```
 
-`Warnings` lists failures of checkers configured as `non_critical`: they are reported but do not fail the probe. The first entry of each section is not indented and the rest are tab-indented; the layout is kept as is for existing parsers. Responses carry `Vary: Accept`.
+`Warnings` lists failures of checkers configured as `non_critical` — including an exception thrown by such a checker, reported as `<checker class> failed (<message>)`: they are reported but do not fail the probe. The first entry of each section is not indented and the rest are tab-indented; the layout is kept as is for existing parsers. Responses carry `Vary: Accept`.
 
 **JSON Response Example** — request `?_format=json` or send an `Accept: application/json` header (the query parameter wins over the header):
 ```bash
@@ -233,7 +233,7 @@ class CustomServiceChecker implements CheckInterface
 
 The bundle uses Symfony's autoconfiguration with the `#[AutoconfigureTag]` attribute. If your checker is in a directory with autoconfiguration enabled, it will be automatically registered.
 
-Alternatively, you can manually tag your service in `services.yaml`:
+Alternatively, you can manually tag your service in `services.yaml` (a child of an abstract `parent` template works too):
 
 ```yaml
 services:

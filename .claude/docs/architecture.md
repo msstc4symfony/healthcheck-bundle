@@ -61,13 +61,16 @@ fail a probe.
    `CheckerDetectorInterface` services (tagged `healthcheck.detector` via
    `#[AutoconfigureTag]`), instantiates each via `new $class()`, calls
    `detect($container)`, registers yielded checker `Definition`s with the
-   `CheckInterface::class` tag.
+   `CheckInterface::class` tag. Drops a checker whose target is a
+   `StoreFactory::createStore` lock store wrapping a service another detected
+   checker already probes (`framework.lock` given a connection id).
 2. **`HealthCheckerTimeoutDecorationPass`** — wraps each
    `CheckInterface`-tagged service in `TimeoutCheckerDecorator`, retags the
    wrapper.
 3. **`HealthCheckerDeferredConstructionPass`** (`@internal`) — wraps every
    readiness-only checker (`AbstractReadinessChecker` subclasses,
-   `ElasticaConnectionChecker`; looks through the timeout decorator) in
+   `ElasticaConnectionChecker`; looks through the timeout decorator and
+   through a `ChildDefinition`'s parent chain) in
    `DeferredReadinessCheckerDecorator`, which gets the rest of the chain as a
    `ServiceClosureArgument` and builds it only inside a readiness probe. A
    target whose constructor throws becomes `<label> failed (<message>)`; the
@@ -78,7 +81,8 @@ fail a probe.
    checker class (third argument) so events can name it without building it.
 4. **`HealthCheckerCriticalityDecorationPass`** — wraps in
    `NonCriticalCheckerDecorator` for checkers listed in
-   `non_critical` config, retags the wrapper.
+   `non_critical` config, retags the wrapper. The decorator turns both the
+   inner's errors and an exception thrown by its `check()` into warnings.
 
 Order matters: timeout is the **innermost** decorator. Final composition is
 `NonCritical(Deferred(Timeout(inner)))` (Deferred only for readiness-only

@@ -33,15 +33,19 @@ an older FrameworkBundle (roave/backward-compatibility-check caps
 `symfony/console`), so only the CI matrix — which removes roave and resolves
 the latest framework — exposed it.
 
-## Lock store check names contain the container hash (open)
+## Lock store check names contained the container hash (fixed in v1.3.0)
 
 FrameworkBundle registers lock stores as hidden `.lock.<resource>.store.<hash>`
-services, so the checker id is `healthcheck.checker..lock.default.store.<hash>`
-and the label `Lock store (.lock.default.store.<hash>)`. The hash follows the DSN,
-so dashboards keyed by the check name break when the DSN changes. Not fixed yet:
-a combined store yields several hidden services per resource (stripping the hash
-collides) and the DSN may contain credentials (unusable as a label). Candidate
-fix: `lock.<resource>` plus a positional index for combined stores.
+services (hash of the DSN). Since v1.3.0 `LockStoreDetector` labels them by the
+resources using them, read from the `lock.<resource>.factory` child definitions
+(`lock.factory.abstract`, argument 0): `Lock store (lock.default)`;
+`lock.<resource>[<i>]` for the i-th store of a combined store
+(`lock.store.combined.abstract`, argument 0 = list of references);
+`lock.a, lock.b` for a store shared by resources (8.1's `.lock.flock.store`).
+A store no factory references keeps its id as label. The **checker id is
+unchanged** (`healthcheck.checker..lock.<resource>.store.<hash>`): it is the key
+of `non_critical` / `timeouts`, so renaming it would silently drop existing
+configuration (BC).
 
 ## PHPUnit deprecations from `MemcacheCheckerTest` (pecl memcache)
 
@@ -121,7 +125,7 @@ the driver need a matching extension locally.
 output; anything else (incl. `*/*`, `text/html` — Kubernetes sends `*/*`) stays text. Before
 1.2.0 only the route attribute counted, so `?_format=json` and `Accept` were ignored.
 
-## `CacheChecker` skip semantics changed in v1.1.0 (forthcoming)
+## `CacheChecker` skip semantics changed in v1.1.0
 
 Pre-`v1.1.0`, `CacheChecker` with `NullAdapter` or APCu-in-CLI emitted
 "<label> passed" — a false success signal. From v1.1.0 onward it emits
@@ -162,13 +166,6 @@ Tracked here so it doesn't get forgotten.
   currently runs once against the locked Symfony version. If `Phpunit`
   matrix surfaces Symfony 6.4 / 7 deprecations, those won't fail
   PHPStan. Tradeoff: matrix-aware PHPStan would multiply CI time × 3.
-- **Roave BC check promotion.** Flip `continue-on-error: false` after
-  tagging `v1.1.0`.
-- **Infection min-MSI threshold.** Currently informational. Set
-  `--min-msi` in the Makefile target after observing a stable baseline
-  (current baseline: 66.74 %).
-- **`prefer-lowest` matrix variant.** Would catch missing lower bounds in
-  composer constraints; not currently wired.
 - **PHP version matrix.** Currently single 8.4. Add 8.5+ when those land.
 
 ## Детекторы роняли компиляцию на классах с неустановленным родителем (2026-10-01 UTC)
@@ -218,8 +215,15 @@ FrameworkBundle 8.1 (`Resources/config/lock.php`) всегда регистри�
 `CombinedStore` (`ChildDefinition` от `lock.store.combined.abstract`) тега не имеет, но его
 составные хранилища тегированы. Правило детектора: скрытые (`.`-префикс) сервисы — только с
 тегом `lock.store`; хранилища, зарегистрированные приложением под обычным id, проверяются
-как раньше. Если приложение передаёт свой сервис в `framework.lock` по id, он проверяется
-дважды (свой id + `.lock.<resource>.store.<hash>`) — было и до исправления.
+как раньше. Если приложение передаёт в `framework.lock` id сервиса-соединения (`\Redis`, DBAL connection, …),
+FrameworkBundle строит вокруг него `.lock.<resource>.store.<hash>` с фабрикой
+`StoreFactory::createStore(@сервис)`. До v1.3.0 то же соединение проверялось дважды (свой чекер +
+lock store). С v1.3.0 `HealthCheckerAutoDetectionPass` собирает цели всех обнаруженных чекеров
+(аргумент 0, алиасы разрешены) и не регистрирует чекер, чья цель — `StoreFactory::createStore`
+вокруг уже проверяемого сервиса. Сервис-хранилище (`RedisStore` и т.п.) передать по id нельзя —
+`StoreFactory` принимает только соединения/DSN. Сравнивать фабрику нужно по частям массива:
+Rector превращает литерал `[StoreFactory::class, 'createStore']` в `StoreFactory::createStore(...)`
+(first-class callable), и сравнение с массивом становится всегда ложным.
 
 ## Ревью v1.1.2 → v1.1.3 (2026-10-02 UTC)
 
@@ -238,7 +242,7 @@ FrameworkBundle 8.1 (`Resources/config/lock.php`) всегда регистри�
   список readiness-only типов `[AbstractReadinessChecker, ElasticaConnectionChecker]`.
 - `HealthCheckerCompletedEvent::$checkerClass` был классом внешнего декоратора (CR-008) — исправлено
   в v1.2.0, см. раздел ниже.
-- Пользовательский чекер, объявленный как `ChildDefinition` (без класса до `ResolveChildDefinitionsPass`), не распознаётся как readiness-only и создаётся сразу (eager).
+- Пользовательский чекер, объявленный как `ChildDefinition` (без класса до `ResolveChildDefinitionsPass`), не распознавался как readiness-only и создавался сразу (eager). С v1.3.0 `HealthCheckerDeferredConstructionPass::flatten()` склеивает цепочку родителей (класс — первый непустой от ребёнка; аргументы родителя, поверх — `index_N` ребёнка) только для классификации и label; сами определения не меняются.
 - В текстовом выводе HTTP-проб `warnings` не печатались — с v1.2.0 есть секция `Warnings:` (в конце,
   после `Messages:`, чтобы не сдвигать строки для существующих парсеров); консольные команды печатают
   `Warnings:` только если они есть.
@@ -271,11 +275,11 @@ FrameworkBundle 8.1 (`Resources/config/lock.php`) всегда регистри�
 - **Неровный отступ текстового вывода** (`Messages: \nfirst\n\tsecond`) — старое
   `implode(PHP_EOL . "\t", …)`, сохранён ради существующих парсеров; секция `Warnings` идёт тем же
   форматом. Выравнивать — только в 2.0. Ответы проб несут `Vary: Accept` (формат зависит от Accept).
-- **Non-critical + исключение = error.** `NonCriticalCheckerDecorator` понижает только добавленные
-  ошибки; исключение из `check()` он не ловит: в `ParallelAction` оно становится
-  `parallel: X failed (…)` в `errors` (readiness падает), в последовательном `Action` — пролетает
-  наружу. Встроенные чекеры не бросают (шаблон ловит `Throwable`). Ловить `Throwable` в декораторе —
-  кандидат на отдельное изменение (меняет поведение).
+- **Non-critical + исключение = error** (до v1.3.0). `NonCriticalCheckerDecorator` понижал только
+  добавленные ошибки; исключение из `check()` в последовательном `Action` пролетало наружу, в
+  `ParallelAction` становилось `parallel: X failed (…)` в `errors`. С v1.3.0 декоратор ловит
+  `Throwable`, отбрасывает частичный вывод и пишет warning `<класс чекера> failed (<сообщение,
+  CredentialRedactor>)`. Критичный чекер по-прежнему бросает наружу в `Action`.
 - README до 1.2.0 советовал тег `healthcheck.checker` и `$result->messages[] = …` для своего
   чекера — оба не работают (тег — FQCN `CheckInterface`, свойства `private(set)`); исправлено.
   Ручная регистрация `CacheChecker` (README «Probing a Local Cache Pool») закреплена тестом
@@ -283,3 +287,29 @@ FrameworkBundle 8.1 (`Resources/config/lock.php`) всегда регистри�
 - RED для `CachePoolSelectionTest::testAppPoolOnRedis…` использует `redis://127.0.0.1:1`
   (мгновенный отказ соединения) — Redis-сервер не нужен, но нужен ext-redis или predis (иначе skip).
 
+
+## v1.3.0: bundle-standard 1.8.0, prefer-lowest, level 10 (2026-10-02 UTC)
+
+- **Prefer-lowest (PHP 8.4, Symfony 6.4.0) проходит.** Что потребовалось:
+  - `phpunit/phpunit: >=11.5` в обоих манифестах: 10.5 не знает
+    `<source ignoreIndirectDeprecations>` шаблона. Фактический минимум диктует
+    `roave/security-advisories` (сейчас 11.5.50).
+  - `conflict: symfony/error-handler <6.4.10|>=7.0,<7.0.10|>=7.1,<7.1.3` в обоих манифестах:
+    до этих версий `ErrorHandler` трогает `E_STRICT` (deprecated в PHP 8.4). В `require` поднять
+    патч нельзя — верификатор требует ровно `^6.4|^7.0|^8.0`; `conflict` он не проверяет (кроме
+    `symfony/symfony`).
+  - **Реальный баг DBAL 3**: `DBALConnectionChecker` звал `Connection::getServerVersion()`, а в
+    DBAL 3.x этот метод `private` → на отключённом соединении readiness всегда падала с
+    «Call to private method». Теперь `executeQuery(getDatabasePlatform()->getDummySelectSQL())`
+    (есть в 3.x и 4.x); тест на реальном `pdo_sqlite` ловит регрессию на обеих версиях. Ограничение
+    DBAL (`^3.0|^4.0`) не менялось.
+  - FrameworkBundle < 6.4.13 в `boot()` всегда регистрирует `ErrorHandler` (с 6.4.13 — нет, если
+    есть `symfony/runtime`); PHPUnit 11+ помечает такие тесты risky («did not remove its own
+    exception handlers»). Это не баг бандла — `TestKernel` снимает обработчики, которые положил
+    его `boot()`, в `shutdown()` (сравнение вершины стека до/после через `set_*_handler(null)` +
+    `restore_*_handler()`).
+- **PHPStan level 10**: две ошибки в `CachePoolDetector` (`mixed` из атрибутов тега) — имя пула
+  теперь берётся `poolName()` с сужением через `is_array`/`is_string`, без `@var`.
+- `symfony/*-contracts`: в `require` объявлять нечего — из контрактов код использует только
+  `HttpClient`, а он нужен лишь опциональному `HttpClientChecker` (приходит с `symfony/http-client`
+  из `composer-ci.json`).

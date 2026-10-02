@@ -7,7 +7,7 @@ Runs sequentially. Any non-zero exit kills the gate.
 | Tool | Config | Purpose |
 |------|--------|---------|
 | `php -l` | — | Syntax lint |
-| `phpstan` | `phpstan.dist.neon` (local) / `phpstan-ci.neon` (CI) | Static analysis, level 9 |
+| `phpstan` | `phpstan.dist.neon` (local) / `phpstan-ci.neon` (CI) | Static analysis, level 10 |
 | `php-cs-fixer check` | `.php-cs-fixer.dist.php` | Coding style |
 | `composer validate --strict --no-check-publish` | — | Manifest schema + lock sync |
 | `composer audit` | — | Security advisories |
@@ -19,7 +19,7 @@ sequential is fine — the codebase is small.
 
 ## PHPStan
 
-- **Level 9**, `treatPhpDocTypesAsCertain: false`.
+- **Level 10** (since v1.3.0), `treatPhpDocTypesAsCertain: false`.
 - Extensions: `spaze/phpstan-disallowed-calls`, `phpstan-strict-rules`,
   `phpstan-symfony`, `phpstan-doctrine`, `phpstan-beberlei-assert`.
 - Baseline: `phpstan-baseline.neon`. New findings are **not** auto-baselined
@@ -86,8 +86,8 @@ against the full set, prefix commands with `COMPOSER=composer-ci.json`.
 
 ## Backward-compat tracking
 
-`roave/backward-compatibility-check` runs in CI as `bc-check` job —
-informational until `v1.1.0` is tagged.
+`roave/backward-compatibility-check` runs in CI as the blocking `bc-check`
+job against the latest stable tag.
 
 When tagging a new release, run locally first to capture BC changes for the
 CHANGELOG:

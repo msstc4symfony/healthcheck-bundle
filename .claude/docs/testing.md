@@ -41,7 +41,7 @@ error handler; no custom bootstrap is needed (`phpunit.xml.dist` is the shared
 
 ## Minimal install (no optional libraries)
 
-CI job "PHPUnit without optional libraries" (bundle-standard v1.7.x) installs
+CI job "PHPUnit without optional libraries" (bundle-standard since v1.7) installs
 only `composer.json` (no `composer-ci.json` extras: doctrine/*, symfony/lock,
 mailer, messenger, browser-kit, http-client, predis, elastica, ...) and runs
 `vendor/bin/phpunit`. Every test needing an optional package must SKIP there:
@@ -85,16 +85,14 @@ This replaced `symfony/phpunit-bridge` + `SYMFONY_DEPRECATIONS_HELPER=max[direct
 ## Roave BC check baseline
 
 The CI `bc-check` job runs `roave/backward-compatibility-check` against
-the latest git tag (`v1.0.0` at time of writing). Currently
-`continue-on-error: true` — informational because v1.0.0 → HEAD has
-accumulated BC breaks from this refactor. Promote to blocking after
-tagging `v1.1.0`.
+the latest stable tag and is blocking since `bundle-standard` v1.8.0 (adopted
+in v1.3.0): every change in a 1.x release must be additive or a bug fix.
 
 Local probe (mind the xdebug interference — disable it):
 
 ```bash
 php -d xdebug.mode=off vendor/bin/roave-backward-compatibility-check \
-    --from=v1.0.0 --to=HEAD --format=console
+    --from=v1.2.0 --to=HEAD --format=console
 ```
 
 ## Mutation testing (Infection)
@@ -108,9 +106,9 @@ php -d xdebug.mode=off vendor/bin/roave-backward-compatibility-check \
 
 Run: `make infection`. ~8 s wall time on this codebase.
 
-CI job runs **push-to-main only** with `continue-on-error: true`. Set
-`--min-msi` / `--min-covered-msi` thresholds in the Makefile target after
-measuring a stable baseline (first run reported MSI 66.74 %).
+CI job runs **push-to-main only** and fails below the `infection-min-msi` /
+`infection-min-covered-msi` inputs of `checks.yml` (72 / 72; MSI 79.9 % at
+v1.3.0). Locally: `make infection` plus `--min-msi=72 --min-covered-msi=72`.
 
 ## DEPTRAC
 

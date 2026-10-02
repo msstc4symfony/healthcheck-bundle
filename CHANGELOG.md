@@ -1,5 +1,36 @@
 # Changelog
 
+## 1.3.0
+
+### Fixed
+
+- A `non_critical` checker whose `check()` throws reports a warning (`<checker class> failed (<message>)`,
+  credentials masked) instead of the exception escaping the sequential runner (HTTP 500 / command crash)
+  or failing readiness as `parallel: X failed (…)` in the parallel runner. Critical checkers are unchanged.
+- `DBALConnectionChecker` works with Doctrine DBAL 3: it called `Connection::getServerVersion()`, which is
+  private before DBAL 4, so a not-yet-connected DBAL 3 connection always failed readiness. It now runs the
+  platform's dummy `SELECT` to connect.
+- A checker declared as a child of an abstract `parent` service is recognised as readiness-only (its class
+  is resolved through the parent chain): it is built inside the readiness probe, so a client that cannot
+  be constructed no longer breaks liveliness.
+- When `framework.lock` names a connection service the bundle already probes (a `\Redis` client, a DBAL
+  connection, …), the lock store FrameworkBundle builds around it is no longer probed a second time.
+
+### Changed
+
+- Lock stores built by FrameworkBundle are labelled by their resource: `Lock store (lock.default)`,
+  `Lock store (lock.invoice[1])` for the second store of a combined resource, instead of
+  `Lock store (.lock.default.store.<hash>)`. Dashboards matching the old text need updating. The checker
+  ids (`healthcheck.checker..lock.<resource>.store.<hash>`, the keys of `non_critical` / `timeouts`) are
+  unchanged.
+- Dependencies: `symfony/error-handler` releases that use `E_STRICT` on PHP 8.4 conflict
+  (`<6.4.10`, `7.0.0`–`7.0.9`, `7.1.0`–`7.1.2`); PHPUnit `>=11.5` for development.
+
+### Internal
+
+- `bundle-standard` v1.8.0: blocking Roave BC check, blocking Infection (min MSI / covered MSI 72 %), a
+  `--prefer-lowest` PHPUnit cell; PHPStan level 10.
+
 ## 1.2.0
 
 ### Added

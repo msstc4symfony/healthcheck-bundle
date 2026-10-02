@@ -17,7 +17,7 @@ backports.
 
 All in `Makefile`:
 
-- `make check` — full quality gate (lint, PHPStan level 9, php-cs-fixer,
+- `make check` — full quality gate (lint, PHPStan level 10, php-cs-fixer,
   `composer validate --strict`, `composer audit`, Rector dry-run, DEPTRAC).
   CI runs the same pieces in parallel jobs with `PHPSTAN_CONFIG=phpstan-ci.neon`.
 - `make fix` — apply `php-cs-fixer fix` then `rector process` writes.

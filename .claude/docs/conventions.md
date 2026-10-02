@@ -20,7 +20,7 @@ The bundle hard-requires PHP 8.4. Don't propose downgrades.
 
 - PSR-4 root: `Msstc4Symfony\HealthCheckBundle\` → `src/`.
 - Test PSR-4 root: `Msstc4Symfony\HealthCheckBundle\Test\` → `tests/` (`Unit/`,
-  `Integration/`, `Mock/`; layout shared by every bundle, `bundle-standard` 1.7).
+  `Integration/`, `Mock/`; layout shared by every bundle, `bundle-standard` 1.7+).
 - One class per file. Classes are `final readonly` unless extension is part
   of the contract (`AbstractReadinessChecker`).
 - `#[Exclude]` on classes that are constructed by compiler passes as

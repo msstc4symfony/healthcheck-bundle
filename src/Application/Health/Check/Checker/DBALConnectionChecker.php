@@ -22,7 +22,7 @@ final readonly class DBALConnectionChecker extends AbstractReadinessChecker
     {
         // Connection::getServerVersion() is private before DBAL 4; a dummy SELECT connects on 3.x and 4.x.
         if (!$this->connection->isConnected()) {
-            $this->connection->executeQuery($this->connection->getDatabasePlatform()->getDummySelectSQL());
+            $this->connection->fetchOne($this->connection->getDatabasePlatform()->getDummySelectSQL());
         }
     }
 

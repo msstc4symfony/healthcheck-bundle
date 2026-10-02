@@ -13,9 +13,8 @@ use Throwable;
 
 /**
  * Demotes errors produced by the inner checker, and any exception it throws, into warnings.
- * Used for non-critical
- * dependencies whose unavailability should not fail readiness (caches, analytics-only
- * stores, etc.).
+ * Used for non-critical dependencies whose unavailability should not fail readiness
+ * (caches, analytics-only stores, etc.).
  *
  * On demotion, any partial messages/warnings added by the inner are discarded (symmetric
  * with TimeoutCheckerDecorator's "override-stripping" policy) so we don't simultaneously

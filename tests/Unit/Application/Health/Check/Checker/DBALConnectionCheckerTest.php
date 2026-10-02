@@ -50,7 +50,7 @@ final class DBALConnectionCheckerTest extends TestCase
         $connection = $this->createMock(Connection::class);
         $connection->method('isConnected')->willReturn(false);
         $connection->method('getDatabasePlatform')->willReturn($platform);
-        $connection->expects(self::once())->method('executeQuery')->with('SELECT 1');
+        $connection->expects(self::once())->method('fetchOne')->with('SELECT 1')->willReturn(1);
 
         $result = new DBALConnectionChecker($connection, 'default')->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 

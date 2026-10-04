@@ -1,0 +1,36 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker;
+
+use ClickHouseDB\Client;
+use Override;
+use RuntimeException;
+use Symfony\Component\DependencyInjection\Attribute\Exclude;
+
+#[Exclude]
+final readonly class ClickHouseChecker extends AbstractReadinessChecker
+{
+    public function __construct(
+        private Client $connection,
+        private string $name,
+    ) {
+    }
+
+    #[Override]
+    protected function doCheck(): ?string
+    {
+        if (!$this->connection->ping()) {
+            throw new RuntimeException('ping returned false');
+        }
+
+        return null;
+    }
+
+    #[Override]
+    protected function label(): string
+    {
+        return sprintf('ClickHouse (%s)', $this->name);
+    }
+}

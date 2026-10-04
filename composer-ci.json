@@ -1,0 +1,99 @@
+{
+  "name": "msstc4symfony/healthcheck-bundle",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Maxim Shamaev",
+      "email": "maxim.shamaev@gmail.com"
+    }
+  ],
+  "type": "symfony-bundle",
+  "description": "Health checks bundle (CI manifest with full optional dependencies)",
+  "minimum-stability": "stable",
+  "keywords": [
+    "php",
+    "symfony",
+    "healthcheck"
+  ],
+  "prefer-stable": true,
+  "autoload": {
+    "psr-4": {
+      "Msstc4Symfony\\HealthCheckBundle\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Msstc4Symfony\\HealthCheckBundle\\Test\\": "tests/"
+    }
+  },
+  "require": {
+    "php": ">=8.4",
+    "composer-runtime-api": ">=2.2",
+    "psr/log": "^3.0",
+    "symfony/framework-bundle": "^7.4|^8.0",
+    "symfony/http-foundation": "^7.4|^8.0",
+    "symfony/console": "^7.4|^8.0"
+  },
+  "require-dev": {
+    "doctrine/dbal": "^3.0|^4.0",
+    "doctrine/migrations": "^3.8",
+    "doctrine/mongodb-odm": "^2.6",
+    "doctrine/orm": "^3.0",
+    "friendsofphp/php-cs-fixer": "^3.55",
+    "infection/infection": "^0.32",
+    "league/flysystem-bundle": "^3.4",
+    "mongodb/mongodb": "^2.1",
+    "opensearch-project/opensearch-php": "^2.4",
+    "php-amqplib/php-amqplib": "^3.5",
+    "phpstan/extension-installer": "^1.4",
+    "phpstan/phpstan": "^2.1",
+    "phpstan/phpstan-beberlei-assert": "^2.0",
+    "phpstan/phpstan-doctrine": "^2.0",
+    "phpstan/phpstan-strict-rules": "^2.0",
+    "phpstan/phpstan-symfony": "^2.0",
+    "phpunit/phpunit": ">=11.5",
+    "deptrac/deptrac": "^4.6",
+    "predis/predis": "^2.0",
+    "rector/rector": "^2.1",
+    "roave/backward-compatibility-check": "^8.20",
+    "roave/security-advisories": "dev-latest",
+    "ruflin/elastica": "^7.3|^8.0",
+    "smi2/phpclickhouse": "^1.5",
+    "spaze/phpstan-disallowed-calls": "^v4.0",
+    "symfony/http-client": "^7.4|^8.0",
+    "symfony/lock": "^7.4|^8.0",
+    "symfony/mailer": "^7.4|^8.0",
+    "symfony/messenger": "^7.4|^8.0",
+    "symfony/browser-kit": "^7.4|^8.0",
+    "symfony/runtime": "^7.4|^8.0"
+  },
+  "suggest": {
+    "symfony/monolog-bundle": "To upload the verification results to the logs"
+  },
+  "config": {
+    "platform": {
+      "ext-mongodb": "2.5.2"
+    },
+    "allow-plugins": {
+      "composer/package-versions-deprecated": true,
+      "infection/extension-installer": true,
+      "phpstan/extension-installer": true,
+      "symfony/runtime": false
+    },
+    "sort-packages": true
+  },
+  "conflict": {
+    "symfony/error-handler": "<7.4.17 || >=8.0,<8.1.5",
+    "symfony/symfony": "*"
+  },
+  "extra": {
+    "symfony": {
+      "allow-contrib": false,
+      "require": "^7.4|^8.0"
+    }
+  },
+  "scripts": {
+    "healthcheck:readiness": "./bin/console healthcheck:readiness",
+    "healthcheck:liveliness": "./bin/console healthcheck:liveliness"
+  }
+}

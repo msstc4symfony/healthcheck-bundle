@@ -1,0 +1,30 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector;
+
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\EntityManagerChecker;
+use Override;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Definition;
+use Symfony\Component\DependencyInjection\Reference;
+
+final readonly class EntityManagerDetector implements CheckerDetectorInterface
+{
+    /**
+     * @return iterable<string, Definition>
+     */
+    #[Override]
+    public function detect(ContainerBuilder $container): iterable
+    {
+        foreach (array_keys($container->getDefinitions()) as $id) {
+            if (preg_match('/^doctrine\.orm\.(\w+)_entity_manager$/Ss', $id, $match) === 1) {
+                yield sprintf('healthcheck.checker.%s', $id) => new Definition(EntityManagerChecker::class)
+                    ->addArgument(new Reference($id))
+                    ->addArgument($match[1])
+                ;
+            }
+        }
+    }
+}

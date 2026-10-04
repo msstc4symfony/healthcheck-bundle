@@ -1,0 +1,13 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Cannot access offset 0 on non\-empty\-array\|bool\|string\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: src/Application/Health/Check/Checker/ElasticaConnectionChecker.php
+
+		-
+			message: '#^Parameter \#1 \$value of function count expects array\|Countable, array\|bool\|string given\.$#'
+			identifier: argument.type
+			count: 2
+			path: src/Application/Health/Check/Checker/ElasticaConnectionChecker.php

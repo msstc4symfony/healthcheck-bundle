@@ -1,0 +1,74 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Msstc4Symfony\HealthCheckBundle\Test\Integration\Cli;
+
+use Msstc4Symfony\HealthCheckBundle\Test\Integration\Kernel\TestKernel;
+use Override;
+use Symfony\Bundle\FrameworkBundle\Console\Application;
+use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Tester\CommandTester;
+use Symfony\Component\Filesystem\Filesystem;
+
+/**
+ * Asserts both CLI commands are discoverable through Symfony's Application and run
+ * end-to-end against the real container. Complements the unit Command tests, which
+ * skip Application registration.
+ */
+final class HealthCommandFunctionalTest extends KernelTestCase
+{
+    protected function setUp(): void
+    {
+        new Filesystem()->remove(sys_get_temp_dir() . '/msstc4symfony-healthcheck-bundle-test');
+    }
+
+    #[Override]
+    protected static function getKernelClass(): string
+    {
+        return TestKernel::class;
+    }
+
+    public function testReadinessCommandRunsToCompletion(): void
+    {
+        $tester = $this->executeCommand('healthcheck:readiness');
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode());
+        self::assertStringContainsString('Result: success', $tester->getDisplay());
+    }
+
+    public function testLivelinessCommandRunsToCompletion(): void
+    {
+        $tester = $this->executeCommand('healthcheck:liveliness');
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode());
+        self::assertStringContainsString('Result: success', $tester->getDisplay());
+    }
+
+    public function testBothCommandsAreRegisteredWithApplication(): void
+    {
+        $application = new Application(self::bootKernel());
+
+        self::assertTrue($application->has('healthcheck:liveliness'));
+        self::assertTrue($application->has('healthcheck:readiness'));
+    }
+
+    public function testHealthcheckAliasResolvesToLiveliness(): void
+    {
+        $application = new Application(self::bootKernel());
+
+        $command = $application->find('healthcheck');
+        self::assertSame('healthcheck:liveliness', $command->getName());
+    }
+
+    private function executeCommand(string $name): CommandTester
+    {
+        $kernel = self::bootKernel();
+        $application = new Application($kernel);
+        $tester = new CommandTester($application->find($name));
+        $tester->execute([]);
+
+        return $tester;
+    }
+}

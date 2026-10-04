@@ -1,0 +1,19 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker;
+
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\Context;
+use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
+
+#[AutoconfigureTag(CheckInterface::class)]
+interface CheckInterface
+{
+    public const string PROBE_KEY = '__healthcheck';
+
+    public function isSupport(Context $context): bool;
+
+    public function check(CheckResult $result, Context $context): CheckResult;
+}

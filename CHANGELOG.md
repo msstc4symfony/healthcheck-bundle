@@ -4,6 +4,17 @@ All notable changes to this bundle are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions follow
 [Semantic Versioning](https://semver.org/); dates are UTC.
 
+## [1.0.1] - 2026-10-05
+
+### Fixed
+
+- Elastica 8 readiness check no longer fails with "Config key is not set: connections".
+- Clients declared as a `ChildDefinition` of an abstract prototype (FOSElasticaBundle's `fos_elastica.client_prototype`) get a readiness check: the class is now resolved through the parent chain.
+  The parent chain is followed for every auto-detected checker type (OpenSearch, ClickHouse, Kafka,
+  Mailer, lock stores, cache pools, Elastica), so new readiness checks may appear after upgrading.
+  Mark one as non-critical with `non_critical` or change its timeout with `timeouts.overrides`.
+- Elastica 7 clients configured through top-level `host`, `url` or `servers` are probed instead of skipped.
+
 ## [1.0.0] - 2026-10-04
 
 First release of `msstc4symfony/healthcheck-bundle` (namespace `Msstc4Symfony\HealthCheckBundle`).
@@ -31,4 +42,5 @@ First release of `msstc4symfony/healthcheck-bundle` (namespace `Msstc4Symfony\He
 - PHP >= 8.4, Symfony ^7.4|^8.0, `psr/log` ^3.0.
 - The client library of each checked service (Doctrine, Redis, Kafka, ...) is optional.
 
+[1.0.1]: https://github.com/msstc4symfony/healthcheck-bundle/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/msstc4symfony/healthcheck-bundle/releases/tag/v1.0.0

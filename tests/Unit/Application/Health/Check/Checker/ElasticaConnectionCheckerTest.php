@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Msstc4Symfony\HealthCheckBundle\Test\Unit\Application\Health\Check\Checker;
 
+use Elastic\Transport\Transport;
 use Elastica\Client;
 use Elastica\Cluster;
 use Elastica\Cluster\Health;
@@ -11,6 +12,7 @@ use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\ElasticaCon
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\Context;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
@@ -34,7 +36,7 @@ final class ElasticaConnectionCheckerTest extends TestCase
     public function testCheckSkipsWhenNoConnectionsConfigured(): void
     {
         $client = self::createStub(Client::class);
-        $client->method('getConfig')->willReturn([]);
+        $client->method('getConfigValue')->willReturnCallback(static fn (string $key, mixed $default = null): mixed => $default);
 
         $result = new ElasticaConnectionChecker($client, 'main')->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
@@ -45,7 +47,7 @@ final class ElasticaConnectionCheckerTest extends TestCase
     public function testCheckSkipsWhenOnlyLocalhostConfigured(): void
     {
         $client = self::createStub(Client::class);
-        $client->method('getConfig')->willReturn([['host' => 'localhost']]);
+        $client->method('getConfigValue')->willReturnCallback(static fn (string $key): mixed => $key === 'connections' ? [['host' => 'localhost']] : null);
 
         $result = new ElasticaConnectionChecker($client, 'main')->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
@@ -62,7 +64,7 @@ final class ElasticaConnectionCheckerTest extends TestCase
         $cluster->method('getHealth')->willReturn($health);
 
         $client = self::createStub(Client::class);
-        $client->method('getConfig')->willReturn([['host' => 'localhost'], ['host' => 'es-prod']]);
+        $client->method('getConfigValue')->willReturnCallback(static fn (string $key): mixed => $key === 'connections' ? [['host' => 'localhost'], ['host' => 'es-prod']] : null);
         $client->method('getCluster')->willReturn($cluster);
 
         $result = new ElasticaConnectionChecker($client, 'main')->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
@@ -79,7 +81,7 @@ final class ElasticaConnectionCheckerTest extends TestCase
         $cluster->method('getHealth')->willReturn($health);
 
         $client = self::createStub(Client::class);
-        $client->method('getConfig')->willReturn([['host' => 'es-prod']]);
+        $client->method('getConfigValue')->willReturnCallback(static fn (string $key): mixed => $key === 'connections' ? [['host' => 'es-prod']] : null);
         $client->method('getCluster')->willReturn($cluster);
 
         $result = new ElasticaConnectionChecker($client, 'main')->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
@@ -91,7 +93,7 @@ final class ElasticaConnectionCheckerTest extends TestCase
     public function testCheckOnException(): void
     {
         $client = self::createStub(Client::class);
-        $client->method('getConfig')->willThrowException(new RuntimeException('boom'));
+        $client->method('getConfigValue')->willThrowException(new RuntimeException('boom'));
 
         $result = new ElasticaConnectionChecker($client, 'main')->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
@@ -102,10 +104,76 @@ final class ElasticaConnectionCheckerTest extends TestCase
     public function testCheckRedactsCredentialsInFailureReason(): void
     {
         $client = self::createStub(Client::class);
-        $client->method('getConfig')->willThrowException(new RuntimeException('Unreachable "https://elastic:s3cret@es:9200"'));
+        $client->method('getConfigValue')->willThrowException(new RuntimeException('Unreachable "https://elastic:s3cret@es:9200"'));
 
         $result = new ElasticaConnectionChecker($client, 'main')->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
         self::assertSame(['Elastica connection (main) failed (Unreachable "https://***@es:9200")'], $result->errors);
+    }
+
+    public function testDefaultConfigurationIsSkipped(): void
+    {
+        $result = new ElasticaConnectionChecker(new Client(), 'main')->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+
+        self::assertSame(['Elastica connection (main) skipped (connections list is empty)'], $result->messages);
+    }
+
+    public function testConfiguredHostIsProbed(): void
+    {
+        $config = $this->isElasticaEight()
+            ? ['hosts' => ['http://es.invalid:9200'], 'retries' => 0]
+            : ['host' => 'es.invalid', 'port' => 9200];
+
+        $result = new ElasticaConnectionChecker(new Client($config), 'main')->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+
+        self::assertStringStartsWith('Elastica connection (main) failed (', $result->errors[0] ?? '');
+    }
+
+    public function testCloudIdIsNotTreatedAsUnconfigured(): void
+    {
+        if (!$this->isElasticaEight()) {
+            self::markTestSkipped('cloud_id is an Elastica 8 setting');
+        }
+
+        $client = new Client(['cloud_id' => 'test:' . base64_encode('es.invalid$abc$def'), 'retries' => 0]);
+        $result = new ElasticaConnectionChecker($client, 'main')->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+
+        self::assertSame([], $result->messages);
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     */
+    #[DataProvider('provideSkipRuleCases')]
+    public function testSkipRule(array $config, bool $skipped): void
+    {
+        $client = self::createStub(Client::class);
+        $client->method('getConfigValue')->willReturnCallback(
+            static fn (string $key, mixed $default = null): mixed => $config[$key] ?? $default,
+        );
+
+        $result = new ElasticaConnectionChecker($client, 'main')->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+
+        self::assertSame($skipped, $result->messages === ['Elastica connection (main) skipped (connections list is empty)']);
+    }
+
+    /**
+     * @return iterable<string, array{array<string, mixed>, bool}>
+     */
+    public static function provideSkipRuleCases(): iterable
+    {
+        yield 'elastica 7 top-level url' => [['connections' => [], 'url' => 'http://es:9200'], false];
+        yield 'elastica 7 top-level host' => [['connections' => [], 'host' => 'es'], false];
+        yield 'elastica 7 servers' => [['connections' => [], 'servers' => [['host' => 'es']]], false];
+        yield 'elastica 8 default host' => [['hosts' => ['localhost:9200']], true];
+        yield 'elastica 8 explicit localhost url' => [['hosts' => ['http://localhost:9200']], false];
+        yield 'elastica 8 empty hosts' => [['hosts' => []], true];
+        yield 'elastica 8 default host with cloud id' => [['hosts' => ['localhost:9200'], 'cloud_id' => 'x'], false];
+        yield 'elastica 8 empty hosts with cloud id' => [['hosts' => [], 'cloud_id' => 'x'], false];
+    }
+
+    private function isElasticaEight(): bool
+    {
+        return class_exists(Transport::class);
     }
 }

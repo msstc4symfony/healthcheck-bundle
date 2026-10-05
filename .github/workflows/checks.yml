@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   standard:
-    uses: msstc4symfony/bundle-standard/.github/workflows/php-bundle.yml@v1.0.0
+    uses: msstc4symfony/bundle-standard/.github/workflows/php-bundle.yml@v1.1.0
     with:
       slug: msstc4symfony/healthcheck-bundle
       # Every checker's client extension, so no checker test is skipped in CI.
@@ -26,5 +26,10 @@ jobs:
       # Measured MSI 79.9 % on 2026-10-02 UTC, minus a margin for noise.
       infection-min-msi: 72
       infection-min-covered-msi: 72
+      elasticsearch: >-
+        [
+          {"elastica": "^7.3", "image": "docker.elastic.co/elasticsearch/elasticsearch:7.17.29"},
+          {"elastica": "^8.0", "image": "docker.elastic.co/elasticsearch/elasticsearch:8.19.22"}
+        ]
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

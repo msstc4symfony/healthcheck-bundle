@@ -335,3 +335,24 @@ Rector превращает литерал `[StoreFactory::class, 'createStore']
 - **s5** уже покрыт: `HealthCheckerAutoDetectionPassTest::testProcessPreservesChildCachePoolNameOverParent`.
 - **m5.** Порядок элементов класса `TestKernel` выправлен вручную; правило `ordered_class_elements`
   в `.php-cs-fixer.dist.php` включить нельзя — файл `ExactFileRule` в `bundle-standard` (follow-up).
+
+## Elastica 7 and 8 expose configuration differently
+
+`ElasticaConnectionChecker::skipReason()` must not call `Client::getConfig('connections')`: on
+Elastica 8 that key does not exist and `getConfig()` throws "Config key is not set: connections", so
+every readiness probe failed instead of skipping an unconfigured client. The checker reads
+`getConfigValue()` (never throws). Elastica 8 is recognised by the `hosts` key (default
+`['localhost:9200']`, plus `cloud_id`); Elastica 7 by `connections` (empty or a single `localhost`),
+and a top-level `host` / `url` / `servers` also counts as configured. The 8-only default host is a
+class constant, not `ClientConfiguration::DEFAULT_HOST`, so nothing references a class absent on 7.
+Live-cluster tests (`#[Group('elasticsearch')]`, `ELASTICSEARCH_URL`) run in CI per Elastica version;
+on Elastica 7 a top-level `url` is a malformed-URL error, so the test passes `host` and `port`.
+
+## Detectors see child definitions before their class is resolved
+
+`HealthCheckerAutoDetectionPass` runs before `ResolveChildDefinitionsPass`. FOSElasticaBundle registers
+clients as `ChildDefinition('fos_elastica.client_prototype')`, with the class on the abstract parent, so
+`$definition->getClass()` is `null` and a plain class check found no client. `ServiceClass::is()` now walks
+the `ChildDefinition` parent chain (own class wins; missing or cyclic parents give no class), which covers
+every detector using it. The abstract prototype itself is skipped explicitly by `ElasticaClientDetector`.
+

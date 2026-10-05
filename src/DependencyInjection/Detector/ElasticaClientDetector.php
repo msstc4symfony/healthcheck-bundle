@@ -21,7 +21,7 @@ final readonly class ElasticaClientDetector implements CheckerDetectorInterface
     public function detect(ContainerBuilder $container): iterable
     {
         foreach ($container->getDefinitions() as $id => $definition) {
-            if (!ServiceClass::is($container, $definition, Client::class)) {
+            if ($definition->isAbstract() || !ServiceClass::is($container, $definition, Client::class)) {
                 continue;
             }
 

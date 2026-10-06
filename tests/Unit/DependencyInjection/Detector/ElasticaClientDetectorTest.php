@@ -41,6 +41,8 @@ final class ElasticaClientDetectorTest extends TestCase
 
     public function testDetectResolvesClassThroughAbstractPrototype(): void
     {
+        $this->requireElastica();
+
         $container = new ContainerBuilder();
         $container->setDefinition('fos_elastica.client_prototype', new Definition(SubclassedClient::class)->setAbstract(true));
         $container->setDefinition('fos_elastica.client.default', new ChildDefinition('fos_elastica.client_prototype'));
@@ -52,6 +54,8 @@ final class ElasticaClientDetectorTest extends TestCase
 
     public function testDetectResolvesClassThroughParentChain(): void
     {
+        $this->requireElastica();
+
         $container = new ContainerBuilder();
         $container->setDefinition('base', new Definition(SubclassedClient::class)->setAbstract(true));
         $container->setDefinition('mid', new ChildDefinition('base'));
@@ -76,5 +80,12 @@ final class ElasticaClientDetectorTest extends TestCase
         $container->setDefinition('b', new ChildDefinition('a'));
 
         self::assertSame([], iterator_to_array(new ElasticaClientDetector()->detect($container)));
+    }
+
+    private function requireElastica(): void
+    {
+        if (!class_exists(Client::class)) {
+            self::markTestSkipped('ruflin/elastica is not installed');
+        }
     }
 }

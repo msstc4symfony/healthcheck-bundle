@@ -6,6 +6,7 @@ namespace Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker;
 
 use Elastica\Client;
 use Override;
+use RuntimeException;
 use Symfony\Component\DependencyInjection\Attribute\Exclude;
 
 #[Exclude]
@@ -28,7 +29,12 @@ final readonly class ElasticaConnectionChecker extends AbstractReadinessChecker
     #[Override]
     protected function doCheck(): string
     {
-        return 'cluster status: ' . $this->connection->getCluster()->getHealth()->getStatus();
+        $status = $this->connection->getCluster()->getHealth()->getStatus();
+        if ($status === 'red') {
+            throw new RuntimeException('cluster status: red');
+        }
+
+        return 'cluster status: ' . $status;
     }
 
     #[Override]

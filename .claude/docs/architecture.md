@@ -178,8 +178,8 @@ abstract readonly class AbstractReadinessChecker implements CheckInterface
 Hook semantics:
 - `doCheck()` — probe the underlying service; throw any `Throwable` to mark
   as failed. A returned string is appended (credentials masked) as `<label> passed (<detail>)`
-  (`ElasticaConnectionChecker`: `cluster status: green`); `null` gives
-  `<label> passed`.
+  (`ElasticaConnectionChecker`: `cluster status: green`; status `red` throws,
+  so it reads `failed (cluster status: red)`); `null` gives `<label> passed`.
 - `label()` — human-readable identifier shown in HTTP / CLI output. **Do not
   leak Symfony-internal class names** (see `known-issues.md`).
 - `skipReason()` — return a short string to emit

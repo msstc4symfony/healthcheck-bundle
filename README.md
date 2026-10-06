@@ -321,6 +321,18 @@ msstc4symfony_healthcheck:
 
 Both options take checker service ids. An id no checker has fails the container build with the list of known ids. Quote ids containing brackets in YAML, e.g. `'healthcheck.checker.lock.invoice[1]'` (a combined lock store).
 
+#### Timeouts are checked after the probe returns
+
+`timeouts.default_ms` and `timeouts.overrides` are compared with the elapsed time once the probe has returned: synchronous PHP cannot interrupt a blocking driver call, so a hung connection is not cut short by the bundle and a slow probe is only reported as failed afterwards. Bound the time at the client level instead; the option names differ per client:
+
+- Elastica 7: top-level client options `timeout` and `connectTimeout`.
+- Elastica 8: no top-level timeout keys; set the underlying HTTP client's own option names in `transport_config.http_client_options` (Symfony HttpClient: `timeout`, `max_duration`; Guzzle: `timeout`, `connect_timeout`). Elastica rejects options for HTTP clients it has no adapter for.
+- Redis: phpredis takes a connect timeout and a `read_timeout`; with Symfony's Redis DSN use `?timeout=2&read_timeout=2`; Predis takes `timeout` (connect) and `read_write_timeout`.
+- PDO / Doctrine DBAL: pgsql `connect_timeout=N` in the DSN, plus `options='-c statement_timeout=N'` (milliseconds) to bound queries; mysql `PDO::ATTR_TIMEOUT` bounds the connect only; sqlite `PDO::ATTR_TIMEOUT` is the busy timeout.
+- Symfony HttpClient (HTTP probes): `timeout` is an idle timeout (no data received), `max_duration` caps the total request time.
+
+Even with these set, the bundle only reports an over-limit probe after the fact; the client options are what keep it from blocking.
+
 ## Docker Compose Integration Example
 You can configure health checks for your services in `docker-compose.yaml`:
 

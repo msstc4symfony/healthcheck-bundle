@@ -90,6 +90,42 @@ final class ElasticaConnectionCheckerTest extends TestCase
         self::assertSame(['Elastica connection (main) passed (cluster status: green)'], $result->messages);
     }
 
+    #[DataProvider('provideClusterStatuses')]
+    public function testCheckByClusterStatus(string $status, bool $passes): void
+    {
+        $health = self::createStub(Health::class);
+        $health->method('getStatus')->willReturn($status);
+
+        $cluster = self::createStub(Cluster::class);
+        $cluster->method('getHealth')->willReturn($health);
+
+        $client = self::createStub(Client::class);
+        $client->method('getConfigValue')->willReturnCallback(static fn (string $key): mixed => $key === 'connections' ? [['host' => 'es-prod']] : null);
+        $client->method('getCluster')->willReturn($cluster);
+
+        $result = new ElasticaConnectionChecker($client, 'main')->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+
+        if ($passes) {
+            self::assertSame([], $result->errors);
+            self::assertSame(['Elastica connection (main) passed (cluster status: ' . $status . ')'], $result->messages);
+
+            return;
+        }
+
+        self::assertSame([], $result->messages);
+        self::assertSame(['Elastica connection (main) failed (cluster status: red)'], $result->errors);
+    }
+
+    /**
+     * @return iterable<string, array{string, bool}>
+     */
+    public static function provideClusterStatuses(): iterable
+    {
+        yield 'green' => ['green', true];
+        yield 'yellow' => ['yellow', true];
+        yield 'red' => ['red', false];
+    }
+
     public function testCheckOnException(): void
     {
         $client = self::createStub(Client::class);

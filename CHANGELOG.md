@@ -4,6 +4,16 @@ All notable changes to this bundle are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions follow
 [Semantic Versioning](https://semver.org/); dates are UTC.
 
+## [1.0.2] - 2026-10-06
+
+### Fixed
+
+- The Elastica readiness check fails when the cluster status is `red`; `green` and `yellow` still pass.
+
+### Documentation
+
+- README: per-check timeouts are checked after the probe returns; bound client-level timeouts for Elastica, Redis, PDO and HTTP clients.
+
 ## [1.0.1] - 2026-10-05
 
 ### Fixed
@@ -42,5 +52,6 @@ First release of `msstc4symfony/healthcheck-bundle` (namespace `Msstc4Symfony\He
 - PHP >= 8.4, Symfony ^7.4|^8.0, `psr/log` ^3.0.
 - The client library of each checked service (Doctrine, Redis, Kafka, ...) is optional.
 
+[1.0.2]: https://github.com/msstc4symfony/healthcheck-bundle/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/msstc4symfony/healthcheck-bundle/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/msstc4symfony/healthcheck-bundle/releases/tag/v1.0.0

@@ -356,3 +356,6 @@ clients as `ChildDefinition('fos_elastica.client_prototype')`, with the class on
 the `ChildDefinition` parent chain (own class wins; missing or cyclic parents give no class), which covers
 every detector using it. The abstract prototype itself is skipped explicitly by `ElasticaClientDetector`.
 
+## Timeouts are post-hoc, not preemptive
+
+`timeouts.default_ms` / `timeouts.overrides` are compared with the elapsed time after the probe returns; synchronous PHP cannot interrupt a blocking driver call. Real bounds must be set on the client (documented in README, "Timeouts are checked after the probe returns").

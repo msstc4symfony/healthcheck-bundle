@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Msstc4Symfony\HealthCheckBundle\Test\Unit\Application\Health\Check\Checker;
 
+use Closure;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CheckInterface;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\PredisChecker;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
@@ -52,20 +53,25 @@ final class PredisCheckerTest extends TestCase
     }
 
     /**
-     * @return iterable<string, array{?ResponseInterface, non-empty-string}>
+     * The replies are built lazily: data providers run before setUp() skips the test without predis.
+     *
+     * @return iterable<string, array{Closure(): ?ResponseInterface, non-empty-string}>
      */
     public static function nonOkReplies(): iterable
     {
-        yield 'queued status' => [new Status('QUEUED'), 'Redis connection failed (SET command returned QUEUED)'];
-        yield 'error reply without exceptions' => [new Error("READONLY You can't write against a read only replica."), "Redis connection failed (SET command returned READONLY You can't write against a read only replica.)"];
-        yield 'no reply' => [null, 'Redis connection failed (SET command returned null)'];
+        yield 'queued status' => [static fn (): ResponseInterface => new Status('QUEUED'), 'Redis connection failed (SET command returned QUEUED)'];
+        yield 'error reply without exceptions' => [static fn (): ResponseInterface => new Error("READONLY You can't write against a read only replica."), "Redis connection failed (SET command returned READONLY You can't write against a read only replica.)"];
+        yield 'no reply' => [static fn (): ?ResponseInterface => null, 'Redis connection failed (SET command returned null)'];
     }
 
+    /**
+     * @param Closure(): ?ResponseInterface $reply
+     */
     #[DataProvider('nonOkReplies')]
-    public function testCheckFailsOnNonOkReply(?ResponseInterface $reply, string $expectedError): void
+    public function testCheckFailsOnNonOkReply(Closure $reply, string $expectedError): void
     {
         $client = self::createStub(Client::class);
-        $client->method('__call')->willReturn($reply);
+        $client->method('__call')->willReturn($reply());
 
         $result = new PredisChecker($client)->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 

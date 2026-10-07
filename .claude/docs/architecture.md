@@ -136,9 +136,15 @@ Conventions:
   `healthcheck.checker.<resource names joined by +>`, see `known-issues.md`).
   The pass tags the yielded `Definition` with `CheckInterface::class` and
   marks it autowired.
-- Detectors may implement subclass detection
-  (`$class === Target::class || is_subclass_of($class, Target::class)`); this
-  is the canonical pattern for class-based detectors.
+- Class-based detectors match through `ServiceClass::is($container, $definition, Target::class)`
+  (`DependencyInjection/ServiceClass`): class or subclass, `%param%` classes and `ChildDefinition`
+  parent chains resolved, exact-name fallback when the target type is not installed. This is the
+  canonical pattern (Elastica, cache clients, lock stores, …); skip `isAbstract()` definitions.
+- `CacheClientDetector` (since 1.2.0) maps by `ServiceClass::is` in this order: `Predis\Client` →
+  `PredisChecker`, `\Redis` → `RedisChecker`, `\RedisCluster` → `RedisClusterChecker`
+  (label `Redis cluster connection`), `Memcached`, `Memcache`. All three Redis checkers probe with
+  `SET __healthcheck <time> EX 1`; argument 0 is the client reference, so the lock-store
+  dedup (`wrappedTarget`) covers subclass and cluster connections too.
 
 `CachePoolDetector` skips pools that `CachePoolLocality` (`@internal`,
 `DependencyInjection/`) classifies as local (in-memory / local disk / FrameworkBundle

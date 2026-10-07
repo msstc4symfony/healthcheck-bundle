@@ -361,3 +361,22 @@ every detector using it. The abstract prototype itself is skipped explicitly by 
 ## Timeouts are post-hoc, not preemptive
 
 `timeouts.default_ms` / `timeouts.overrides` are compared with the elapsed time after the probe returns; synchronous PHP cannot interrupt a blocking driver call. Real bounds must be set on the client (documented in README, "Timeouts are checked after the probe returns").
+
+## Redis / Predis probes (1.2.0, 2026-10-07 UTC)
+
+- **Predis probe used to be a no-op.** `PredisChecker` checked `isConnected()` / `connect()` only —
+  that opens a socket but sends no command, so AUTH/ACL errors, a full/read-only server or a broken
+  cluster passed. Now `set(PROBE_KEY, time(), 'EX', 1)` must return `Status('OK')`; a reply that is
+  not OK fails with `SET command returned <payload | error message | type>` (an `Error` reply shows up
+  as a value only when the client's `exceptions` option is off; otherwise `ServerException` propagates).
+- **Mocking Predis:** `set()` is a `@method` behind `Client::__call`, PHPUnit 13 cannot stub
+  doc-only methods — stub `__call` and match `('set', [key, value, 'EX', 1])`.
+- **No-server test** uses `tcp://127.0.0.1:1` (instant refusal, no Redis needed; `ConnectionException`
+  thrown from the first command).
+- **Exact-class detection missed subclasses** (SncRedisBundle's `Snc\RedisBundle\Client\Phpredis\Client
+  extends \Redis`, `ClientCluster extends \RedisCluster`) — `CacheClientDetector` now uses
+  `ServiceClass::is`. `\RedisCluster` got its own `RedisClusterChecker` (phpredis
+  `set(key, value, ['EX' => 1])` must return `true`). Relay (`Relay\Relay`, does not extend `\Redis`)
+  is not supported. FrameworkBundle cache-pool connections (`.cache_connection.*`) are declared as
+  `AbstractAdapter` with a factory, so they are not picked up by this detector.
+

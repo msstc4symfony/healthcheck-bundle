@@ -4,6 +4,21 @@ All notable changes to this bundle are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions follow
 [Semantic Versioning](https://semver.org/); dates are UTC.
 
+## [1.2.0] - 2026-10-07
+
+### Changed
+
+- The Predis readiness check does a real round trip, `SET __healthcheck <time> EX 1`, like the phpredis check; it used to pass on an open socket alone. A non-`OK` reply fails the check.
+
+### Added
+
+- `\Redis`, `Predis\Client`, Memcached and Memcache clients are detected by subclass too (e.g. SncRedisBundle's phpredis client), including classes set through a parameter or inherited from a parent definition.
+- `\RedisCluster` clients get a readiness check (`RedisClusterChecker`, label `Redis cluster connection`) doing the same `SET` probe.
+
+### Documentation
+
+- README: Redis section — detected clients, the write the probe needs, TLS configured in the client, Relay not supported.
+
 ## [1.1.0] - 2026-10-07
 
 ### Added
@@ -58,6 +73,7 @@ First release of `msstc4symfony/healthcheck-bundle` (namespace `Msstc4Symfony\He
 - PHP >= 8.4, Symfony ^7.4|^8.0, `psr/log` ^3.0.
 - The client library of each checked service (Doctrine, Redis, Kafka, ...) is optional.
 
+[1.2.0]: https://github.com/msstc4symfony/healthcheck-bundle/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/msstc4symfony/healthcheck-bundle/compare/v1.0.2...v1.1.0
 [1.0.2]: https://github.com/msstc4symfony/healthcheck-bundle/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/msstc4symfony/healthcheck-bundle/compare/v1.0.0...v1.0.1

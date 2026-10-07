@@ -31,6 +31,7 @@ use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\OpenSearchC
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\PredisChecker;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\RabbitmqChecker;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\RedisChecker;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\RedisClusterChecker;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\HttpProbeTarget;
 use Msstc4Symfony\HealthCheckBundle\DependencyInjection\ContainerIds;
 use Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector\CacheClientDetector;
@@ -53,9 +54,12 @@ use Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector\OpenSearchDetec
 use Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector\RabbitMQConnectionDetector;
 use Msstc4Symfony\HealthCheckBundle\DependencyInjection\HealthCheckerAutoDetectionPass;
 use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\SuccessChecker;
+use Msstc4Symfony\HealthCheckBundle\Test\Mock\Redis\SubclassedRedis;
+use Msstc4Symfony\HealthCheckBundle\Test\Mock\Redis\SubclassedRedisCluster;
 use OpenSearch\Client as OpenSearchClient;
 use PhpAmqpLib\Connection\AbstractConnection;
 use PHPUnit\Framework\Attributes\RequiresMethod;
+use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use PHPUnit\Framework\TestCase;
 use Predis\Client;
 use RdKafka\Producer as KafkaProducer;
@@ -434,6 +438,23 @@ final class HealthCheckerAutoDetectionPassTest extends TestCase
         self::assertTrue($container->hasDefinition('healthcheck.checker..lock.custom.store.mno'));
         self::assertTrue($container->hasDefinition('healthcheck.checker..lock.method.store.pqr'));
         self::assertTrue($container->hasDefinition('healthcheck.checker..lock.direct.store.stu'), 'a store the app builds itself is probed');
+    }
+
+    #[RequiresPhpExtension('redis')]
+    public function testProcessSkipsFrameworkLockStoreWrappingAProbedRedisSubclassOrClusterConnection(): void
+    {
+        $container = new ContainerBuilder();
+        $container->setDefinition('snc_redis.default', new Definition(SubclassedRedis::class));
+        $container->setDefinition('snc_redis.cluster', new Definition(SubclassedRedisCluster::class));
+        $container->setDefinition('.lock.default.store.abc', $this->frameworkLockStore(new Reference('snc_redis.default')));
+        $container->setDefinition('.lock.cluster.store.def', $this->frameworkLockStore(new Reference('snc_redis.cluster')));
+
+        $this->runPass($container);
+
+        self::assertSame(RedisChecker::class, $container->findDefinition('healthcheck.checker.snc_redis.default')->getClass());
+        self::assertSame(RedisClusterChecker::class, $container->findDefinition('healthcheck.checker.snc_redis.cluster')->getClass());
+        self::assertFalse($container->hasDefinition('healthcheck.checker..lock.default.store.abc'));
+        self::assertFalse($container->hasDefinition('healthcheck.checker..lock.cluster.store.def'));
     }
 
     /**

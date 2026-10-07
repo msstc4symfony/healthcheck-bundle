@@ -48,7 +48,8 @@ The bundle automatically detects and registers health checkers for the following
 - **Doctrine MongoDB ODM** — MongoDB connections + document managers
 - **Doctrine Migrations** — schema-status probe
 - **Symfony Cache Pools** — `cache.pool`-tagged services backed by infrastructure: Redis/Valkey, Memcached, PDO, Doctrine DBAL, Couchbase, third-party adapters, and chains containing one of them. Pools that live in memory or on the local disk (Array, APCu, Filesystem, PhpFiles, PhpArray, Null) — including FrameworkBundle's system pools `cache.system`, `cache.validator`, `cache.serializer`, … and a filesystem `cache.app` — are not probed
-- **Redis** / **Predis** / **Memcached** / **Memcache** — cache clients detected by class
+- **Redis** / **Predis** — `\Redis`, `\RedisCluster` and `Predis\Client` clients, subclasses included (see [Redis](#redis))
+- **Memcached** / **Memcache** — cache clients detected by class, subclasses included
 - **RabbitMQ** — `old_sound_rabbit_mq.connection`-tagged services
 - **Elastica** (7, 8 and 9) — Elasticsearch clients
 - **OpenSearch** — OpenSearch clients
@@ -63,6 +64,14 @@ The bundle automatically detects and registers health checkers for the following
 Readiness-only checkers are built inside the readiness probe: a client whose constructor throws (missing extension, invalid DSN) fails only its own check, e.g. `Lock store (…) failed (…)`, and never affects liveliness. Credentials in URLs (`scheme://user:pass@host`) and secret query parameters are masked in failure messages.
 
 All detections happen automatically when the relevant package is installed and a service is registered. Third-party packages can contribute their own detectors by implementing `CheckerDetectorInterface` and registering the service — the bundle picks them up via the `healthcheck.detector` tag. A detector whose checker probes a client built around another service (as a lock store wraps a `\Redis` connection) can also implement `WrappedTargetDetectorInterface`: `wrappedTarget()` returns the id of that wrapped service (or `null`), and the checker is skipped when a checker outside `non_critical` already probes it — unless its own id is listed in `non_critical` / `timeouts.overrides`.
+
+### Redis
+
+Detected clients: `\Redis` and its subclasses (e.g. SncRedisBundle's phpredis client), `\RedisCluster` and its subclasses, and `Predis\Client` and its subclasses (single server, cluster, replication and sentinel). Each client service gets its own checker `healthcheck.checker.<service id>`, labelled `Redis connection` (`Redis cluster connection` for `\RedisCluster`).
+
+The probe writes the key `__healthcheck` with `SET __healthcheck <unix time> EX 1`, so the connection needs write permission for that key (an ACL that allows `SET` on it). A read-only replica fails the probe; a Predis replication or sentinel client sends the write to the master, a cluster client to the node owning the key.
+
+The bundle does not configure connections. TLS (`rediss://` / `tls://` DSNs, stream context, CA and client certificates) is set up in the client itself; a TLS handshake failure is reported like an unreachable Redis — `Redis connection failed (<client message>)`. Relay (`Relay\Relay`) clients are not supported.
 
 ## Usage
 

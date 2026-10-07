@@ -50,7 +50,7 @@ The bundle automatically detects and registers health checkers for the following
 - **Symfony Cache Pools** — `cache.pool`-tagged services backed by infrastructure: Redis/Valkey, Memcached, PDO, Doctrine DBAL, Couchbase, third-party adapters, and chains containing one of them. Pools that live in memory or on the local disk (Array, APCu, Filesystem, PhpFiles, PhpArray, Null) — including FrameworkBundle's system pools `cache.system`, `cache.validator`, `cache.serializer`, … and a filesystem `cache.app` — are not probed
 - **Redis** / **Predis** / **Memcached** / **Memcache** — cache clients detected by class
 - **RabbitMQ** — `old_sound_rabbit_mq.connection`-tagged services
-- **Elastica** — Elasticsearch clients
+- **Elastica** (7, 8 and 9) — Elasticsearch clients
 - **OpenSearch** — OpenSearch clients
 - **ClickHouse** — ClickHouseDB clients
 - **Kafka** — `RdKafka\Producer` / `RdKafka\KafkaConsumer`
@@ -326,7 +326,7 @@ Both options take checker service ids. An id no checker has fails the container 
 `timeouts.default_ms` and `timeouts.overrides` are compared with the elapsed time once the probe has returned: synchronous PHP cannot interrupt a blocking driver call, so a hung connection is not cut short by the bundle and a slow probe is only reported as failed afterwards. Bound the time at the client level instead; the option names differ per client:
 
 - Elastica 7: top-level client options `timeout` and `connectTimeout`.
-- Elastica 8: no top-level timeout keys; set the underlying HTTP client's own option names in `transport_config.http_client_options` (Symfony HttpClient: `timeout`, `max_duration`; Guzzle: `timeout`, `connect_timeout`). Elastica rejects options for HTTP clients it has no adapter for.
+- Elastica 8 and 9: no top-level timeout keys; set the underlying HTTP client's own option names in `transport_config.http_client_options` (Symfony HttpClient: `timeout`, `max_duration`; Guzzle: `timeout`, `connect_timeout`). Elastica rejects options for HTTP clients it has no adapter for.
 - Redis: phpredis takes a connect timeout and a `read_timeout`; with Symfony's Redis DSN use `?timeout=2&read_timeout=2`; Predis takes `timeout` (connect) and `read_write_timeout`.
 - PDO / Doctrine DBAL: pgsql `connect_timeout=N` in the DSN, plus `options='-c statement_timeout=N'` (milliseconds) to bound queries; mysql `PDO::ATTR_TIMEOUT` bounds the connect only; sqlite `PDO::ATTR_TIMEOUT` is the busy timeout.
 - Symfony HttpClient (HTTP probes): `timeout` is an idle timeout (no data received), `max_duration` caps the total request time.

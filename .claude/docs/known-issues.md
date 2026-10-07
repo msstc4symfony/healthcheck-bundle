@@ -336,7 +336,7 @@ Rector превращает литерал `[StoreFactory::class, 'createStore']
 - **m5.** Порядок элементов класса `TestKernel` выправлен вручную; правило `ordered_class_elements`
   в `.php-cs-fixer.dist.php` включить нельзя — файл `ExactFileRule` в `bundle-standard` (follow-up).
 
-## Elastica 7 and 8 expose configuration differently
+## Elastica 7, 8 and 9 expose configuration differently
 
 `ElasticaConnectionChecker::skipReason()` must not call `Client::getConfig('connections')`: on
 Elastica 8 that key does not exist and `getConfig()` throws "Config key is not set: connections", so
@@ -345,6 +345,8 @@ every readiness probe failed instead of skipping an unconfigured client. The che
 `['localhost:9200']`, plus `cloud_id`); Elastica 7 by `connections` (empty or a single `localhost`),
 and a top-level `host` / `url` / `servers` also counts as configured. The 8-only default host is a
 class constant, not `ClientConfiguration::DEFAULT_HOST`, so nothing references a class absent on 7.
+Elastica 9 (9.0.0) keeps the 8 shape (`hosts`, `cloud_id`, `ClientConfiguration::DEFAULT_HOST = localhost:9200`),
+so the checker and detector needed no change; the full suite and PHPStan pass on it. The CI lock stays on 8.2.0.
 Live-cluster tests (`#[Group('elasticsearch')]`, `ELASTICSEARCH_URL`) run in CI per Elastica version;
 on Elastica 7 a top-level `url` is a malformed-URL error, so the test passes `host` and `port`.
 

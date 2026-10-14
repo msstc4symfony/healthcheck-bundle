@@ -27,7 +27,7 @@ Default sources of diff: `git diff main...HEAD` for a branch, `git diff` + `git 
 - **Rector**: PHP 8.1 sets plus deadCode / codeQuality / codingStyle / typeDeclarations / privatization / instanceOf / earlyReturn / doctrineCodeQuality / symfonyCodeQuality / symfonyConfigs. Several rectors are **explicitly skipped** in `rector.php` (constructor-promotion conversion, `or`→early-return, post→pre increment, dead `instanceof`, etc.). Flag any hand-written change that re-introduces a skipped pattern.
 - **PHP-CS-Fixer**: `@Symfony` plus `phpdoc_align: left`, `global_namespace_import: classes`, `concat_space: one`, `increment_style: post`, `yoda_style` all off, `trailing_comma_in_multiline` on arguments/arrays/match/parameters, `blank_line_before_statement` only for `declare` / `return`. Hand-written deviations from `make fix` output are not acceptable.
 - **PHPUnit**: `failOnRisky`, `failOnWarning`, `failOnPhpunitDeprecation`, `beStrictAboutOutputDuringTests`, `beStrictAboutCoverageMetadata`. Any `var_dump` / `echo` / uncaught warning / deprecation fails CI. New tests use PHPUnit 10 **attributes** (`#[DataProvider]`, `#[Test]`, `#[CoversClass]`), never docblock annotations.
-- Min PHP **8.4**; Symfony range **7.4 | 8.x**.
+- Min PHP **8.2**; Symfony range **7.4 | 8.x** (Symfony 8 only from PHP 8.4). Code must run on 8.2: no typed class constants, anonymous `readonly class`, `new X()->m()`, property hooks or asymmetric visibility; PHP 8.3/8.4 functions (`array_any`, `json_validate`, …) only with the matching `symfony/polyfill-php8x` in `require`.
 
 ## Review checklist
 

@@ -240,7 +240,7 @@ class CustomServiceChecker implements CheckInterface
 
 ### Readiness Checker Template
 
-Readiness-only checkers can extend `AbstractReadinessChecker`, which formats the output and masks credentials in failure messages. `doCheck()` throws to fail; a returned string is appended to the success line:
+Readiness-only checkers can extend `AbstractReadinessChecker`, which formats the output and masks credentials in failure messages. `doCheck()` throws to fail; a returned string is appended to the success line. `AbstractReadinessChecker` is a readonly class, so a subclass must be a named `readonly class` (PHP 8.2 has no anonymous readonly classes):
 
 ```php
 final readonly class SearchChecker extends AbstractReadinessChecker

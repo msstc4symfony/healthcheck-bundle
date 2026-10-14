@@ -397,3 +397,6 @@ every detector using it. The abstract prototype itself is skipped explicitly by 
   префикс просто не видит старые записи; они истекают по TTL. Менять префикс при любом изменении формы `Response`.
 - **`CheckResult` защищён от записи снаружи только PHPStan** (`@readonly` + `@phpstan-allow-private-mutation`):
   PHP 8.2 не знает `private(set)`. Код без PHPStan может писать в `$result->messages` — это не баг бандла.
+- **Label через `Instantiator` видит значения по умолчанию свойств** (с 1.3.0): объект создаётся без конструктора,
+  но свойства с default-значением и нетипизированные (`null`) уже заполнены. `label()`, читающий такое свойство,
+  вернёт строку с ним, а не fallback (ghost раньше бросал). Реальных чекеров с таким `label()` нет.

@@ -18,7 +18,7 @@ final class SafeEventDispatcherTest extends TestCase
         $inner = new RecordingDispatcherFixture();
         $event = new stdClass();
 
-        new SafeEventDispatcher($inner)->dispatch($event);
+        (new SafeEventDispatcher($inner))->dispatch($event);
 
         self::assertSame([$event], $inner->events);
     }
@@ -27,7 +27,7 @@ final class SafeEventDispatcherTest extends TestCase
     {
         $this->expectNotToPerformAssertions();
 
-        new SafeEventDispatcher()->dispatch(new stdClass());
+        (new SafeEventDispatcher())->dispatch(new stdClass());
     }
 
     public function testSwallowsListenerExceptions(): void
@@ -41,6 +41,6 @@ final class SafeEventDispatcherTest extends TestCase
             }
         };
 
-        new SafeEventDispatcher($exploding)->dispatch(new stdClass());
+        (new SafeEventDispatcher($exploding))->dispatch(new stdClass());
     }
 }

@@ -22,7 +22,7 @@ final class MessengerTransportDetectorTest extends TestCase
 
         $container->setDefinition('messenger.transport.async', $transport);
 
-        $detected = iterator_to_array(new MessengerTransportDetector()->detect($container));
+        $detected = iterator_to_array((new MessengerTransportDetector())->detect($container));
 
         $checker = $detected['healthcheck.checker.messenger.transport.async'];
         self::assertSame(MessengerTransportChecker::class, $checker->getClass());
@@ -38,7 +38,7 @@ final class MessengerTransportDetectorTest extends TestCase
 
         $container->setDefinition('custom.queue', $transport);
 
-        $detected = iterator_to_array(new MessengerTransportDetector()->detect($container));
+        $detected = iterator_to_array((new MessengerTransportDetector())->detect($container));
 
         $checker = $detected['healthcheck.checker.custom.queue'];
         self::assertSame('custom.queue', $checker->getArgument(1));
@@ -49,6 +49,6 @@ final class MessengerTransportDetectorTest extends TestCase
         $container = new ContainerBuilder();
         $container->setDefinition('messenger.transport.untagged', new Definition(TransportInterface::class));
 
-        self::assertSame([], iterator_to_array(new MessengerTransportDetector()->detect($container)));
+        self::assertSame([], iterator_to_array((new MessengerTransportDetector())->detect($container)));
     }
 }

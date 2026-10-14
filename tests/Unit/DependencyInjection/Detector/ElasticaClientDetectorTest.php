@@ -22,7 +22,7 @@ final class ElasticaClientDetectorTest extends TestCase
         $container = new ContainerBuilder();
         $container->setDefinition('elastica.client.main', new Definition(Client::class));
 
-        $detected = iterator_to_array(new ElasticaClientDetector()->detect($container));
+        $detected = iterator_to_array((new ElasticaClientDetector())->detect($container));
 
         $checker = $detected['healthcheck.checker.elastica.client.main'];
         self::assertSame(ElasticaConnectionChecker::class, $checker->getClass());
@@ -36,7 +36,7 @@ final class ElasticaClientDetectorTest extends TestCase
         $container->setDefinition('app.other', new Definition(stdClass::class));
         $container->setDefinition('app.classless', new Definition());
 
-        self::assertSame([], iterator_to_array(new ElasticaClientDetector()->detect($container)));
+        self::assertSame([], iterator_to_array((new ElasticaClientDetector())->detect($container)));
     }
 
     public function testDetectResolvesClassThroughAbstractPrototype(): void
@@ -44,10 +44,10 @@ final class ElasticaClientDetectorTest extends TestCase
         $this->requireElastica();
 
         $container = new ContainerBuilder();
-        $container->setDefinition('fos_elastica.client_prototype', new Definition(SubclassedClient::class)->setAbstract(true));
+        $container->setDefinition('fos_elastica.client_prototype', (new Definition(SubclassedClient::class))->setAbstract(true));
         $container->setDefinition('fos_elastica.client.default', new ChildDefinition('fos_elastica.client_prototype'));
 
-        $detected = iterator_to_array(new ElasticaClientDetector()->detect($container));
+        $detected = iterator_to_array((new ElasticaClientDetector())->detect($container));
 
         self::assertSame(['healthcheck.checker.fos_elastica.client.default'], array_keys($detected));
     }
@@ -57,19 +57,19 @@ final class ElasticaClientDetectorTest extends TestCase
         $this->requireElastica();
 
         $container = new ContainerBuilder();
-        $container->setDefinition('base', new Definition(SubclassedClient::class)->setAbstract(true));
+        $container->setDefinition('base', (new Definition(SubclassedClient::class))->setAbstract(true));
         $container->setDefinition('mid', new ChildDefinition('base'));
         $container->setDefinition('leaf', new ChildDefinition('mid'));
 
-        self::assertContains('healthcheck.checker.leaf', array_keys(iterator_to_array(new ElasticaClientDetector()->detect($container))));
+        self::assertContains('healthcheck.checker.leaf', array_keys(iterator_to_array((new ElasticaClientDetector())->detect($container))));
     }
 
     public function testDetectIgnoresAbstractPrototypeItself(): void
     {
         $container = new ContainerBuilder();
-        $container->setDefinition('fos_elastica.client_prototype', new Definition(SubclassedClient::class)->setAbstract(true));
+        $container->setDefinition('fos_elastica.client_prototype', (new Definition(SubclassedClient::class))->setAbstract(true));
 
-        self::assertSame([], iterator_to_array(new ElasticaClientDetector()->detect($container)));
+        self::assertSame([], iterator_to_array((new ElasticaClientDetector())->detect($container)));
     }
 
     public function testDetectIgnoresChildOfMissingOrCyclicParent(): void
@@ -79,7 +79,7 @@ final class ElasticaClientDetectorTest extends TestCase
         $container->setDefinition('a', new ChildDefinition('b'));
         $container->setDefinition('b', new ChildDefinition('a'));
 
-        self::assertSame([], iterator_to_array(new ElasticaClientDetector()->detect($container)));
+        self::assertSame([], iterator_to_array((new ElasticaClientDetector())->detect($container)));
     }
 
     private function requireElastica(): void

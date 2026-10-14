@@ -36,7 +36,7 @@ final class HealthCheckBundleTest extends TestCase
 {
     public function testExtensionAliasIsTheConfigurationRoot(): void
     {
-        $extension = new HealthCheckBundle()->getContainerExtension();
+        $extension = (new HealthCheckBundle())->getContainerExtension();
 
         self::assertNotNull($extension);
         self::assertSame('msstc4symfony_healthcheck', $extension->getAlias());
@@ -131,13 +131,13 @@ final class HealthCheckBundleTest extends TestCase
     {
         $builder = new ContainerBuilder();
         $instanceof = [];
-        $file = (string) new ReflectionClass(HealthCheckBundle::class)->getFileName();
+        $file = (string) (new ReflectionClass(HealthCheckBundle::class))->getFileName();
         $configurator = new ContainerConfigurator($builder, new PhpFileLoader($builder, new FileLocator()), $instanceof, $file, $file);
 
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage('The "msstc4symfony_healthcheck.timeouts" configuration is not an array.');
 
-        new HealthCheckBundle()->loadExtension(
+        (new HealthCheckBundle())->loadExtension(
             ['execution' => 'sequential', 'cache' => ['enabled' => false], 'non_critical' => [], 'timeouts' => 'malformed', 'http_client' => []],
             $configurator,
             $builder,
@@ -160,10 +160,10 @@ final class HealthCheckBundleTest extends TestCase
     public function testAutoconfigurationTagsDetectorsAndApplicationCheckers(): void
     {
         $container = $this->load([]);
-        $container->setDefinition('app.checker', new Definition(SuccessChecker::class)->setAutoconfigured(true));
+        $container->setDefinition('app.checker', (new Definition(SuccessChecker::class))->setAutoconfigured(true));
 
-        new RegisterAutoconfigureAttributesPass()->process($container);
-        new ResolveInstanceofConditionalsPass()->process($container);
+        (new RegisterAutoconfigureAttributesPass())->process($container);
+        (new ResolveInstanceofConditionalsPass())->process($container);
 
         self::assertTrue($container->getDefinition(LockStoreDetector::class)->hasTag(CheckerDetectorInterface::TAG));
         self::assertTrue($container->getDefinition('app.checker')->hasTag(CheckInterface::class));
@@ -224,7 +224,7 @@ final class HealthCheckBundleTest extends TestCase
         // Symfony 7.4.0's extension loader reads it; every kernel defines it.
         $container->setParameter('kernel.build_dir', sys_get_temp_dir());
 
-        $extension = new HealthCheckBundle()->getContainerExtension();
+        $extension = (new HealthCheckBundle())->getContainerExtension();
         self::assertNotNull($extension);
         $extension->load($configs, $container);
 

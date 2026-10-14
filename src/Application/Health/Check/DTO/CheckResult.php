@@ -4,22 +4,37 @@ declare(strict_types=1);
 
 namespace Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO;
 
+/**
+ * Properties are read-only for callers through PHPStan only: PHP 8.2 has no asymmetric visibility.
+ */
 final class CheckResult
 {
     /**
-     * @var string[]
+     * @var list<string>
+     *
+     * @readonly
+     *
+     * @phpstan-allow-private-mutation
      */
-    public private(set) array $messages = [];
+    public array $messages = [];
 
     /**
-     * @var string[]
+     * @var list<string>
+     *
+     * @readonly
+     *
+     * @phpstan-allow-private-mutation
      */
-    public private(set) array $errors = [];
+    public array $errors = [];
 
     /**
-     * @var string[]
+     * @var list<string>
+     *
+     * @readonly
+     *
+     * @phpstan-allow-private-mutation
      */
-    public private(set) array $warnings = [];
+    public array $warnings = [];
 
     public function addMessage(string $message): void
     {

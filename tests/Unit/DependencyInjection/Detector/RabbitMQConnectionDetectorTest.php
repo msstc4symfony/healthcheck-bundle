@@ -26,7 +26,7 @@ final class RabbitMQConnectionDetectorTest extends TestCase
         $container->setDefinition('rabbit.main', $main);
         $container->setDefinition('rabbit.secondary', $secondary);
 
-        $detected = iterator_to_array(new RabbitMQConnectionDetector()->detect($container));
+        $detected = iterator_to_array((new RabbitMQConnectionDetector())->detect($container));
 
         self::assertSame(
             ['healthcheck.checker.rabbit.main', 'healthcheck.checker.rabbit.secondary'],
@@ -43,6 +43,6 @@ final class RabbitMQConnectionDetectorTest extends TestCase
         $container = new ContainerBuilder();
         $container->setDefinition('rabbit.untagged', new Definition(AbstractConnection::class));
 
-        self::assertSame([], iterator_to_array(new RabbitMQConnectionDetector()->detect($container)));
+        self::assertSame([], iterator_to_array((new RabbitMQConnectionDetector())->detect($container)));
     }
 }

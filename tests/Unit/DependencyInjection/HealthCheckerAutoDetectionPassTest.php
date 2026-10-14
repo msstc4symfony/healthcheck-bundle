@@ -426,7 +426,7 @@ final class HealthCheckerAutoDetectionPassTest extends TestCase
         $container->setDefinition('app.unprobed', new Definition(stdClass::class));
         $container->setDefinition('.lock.custom.store.mno', $this->frameworkLockStore(new Reference('app.redis'))->setFactory([stdClass::class, 'createStore']));
         $container->setDefinition('.lock.method.store.pqr', $this->frameworkLockStore(new Reference('app.redis'))->setFactory([StoreFactory::class, 'other']));
-        $container->setDefinition('.lock.direct.store.stu', new Definition(PersistingStoreInterface::class, [new Reference('app.redis')])->addTag('lock.store'));
+        $container->setDefinition('.lock.direct.store.stu', (new Definition(PersistingStoreInterface::class, [new Reference('app.redis')]))->addTag('lock.store'));
 
         $this->runPass($container);
 
@@ -494,7 +494,7 @@ final class HealthCheckerAutoDetectionPassTest extends TestCase
         $container = new ContainerBuilder();
         $container->setParameter(ContainerIds::PARAM_NON_CRITICAL_CHECKERS, ['healthcheck.checker.unknown']);
         $container->setDefinition('app.redis', new Definition('Redis'));
-        $container->setDefinition('zz.custom_checker', new Definition(SuccessChecker::class)->addTag(CheckInterface::class));
+        $container->setDefinition('zz.custom_checker', (new Definition(SuccessChecker::class))->addTag(CheckInterface::class));
 
         $this->expectException(InvalidConfigurationException::class);
         $this->expectExceptionMessage('Unknown checker id "healthcheck.checker.unknown" in "msstc4symfony_healthcheck.non_critical"; known checker ids: "healthcheck.checker.app.redis", "zz.custom_checker".');
@@ -520,7 +520,7 @@ final class HealthCheckerAutoDetectionPassTest extends TestCase
         $container->setParameter(ContainerIds::PARAM_NON_CRITICAL_CHECKERS, ['app.custom_checker']);
         $container->setParameter(ContainerIds::PARAM_TIMEOUT_OVERRIDES, ['healthcheck.checker.app.redis' => 500]);
         $container->setDefinition('app.redis', new Definition('Redis'));
-        $container->setDefinition('app.custom_checker', new Definition(SuccessChecker::class)->addTag(CheckInterface::class));
+        $container->setDefinition('app.custom_checker', (new Definition(SuccessChecker::class))->addTag(CheckInterface::class));
 
         $this->runPass($container);
 
@@ -531,7 +531,7 @@ final class HealthCheckerAutoDetectionPassTest extends TestCase
     public function testProcessSkipsAbstractServiceTemplates(): void
     {
         $container = new ContainerBuilder();
-        $container->setDefinition('lock.store.combined.abstract', new Definition(InMemoryStore::class)->setAbstract(true));
+        $container->setDefinition('lock.store.combined.abstract', (new Definition(InMemoryStore::class))->setAbstract(true));
         $container->setDefinition('lock.default.store', new Definition(InMemoryStore::class));
 
         $this->runPass($container);
@@ -544,7 +544,7 @@ final class HealthCheckerAutoDetectionPassTest extends TestCase
     public function testProcessSkipsAbstractTemplatesReachedThroughAnAlias(): void
     {
         $container = new ContainerBuilder();
-        $container->setDefinition('lock.store.combined.abstract', new Definition(InMemoryStore::class)->setAbstract(true));
+        $container->setDefinition('lock.store.combined.abstract', (new Definition(InMemoryStore::class))->setAbstract(true));
         $container->setAlias('lock.combined.alias', 'lock.store.combined.abstract');
         $container->setDefinition('custom.store', new Definition(InMemoryStore::class));
 
@@ -557,7 +557,7 @@ final class HealthCheckerAutoDetectionPassTest extends TestCase
     public function testProcessKeepsConfiguredHttpTargetEvenWithAnAbstractClient(): void
     {
         $container = new ContainerBuilder();
-        $container->setDefinition('my.client', new Definition(HttpClientInterface::class)->setAbstract(true));
+        $container->setDefinition('my.client', (new Definition(HttpClientInterface::class))->setAbstract(true));
         $container->setParameter(ContainerIds::PARAM_HTTP_CLIENT_TARGETS, [
             'api' => [
                 'url' => 'https://api.example.com/health',
@@ -604,7 +604,7 @@ final class HealthCheckerAutoDetectionPassTest extends TestCase
 
     private function frameworkLockStore(Reference|string $connection): Definition
     {
-        return new Definition(PersistingStoreInterface::class)
+        return (new Definition(PersistingStoreInterface::class))
             ->setFactory([StoreFactory::class, 'createStore'])
             ->setArguments([$connection])
             ->addTag('lock.store')
@@ -633,9 +633,9 @@ final class HealthCheckerAutoDetectionPassTest extends TestCase
             HttpClientTargetDetector::class,
         ];
         foreach ($detectorClasses as $class) {
-            $container->setDefinition($class, new Definition($class)->addTag(CheckerDetectorInterface::TAG));
+            $container->setDefinition($class, (new Definition($class))->addTag(CheckerDetectorInterface::TAG));
         }
 
-        new HealthCheckerAutoDetectionPass()->process($container);
+        (new HealthCheckerAutoDetectionPass())->process($container);
     }
 }

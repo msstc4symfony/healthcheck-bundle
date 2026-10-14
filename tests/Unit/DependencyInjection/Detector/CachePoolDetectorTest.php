@@ -41,7 +41,7 @@ final class CachePoolDetectorTest extends TestCase
 
         $container->setDefinition('cache.app', $pool);
 
-        $detected = iterator_to_array(new CachePoolDetector()->detect($container));
+        $detected = iterator_to_array((new CachePoolDetector())->detect($container));
 
         $checker = $detected['healthcheck.checker.cache.pool.my_pool'];
         self::assertSame(CacheChecker::class, $checker->getClass());
@@ -59,7 +59,7 @@ final class CachePoolDetectorTest extends TestCase
 
         $container->setDefinition('cache.abstract', $pool);
 
-        self::assertSame([], iterator_to_array(new CachePoolDetector()->detect($container)));
+        self::assertSame([], iterator_to_array((new CachePoolDetector())->detect($container)));
     }
 
     public function testDetectInheritsNameAndClassFromParent(): void
@@ -77,7 +77,7 @@ final class CachePoolDetectorTest extends TestCase
 
         $container->setDefinition('cache.child_pool', $child);
 
-        $detected = iterator_to_array(new CachePoolDetector()->detect($container));
+        $detected = iterator_to_array((new CachePoolDetector())->detect($container));
 
         $checker = $detected['healthcheck.checker.cache.pool.inherited_name'];
         self::assertSame('inherited_name', $checker->getArgument(1));
@@ -99,7 +99,7 @@ final class CachePoolDetectorTest extends TestCase
 
         $container->setDefinition('cache.child_pool', $child);
 
-        $detected = iterator_to_array(new CachePoolDetector()->detect($container));
+        $detected = iterator_to_array((new CachePoolDetector())->detect($container));
 
         self::assertArrayHasKey('healthcheck.checker.cache.pool.child_name', $detected);
         self::assertArrayNotHasKey('healthcheck.checker.cache.pool.parent_name', $detected);
@@ -113,7 +113,7 @@ final class CachePoolDetectorTest extends TestCase
 
         $container->setDefinition('cache.app', $pool);
 
-        $detected = iterator_to_array(new CachePoolDetector()->detect($container));
+        $detected = iterator_to_array((new CachePoolDetector())->detect($container));
 
         self::assertArrayHasKey('healthcheck.checker.cache.pool.cache.app', $detected);
     }
@@ -125,12 +125,12 @@ final class CachePoolDetectorTest extends TestCase
     public function testDetectProbesPoolsBackedByRemoteAdapters(string $adapterClass): void
     {
         $container = new ContainerBuilder();
-        $container->setDefinition('cache.adapter.remote', new Definition($adapterClass)->setAbstract(true)->addTag('cache.pool'));
-        $container->setDefinition('app.remote_pool', new ChildDefinition('cache.adapter.remote')->addTag('cache.pool'));
+        $container->setDefinition('cache.adapter.remote', (new Definition($adapterClass))->setAbstract(true)->addTag('cache.pool'));
+        $container->setDefinition('app.remote_pool', (new ChildDefinition('cache.adapter.remote'))->addTag('cache.pool'));
 
         self::assertSame(
             ['healthcheck.checker.cache.pool.app.remote_pool'],
-            array_keys(iterator_to_array(new CachePoolDetector()->detect($container))),
+            array_keys(iterator_to_array((new CachePoolDetector())->detect($container))),
         );
     }
 
@@ -155,10 +155,10 @@ final class CachePoolDetectorTest extends TestCase
     public function testDetectSkipsPoolsBackedByLocalAdapters(string $adapterClass): void
     {
         $container = new ContainerBuilder();
-        $container->setDefinition('cache.adapter.local', new Definition($adapterClass)->setAbstract(true)->addTag('cache.pool'));
-        $container->setDefinition('app.local_pool', new ChildDefinition('cache.adapter.local')->addTag('cache.pool'));
+        $container->setDefinition('cache.adapter.local', (new Definition($adapterClass))->setAbstract(true)->addTag('cache.pool'));
+        $container->setDefinition('app.local_pool', (new ChildDefinition('cache.adapter.local'))->addTag('cache.pool'));
 
-        self::assertSame([], iterator_to_array(new CachePoolDetector()->detect($container)));
+        self::assertSame([], iterator_to_array((new CachePoolDetector())->detect($container)));
     }
 
     /**
@@ -179,29 +179,29 @@ final class CachePoolDetectorTest extends TestCase
     public function testDetectSkipsSystemCacheAndPoolsInheritingFromIt(): void
     {
         $container = new ContainerBuilder();
-        $container->setDefinition('cache.adapter.system', new Definition(AdapterInterface::class)
+        $container->setDefinition('cache.adapter.system', (new Definition(AdapterInterface::class))
             ->setAbstract(true)
             ->setFactory([AbstractAdapter::class, 'createSystemCache'])
             ->addTag('cache.pool'));
-        $container->setDefinition('cache.system', new ChildDefinition('cache.adapter.system')->addTag('cache.pool'));
-        $container->setDefinition('cache.validator', new ChildDefinition('cache.system')->addTag('cache.pool'));
-        $container->setDefinition('cache.validator_expression_language', new ChildDefinition('cache.system')->addTag('cache.pool'));
+        $container->setDefinition('cache.system', (new ChildDefinition('cache.adapter.system'))->addTag('cache.pool'));
+        $container->setDefinition('cache.validator', (new ChildDefinition('cache.system'))->addTag('cache.pool'));
+        $container->setDefinition('cache.validator_expression_language', (new ChildDefinition('cache.system'))->addTag('cache.pool'));
 
-        self::assertSame([], iterator_to_array(new CachePoolDetector()->detect($container)));
+        self::assertSame([], iterator_to_array((new CachePoolDetector())->detect($container)));
     }
 
     public function testDetectProbesChildWhoseOwnFactoryOverridesTheSystemCacheFactory(): void
     {
         $container = new ContainerBuilder();
-        $container->setDefinition('cache.adapter.system', new Definition(AdapterInterface::class)
+        $container->setDefinition('cache.adapter.system', (new Definition(AdapterInterface::class))
             ->setAbstract(true)
             ->setFactory([AbstractAdapter::class, 'createSystemCache'])
             ->addTag('cache.pool'));
-        $container->setDefinition('app.remote_pool', new ChildDefinition('cache.adapter.system')
+        $container->setDefinition('app.remote_pool', (new ChildDefinition('cache.adapter.system'))
             ->setFactory([RedisAdapter::class, 'createConnection'])
             ->addTag('cache.pool'));
 
-        self::assertArrayHasKey('healthcheck.checker.cache.pool.app.remote_pool', iterator_to_array(new CachePoolDetector()->detect($container)));
+        self::assertArrayHasKey('healthcheck.checker.cache.pool.app.remote_pool', iterator_to_array((new CachePoolDetector())->detect($container)));
     }
 
     /**
@@ -211,12 +211,12 @@ final class CachePoolDetectorTest extends TestCase
     public function testDetectProbesChainOnlyWhenAMemberIsRemote(array $chained, bool $probed): void
     {
         $container = new ContainerBuilder();
-        $container->setDefinition('cache.adapter.array', new Definition(ArrayAdapter::class)->setAbstract(true)->addTag('cache.pool'));
-        $container->setDefinition('cache.adapter.filesystem', new Definition(FilesystemAdapter::class)->setAbstract(true)->addTag('cache.pool'));
-        $container->setDefinition('cache.adapter.redis', new Definition(RedisAdapter::class)->setAbstract(true)->addTag('cache.pool'));
-        $container->setDefinition('app.chain', new Definition(ChainAdapter::class, [$chained, 0])->addTag('cache.pool'));
+        $container->setDefinition('cache.adapter.array', (new Definition(ArrayAdapter::class))->setAbstract(true)->addTag('cache.pool'));
+        $container->setDefinition('cache.adapter.filesystem', (new Definition(FilesystemAdapter::class))->setAbstract(true)->addTag('cache.pool'));
+        $container->setDefinition('cache.adapter.redis', (new Definition(RedisAdapter::class))->setAbstract(true)->addTag('cache.pool'));
+        $container->setDefinition('app.chain', (new Definition(ChainAdapter::class, [$chained, 0]))->addTag('cache.pool'));
 
-        self::assertSame($probed, iterator_to_array(new CachePoolDetector()->detect($container)) !== []);
+        self::assertSame($probed, iterator_to_array((new CachePoolDetector())->detect($container)) !== []);
     }
 
     /**
@@ -236,6 +236,6 @@ final class CachePoolDetectorTest extends TestCase
 
     public function testDetectReturnsEmptyWhenNoCachePoolTagsPresent(): void
     {
-        self::assertSame([], iterator_to_array(new CachePoolDetector()->detect(new ContainerBuilder())));
+        self::assertSame([], iterator_to_array((new CachePoolDetector())->detect(new ContainerBuilder())));
     }
 }

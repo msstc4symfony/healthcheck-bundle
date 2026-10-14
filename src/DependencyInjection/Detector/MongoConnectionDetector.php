@@ -20,7 +20,7 @@ final readonly class MongoConnectionDetector implements CheckerDetectorInterface
     {
         foreach (array_keys($container->getDefinitions()) as $id) {
             if (preg_match('/^doctrine_mongodb\.odm\.(\w+)_connection$/Ss', $id, $match) === 1) {
-                yield sprintf('healthcheck.checker.%s', $id) => new Definition(MongoConnectionChecker::class)
+                yield sprintf('healthcheck.checker.%s', $id) => (new Definition(MongoConnectionChecker::class))
                         ->addArgument(new Reference($id))
                         ->addArgument($match[1])
                 ;

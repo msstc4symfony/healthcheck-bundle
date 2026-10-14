@@ -11,7 +11,7 @@ use Symfony\Component\DependencyInjection\Attribute\Exclude;
 #[Exclude]
 final readonly class ODMConnectionChecker extends AbstractReadinessChecker
 {
-    private const string DEFAULT_PING_DATABASE = 'admin';
+    private const DEFAULT_PING_DATABASE = 'admin';
 
     public function __construct(
         private DocumentManager $documentManager,

@@ -12,7 +12,7 @@ use Symfony\Component\DependencyInjection\Attribute\Exclude;
 #[Exclude]
 final readonly class ElasticaConnectionChecker extends AbstractReadinessChecker
 {
-    private const string ELASTICA8_DEFAULT_HOST = 'localhost:9200';
+    private const ELASTICA8_DEFAULT_HOST = 'localhost:9200';
 
     public function __construct(
         private Client $connection,

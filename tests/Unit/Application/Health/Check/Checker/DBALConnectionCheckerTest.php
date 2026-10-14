@@ -44,7 +44,7 @@ final class DBALConnectionCheckerTest extends TestCase
         $connection->method('getDatabasePlatform')->willReturn($platform);
         $connection->expects(self::once())->method('fetchOne')->with('SELECT 1')->willReturn(1);
 
-        $result = new DBALConnectionChecker($connection, 'default')->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+        $result = (new DBALConnectionChecker($connection, 'default'))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
         self::assertSame(['DB connection (default) passed'], $result->messages);
         self::assertSame([], $result->errors);
@@ -59,7 +59,7 @@ final class DBALConnectionCheckerTest extends TestCase
         $connection->method('getDatabasePlatform')->willReturn($platform);
         $connection->expects(self::once())->method('fetchOne')->with('SELECT 1')->willReturn(1);
 
-        $result = new DBALConnectionChecker($connection, 'default')->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+        $result = (new DBALConnectionChecker($connection, 'default'))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
         self::assertSame(['DB connection (default) passed'], $result->messages);
         self::assertSame([], $result->errors);
@@ -70,7 +70,7 @@ final class DBALConnectionCheckerTest extends TestCase
     {
         $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
 
-        $result = new DBALConnectionChecker($connection, 'default')->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+        $result = (new DBALConnectionChecker($connection, 'default'))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
         self::assertSame([], $result->errors);
         self::assertSame(['DB connection (default) passed'], $result->messages);
@@ -86,7 +86,7 @@ final class DBALConnectionCheckerTest extends TestCase
         $connection->method('getDatabasePlatform')->willReturn($platform);
         $connection->method('fetchOne')->willThrowException(new RuntimeException('boom'));
 
-        $result = new DBALConnectionChecker($connection, 'default')->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+        $result = (new DBALConnectionChecker($connection, 'default'))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
         self::assertSame([], $result->messages);
         self::assertCount(1, $result->errors);

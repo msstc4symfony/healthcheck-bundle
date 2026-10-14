@@ -160,7 +160,7 @@ Tracked here so it doesn't get forgotten.
   currently runs once against the locked Symfony version. If `Phpunit`
   matrix surfaces Symfony 7.4 / 8 deprecations, those won't fail
   PHPStan. Tradeoff: matrix-aware PHPStan would multiply CI time × 3.
-- **PHP version matrix.** Owned by `bundle-standard` (`php-versions`, PHP 8.4 and 8.5); extend it
+- **PHP version matrix.** Owned by `bundle-standard` (`php-versions`, PHP 8.2–8.5); extend it
   there, not here.
 
 ## Детекторы роняли компиляцию на классах с неустановленным родителем (2026-10-01 UTC)
@@ -228,9 +228,11 @@ Rector превращает литерал `[StoreFactory::class, 'createStore']
   (user info в URL и секретные query-параметры); так же и `ParallelAction`
   (`parallel: X failed (...)`).
 - **Label при ошибке конструирования** вычисляется в `HealthCheckerDeferredConstructionPass` через
-  `ReflectionClass::newLazyGhost()`: в «призрак» кладутся только скалярные promoted-аргументы
-  конструктора (с разрешёнными `%параметрами%`), затем вызывается `label()`. Если `label()` трогает
-  что-то ещё — инициализатор бросает, берётся fallback `<КороткийКлассЧекера> (<сервис>)`.
+  `Symfony\Component\VarExporter\Instantiator` (с 1.3.0; до этого — `newLazyGhost()` из PHP 8.4): объект
+  создаётся без конструктора, в него кладутся только скалярные promoted-аргументы (с разрешёнными
+  `%параметрами%`) в scope класса, объявившего конструктор (приватные свойства родителя тоже), затем
+  вызывается `label()`. Если `label()` трогает что-то ещё — `Error` о неинициализированном свойстве,
+  берётся fallback `<КороткийКлассЧекера> (<сервис>)`.
 - **`ElasticaConnectionChecker` был вне шаблона** (CR-007): статус кластера не помещался в
   `doCheck(): void`. Теперь `doCheck()` возвращает `?string` — деталь печатается как
   `<label> passed (<деталь>)`; Elastica наследует шаблон (`skipped (connections list is empty)`,
@@ -288,7 +290,7 @@ Rector превращает литерал `[StoreFactory::class, 'createStore']
 
 ## prefer-lowest, level 10 (2026-10-02 UTC)
 
-- **Prefer-lowest (PHP 8.4, Symfony 7.4) проходит.** Что потребовалось:
+- **Prefer-lowest (PHP 8.4, Symfony 7.4; с 1.3.0 — PHP 8.2) проходит.** Что потребовалось:
   - `phpunit/phpunit: >=11.5` в обоих манифестах: 10.5 не знает
     `<source ignoreIndirectDeprecations>` шаблона. Фактический минимум диктует
     `roave/security-advisories` (сейчас 11.5.50).
@@ -380,3 +382,18 @@ every detector using it. The abstract prototype itself is skipped explicitly by 
   is not supported. FrameworkBundle cache-pool connections (`.cache_connection.*`) are declared as
   `AbstractAdapter` with a factory, so they are not picked up by this detector.
 
+- **Код должен разбираться на PHP 8.2** (с 2026-10-14 UTC, bundle-standard v2.0.0, профиль `php82`): без
+  типизированных констант (`const string X`), без анонимных `new readonly class {}` (оба — 8.3;
+  именованный `readonly class` — 8.2, можно) и без `new X()->m()` / `new X()(...)` (8.4) — только
+  `(new X())->m()`. PHPStan (`phpVersion.min: 80200`) ловит типизированные
+  константы; остальное ловят только `php -l` в job «minimal» (PHP 8.2) и ячейки PHPUnit на 8.2. Шаблоны Rector
+  (`withPhpVersion(PHP_82)`) и CS-Fixer (`new_expression_parentheses`) синтаксис обратно не поднимают.
+  `#[Override]` (8.3) допустим: на 8.2 атрибут не инстанцируется. `array_any/all/find` (8.4) — только с
+  `symfony/polyfill-php84` в `require`. Symfony 8 ставится только на PHP 8.4+.
+  `composer-ci.lock` собран на PHP 8.4 (Symfony 8): на 8.2/8.3 локально — `COMPOSER=composer-ci.json composer update`
+  (или `--prefer-lowest`, как ячейка CI), не `install`.
+- **Кеш ответов — префикс `msstc4symfony_healthcheck.v2.`** (с 1.3.0): `Response::$success` из property hook стал
+  хранимым свойством, ответы, закешированные 1.0–1.2, десериализуются без него (`Error` при чтении). Новый
+  префикс просто не видит старые записи; они истекают по TTL. Менять префикс при любом изменении формы `Response`.
+- **`CheckResult` защищён от записи снаружи только PHPStan** (`@readonly` + `@phpstan-allow-private-mutation`):
+  PHP 8.2 не знает `private(set)`. Код без PHPStan может писать в `$result->messages` — это не баг бандла.

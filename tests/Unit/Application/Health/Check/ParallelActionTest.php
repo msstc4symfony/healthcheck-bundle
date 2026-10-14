@@ -138,7 +138,7 @@ final class ParallelActionTest extends TestCase
 
     private function makeReadinessOnlyChecker(): CheckInterface
     {
-        return new readonly class implements CheckInterface {
+        return new class implements CheckInterface {
             public function isSupport(Context $context): bool
             {
                 return $context->type === CheckTypeEnum::READINESS;

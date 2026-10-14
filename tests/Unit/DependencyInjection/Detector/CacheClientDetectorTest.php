@@ -34,7 +34,7 @@ final class CacheClientDetectorTest extends TestCase
         $container->setDefinition('app.predis', new Definition(Client::class));
         $container->setDefinition('app.redis_cluster', new Definition('RedisCluster'));
 
-        $detected = iterator_to_array(new CacheClientDetector()->detect($container));
+        $detected = iterator_to_array((new CacheClientDetector())->detect($container));
 
         self::assertSame(RedisChecker::class, $detected['healthcheck.checker.app.redis']->getClass());
         self::assertSame(MemcachedChecker::class, $detected['healthcheck.checker.app.memcached']->getClass());
@@ -55,10 +55,10 @@ final class CacheClientDetectorTest extends TestCase
         $container->setDefinition('snc_redis.cluster', new Definition(SubclassedRedisCluster::class));
         $container->setParameter('app.redis_class', SubclassedRedis::class);
         $container->setDefinition('app.parametrised', new Definition('%app.redis_class%'));
-        $container->setDefinition('app.redis_prototype', new Definition(SubclassedRedis::class)->setAbstract(true));
+        $container->setDefinition('app.redis_prototype', (new Definition(SubclassedRedis::class))->setAbstract(true));
         $container->setDefinition('app.redis_child', new ChildDefinition('app.redis_prototype'));
 
-        $detected = iterator_to_array(new CacheClientDetector()->detect($container));
+        $detected = iterator_to_array((new CacheClientDetector())->detect($container));
 
         self::assertSame(
             [
@@ -78,7 +78,7 @@ final class CacheClientDetectorTest extends TestCase
         $container = new ContainerBuilder();
         $container->setDefinition('app.predis', new Definition(SubclassedClient::class));
 
-        $detected = iterator_to_array(new CacheClientDetector()->detect($container));
+        $detected = iterator_to_array((new CacheClientDetector())->detect($container));
 
         self::assertSame(['healthcheck.checker.app.predis'], array_keys($detected));
         self::assertSame(PredisChecker::class, $detected['healthcheck.checker.app.predis']->getClass());
@@ -89,15 +89,15 @@ final class CacheClientDetectorTest extends TestCase
         $container = new ContainerBuilder();
         $container->setDefinition('app.classless', new Definition());
 
-        self::assertSame([], iterator_to_array(new CacheClientDetector()->detect($container)));
+        self::assertSame([], iterator_to_array((new CacheClientDetector())->detect($container)));
     }
 
     public function testDetectSkipsAbstractDefinitions(): void
     {
         $container = new ContainerBuilder();
-        $container->setDefinition('app.redis_prototype', new Definition('Redis')->setAbstract(true));
+        $container->setDefinition('app.redis_prototype', (new Definition('Redis'))->setAbstract(true));
 
-        self::assertSame([], iterator_to_array(new CacheClientDetector()->detect($container)));
+        self::assertSame([], iterator_to_array((new CacheClientDetector())->detect($container)));
     }
 
     public function testDetectSkipsUnrelatedClasses(): void
@@ -105,6 +105,6 @@ final class CacheClientDetectorTest extends TestCase
         $container = new ContainerBuilder();
         $container->setDefinition('app.other', new Definition(stdClass::class));
 
-        self::assertSame([], iterator_to_array(new CacheClientDetector()->detect($container)));
+        self::assertSame([], iterator_to_array((new CacheClientDetector())->detect($container)));
     }
 }

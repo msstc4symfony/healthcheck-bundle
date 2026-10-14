@@ -36,7 +36,7 @@ final class ODMConnectionCheckerTest extends TestCase
     {
         $dm = $this->buildDocumentManagerStub('app_db', ok: true);
 
-        $result = new ODMConnectionChecker($dm, 'default')->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+        $result = (new ODMConnectionChecker($dm, 'default'))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
         self::assertSame(['ODM connection (default) passed'], $result->messages);
         self::assertSame([], $result->errors);
@@ -60,7 +60,7 @@ final class ODMConnectionCheckerTest extends TestCase
         $dm->method('getConfiguration')->willReturn($configuration);
         $dm->method('getClient')->willReturn($client);
 
-        $result = new ODMConnectionChecker($dm, 'default')->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+        $result = (new ODMConnectionChecker($dm, 'default'))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
         self::assertSame(['ODM connection (default) passed'], $result->messages);
         self::assertSame([], $result->errors);
@@ -74,7 +74,7 @@ final class ODMConnectionCheckerTest extends TestCase
         $dm = self::createStub(DocumentManager::class);
         $dm->method('getConfiguration')->willReturn($configuration);
 
-        $result = new ODMConnectionChecker($dm, 'default')->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+        $result = (new ODMConnectionChecker($dm, 'default'))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
         self::assertSame([], $result->messages);
         self::assertCount(1, $result->errors);

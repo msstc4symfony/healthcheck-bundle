@@ -22,11 +22,11 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
  */
 final class CachePoolSelectionTest extends TestCase
 {
-    private const array SYSTEM_POOLS = ['cache.system', 'cache.validator', 'cache.serializer', 'cache.property_info'];
+    private const SYSTEM_POOLS = ['cache.system', 'cache.validator', 'cache.serializer', 'cache.property_info'];
 
     protected function setUp(): void
     {
-        new Filesystem()->remove(sys_get_temp_dir() . '/msstc4symfony-healthcheck-bundle-test');
+        (new Filesystem())->remove(sys_get_temp_dir() . '/msstc4symfony-healthcheck-bundle-test');
     }
 
     public function testLocalPoolsAreNotProbed(): void

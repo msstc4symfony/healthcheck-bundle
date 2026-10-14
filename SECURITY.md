@@ -12,8 +12,9 @@ minor on each supported major.
 
 Runtime requirements are tracked in `composer.json`:
 
-- PHP >= 8.4 (no support for earlier minors — the bundle relies on PHP 8.4
-  features: asymmetric visibility, typed class constants, property hooks)
+- PHP >= 8.2 (no support for earlier minors — the bundle relies on PHP 8.2
+  features: readonly classes and promoted properties; PHP 8.4 functions come from
+  `symfony/polyfill-php84`)
 - Symfony 7.4 / 8.x
 
 If you are running an older PHP or Symfony version, upgrade before reporting.
@@ -163,7 +164,7 @@ controls:
   `roave/security-advisories` block dependency installation.
 - PHPStan level 9 with `spaze/phpstan-disallowed-calls`, `phpstan-strict-rules`,
   `phpstan-symfony`, and `phpstan-doctrine` rules.
-- Rector applies the PHP 8.4 quality and dead-code rulesets.
+- Rector applies the PHP 8.2 quality and dead-code rulesets.
 - PHPUnit runs in strict mode (`failOnRisky`, `failOnWarning`,
   `failOnPhpunitDeprecation`).
 

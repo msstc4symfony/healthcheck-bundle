@@ -21,7 +21,7 @@ final class DBALConnectionDetectorTest extends TestCase
         $container->setDefinition('doctrine.dbal.default_connection', new Definition(Connection::class));
         $container->setDefinition('doctrine.dbal.reporting_connection', new Definition(Connection::class));
 
-        $detected = iterator_to_array(new DBALConnectionDetector()->detect($container));
+        $detected = iterator_to_array((new DBALConnectionDetector())->detect($container));
 
         self::assertSame(
             ['healthcheck.checker.doctrine.dbal.default_connection', 'healthcheck.checker.doctrine.dbal.reporting_connection'],
@@ -43,13 +43,13 @@ final class DBALConnectionDetectorTest extends TestCase
         $container->setDefinition('doctrine.dbal._connection', new Definition(Connection::class));   // empty name capture
         $container->setDefinition('unrelated.service', new Definition(stdClass::class));
 
-        $detected = iterator_to_array(new DBALConnectionDetector()->detect($container));
+        $detected = iterator_to_array((new DBALConnectionDetector())->detect($container));
 
         self::assertSame([], $detected);
     }
 
     public function testDetectReturnsEmptyOnEmptyContainer(): void
     {
-        self::assertSame([], iterator_to_array(new DBALConnectionDetector()->detect(new ContainerBuilder())));
+        self::assertSame([], iterator_to_array((new DBALConnectionDetector())->detect(new ContainerBuilder())));
     }
 }

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Msstc4Symfony\HealthCheckBundle\DependencyInjection;
 
-use LogicException;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\AbstractReadinessChecker;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CheckInterface;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\DeferredReadinessCheckerDecorator;
@@ -18,6 +17,7 @@ use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
+use Symfony\Component\VarExporter\Instantiator;
 use Throwable;
 
 /**
@@ -32,7 +32,7 @@ use Throwable;
  */
 final readonly class HealthCheckerDeferredConstructionPass implements CompilerPassInterface
 {
-    private const string DETECTED_CHECKER_ID_PREFIX = 'healthcheck.checker.';
+    private const DETECTED_CHECKER_ID_PREFIX = 'healthcheck.checker.';
 
     #[Override]
     public function process(ContainerBuilder $container): void
@@ -54,7 +54,7 @@ final readonly class HealthCheckerDeferredConstructionPass implements CompilerPa
             $container->setDefinition($innerId, $definition);
             $container->removeDefinition($id);
 
-            $container->setDefinition($id, new Definition(DeferredReadinessCheckerDecorator::class)
+            $container->setDefinition($id, (new Definition(DeferredReadinessCheckerDecorator::class))
                 ->addArgument(new ServiceClosureArgument(new Reference($innerId)))
                 ->addArgument($this->label($container, $checker, $id))
                 ->addArgument($checkerClass)
@@ -166,9 +166,10 @@ final readonly class HealthCheckerDeferredConstructionPass implements CompilerPa
     }
 
     /**
-     * The checker's own label() (e.g. "Lock store (x)"), read from a lazy ghost that holds only the
-     * scalar constructor arguments: a label never needs the target, and the target is exactly what
-     * may fail to construct. Labels that do need more fall back to "<checker class> (<service>)".
+     * The checker's own label() (e.g. "Lock store (x)"), read from an instance built without its
+     * constructor that holds only the scalar constructor arguments: a label never needs the target, and
+     * the target is exactly what may fail to construct. Labels that do need more fall back to
+     * "<checker class> (<service>)".
      *
      * @param non-empty-string $id
      *
@@ -179,7 +180,7 @@ final readonly class HealthCheckerDeferredConstructionPass implements CompilerPa
         $fallback = sprintf('%s (%s)', basename(str_replace('\\', '/', (string) $checker->getClass())), $this->stripCheckerPrefix($id));
 
         try {
-            $label = $this->labelFromGhost($container, $checker);
+            $label = $this->labelFromScalarArguments($container, $checker);
         } catch (Throwable) {
             return $fallback;
         }
@@ -187,30 +188,30 @@ final readonly class HealthCheckerDeferredConstructionPass implements CompilerPa
         return $label !== '' ? $label : $fallback;
     }
 
-    private function labelFromGhost(ContainerBuilder $container, Definition $checker): string
+    private function labelFromScalarArguments(ContainerBuilder $container, Definition $checker): string
     {
         $reflection = $this->reflection($container, $checker);
-        if (!$reflection instanceof ReflectionClass || !$reflection->hasMethod('label') || !$reflection->getConstructor() instanceof ReflectionMethod) {
+        $constructor = $reflection?->getConstructor();
+        if (!$reflection instanceof ReflectionClass || !$reflection->hasMethod('label') || !$constructor instanceof ReflectionMethod) {
             return '';
         }
 
-        $ghost = $reflection->newLazyGhost(static function (): never {
-            throw new LogicException('label() needs more than scalar constructor arguments');
-        });
-
+        // Promoted properties belong to the class declaring the constructor, possibly a parent.
+        $scope = $constructor->getDeclaringClass()->getName();
+        $properties = [];
         $arguments = $checker->getArguments();
-        foreach ($reflection->getConstructor()->getParameters() as $position => $parameter) {
+        foreach ($constructor->getParameters() as $position => $parameter) {
             $value = $arguments[$position] ?? $arguments['$' . $parameter->getName()] ?? null;
             if (!$parameter->isPromoted() || !is_scalar($value)) {
                 continue;
             }
 
-            $reflection->getProperty($parameter->getName())
-                ->setRawValueWithoutLazyInitialization($ghost, $container->getParameterBag()->resolveValue($value))
-            ;
+            $properties[$parameter->getName()] = $container->getParameterBag()->resolveValue($value);
         }
 
-        $label = $reflection->getMethod('label')->invoke($ghost);
+        // Never constructed: a label() reading anything but those properties hits an uninitialized one and throws.
+        $instance = Instantiator::instantiate($reflection->getName(), [], [$scope => $properties]);
+        $label = $reflection->getMethod('label')->invoke($instance);
 
         return is_string($label) ? $label : '';
     }

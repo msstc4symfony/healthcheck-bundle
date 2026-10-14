@@ -20,7 +20,7 @@ final class EntityManagerDetectorTest extends TestCase
         $container->setDefinition('doctrine.orm.default_entity_manager', new Definition(EntityManagerInterface::class));
         $container->setDefinition('doctrine.orm.reporting_entity_manager', new Definition(EntityManagerInterface::class));
 
-        $detected = iterator_to_array(new EntityManagerDetector()->detect($container));
+        $detected = iterator_to_array((new EntityManagerDetector())->detect($container));
 
         self::assertSame(
             ['healthcheck.checker.doctrine.orm.default_entity_manager', 'healthcheck.checker.doctrine.orm.reporting_entity_manager'],
@@ -41,6 +41,6 @@ final class EntityManagerDetectorTest extends TestCase
         $container->setDefinition('doctrine.orm.something_else', new Definition(EntityManagerInterface::class));
         $container->setDefinition('doctrine.orm._entity_manager', new Definition(EntityManagerInterface::class));
 
-        self::assertSame([], iterator_to_array(new EntityManagerDetector()->detect($container)));
+        self::assertSame([], iterator_to_array((new EntityManagerDetector())->detect($container)));
     }
 }

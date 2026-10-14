@@ -19,7 +19,7 @@ final class DoctrineMigrationsDetectorTest extends TestCase
         $container = new ContainerBuilder();
         $container->setDefinition(DependencyFactory::class, new Definition(DependencyFactory::class));
 
-        $detected = iterator_to_array(new DoctrineMigrationsDetector()->detect($container));
+        $detected = iterator_to_array((new DoctrineMigrationsDetector())->detect($container));
 
         $checker = $detected['healthcheck.checker.doctrine_migrations'];
         self::assertSame(DoctrineMigrationsChecker::class, $checker->getClass());
@@ -28,6 +28,6 @@ final class DoctrineMigrationsDetectorTest extends TestCase
 
     public function testDetectReturnsEmptyWhenDependencyFactoryMissing(): void
     {
-        self::assertSame([], iterator_to_array(new DoctrineMigrationsDetector()->detect(new ContainerBuilder())));
+        self::assertSame([], iterator_to_array((new DoctrineMigrationsDetector())->detect(new ContainerBuilder())));
     }
 }

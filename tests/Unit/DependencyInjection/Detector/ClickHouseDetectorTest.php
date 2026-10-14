@@ -20,7 +20,7 @@ final class ClickHouseDetectorTest extends TestCase
         $container = new ContainerBuilder();
         $container->setDefinition('clickhouse.analytics', new Definition(Client::class));
 
-        $detected = iterator_to_array(new ClickHouseDetector()->detect($container));
+        $detected = iterator_to_array((new ClickHouseDetector())->detect($container));
 
         $checker = $detected['healthcheck.checker.clickhouse.analytics'];
         self::assertSame(ClickHouseChecker::class, $checker->getClass());
@@ -34,6 +34,6 @@ final class ClickHouseDetectorTest extends TestCase
         $container->setDefinition('app.other', new Definition(stdClass::class));
         $container->setDefinition('app.classless', new Definition());
 
-        self::assertSame([], iterator_to_array(new ClickHouseDetector()->detect($container)));
+        self::assertSame([], iterator_to_array((new ClickHouseDetector())->detect($container)));
     }
 }

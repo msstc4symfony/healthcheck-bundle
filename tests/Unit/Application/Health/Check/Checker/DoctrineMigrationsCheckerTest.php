@@ -66,7 +66,7 @@ final class DoctrineMigrationsCheckerTest extends TestCase
         $factory = self::createStub(DependencyFactory::class);
         $factory->method('getMigrationStatusCalculator')->willReturn($calculator);
 
-        $result = new DoctrineMigrationsChecker($factory)->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+        $result = (new DoctrineMigrationsChecker($factory))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
         self::assertCount(1, $result->errors);
         self::assertStringContainsString('metadata table missing', $result->errors[0]);

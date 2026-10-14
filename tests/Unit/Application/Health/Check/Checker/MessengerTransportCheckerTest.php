@@ -35,7 +35,7 @@ final class MessengerTransportCheckerTest extends TestCase
         $transport = self::createStub(CountableMessengerTransportFixture::class);
         $transport->method('getMessageCount')->willReturn(7);
 
-        $result = new MessengerTransportChecker($transport, 'async')->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+        $result = (new MessengerTransportChecker($transport, 'async'))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
         self::assertSame(['Messenger transport (async) passed'], $result->messages);
         self::assertSame([], $result->errors);
@@ -48,7 +48,7 @@ final class MessengerTransportCheckerTest extends TestCase
         // see a truthful picture.
         $transport = self::createStub(TransportInterface::class);
 
-        $result = new MessengerTransportChecker($transport, 'async')->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+        $result = (new MessengerTransportChecker($transport, 'async'))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
         self::assertSame([], $result->errors);
         self::assertCount(1, $result->messages);
@@ -61,7 +61,7 @@ final class MessengerTransportCheckerTest extends TestCase
         $transport = self::createStub(CountableMessengerTransportFixture::class);
         $transport->method('getMessageCount')->willThrowException(new RuntimeException('broker offline'));
 
-        $result = new MessengerTransportChecker($transport, 'async')->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+        $result = (new MessengerTransportChecker($transport, 'async'))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
         self::assertCount(1, $result->errors);
         self::assertStringContainsString('async', $result->errors[0]);

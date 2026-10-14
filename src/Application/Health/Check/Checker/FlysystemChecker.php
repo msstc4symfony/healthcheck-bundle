@@ -11,7 +11,7 @@ use Symfony\Component\DependencyInjection\Attribute\Exclude;
 #[Exclude]
 final readonly class FlysystemChecker extends AbstractReadinessChecker
 {
-    private const string PROBE_PATH = '.healthcheck-probe';
+    private const PROBE_PATH = '.healthcheck-probe';
 
     public function __construct(
         private FilesystemOperator $filesystem,

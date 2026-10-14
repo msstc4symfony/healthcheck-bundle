@@ -84,8 +84,9 @@ fail a probe.
    `DeferredReadinessCheckerDecorator`, which gets the rest of the chain as a
    `ServiceClosureArgument` and builds it only inside a readiness probe. A
    target whose constructor throws becomes `<label> failed (<message>)`; the
-   label is the checker's own `label()`, read at compile time from a PHP 8.4
-   lazy ghost holding only the scalar constructor args (fallback
+   label is the checker's own `label()`, read at compile time from an instance
+   built without its constructor (`VarExporter\Instantiator`, scoped to the class declaring
+   the constructor) holding only the scalar promoted constructor args (fallback
    `<CheckerClass> (<service>)`). Messages go through `CredentialRedactor`
    on readiness and is never built for liveliness. The pass also hands over the
    checker class (third argument) so events can name it without building it.
@@ -208,13 +209,13 @@ fit, but it's the exception, not the norm.
   consumption.
 - `Application/Health/Check/DTO/CheckResult` — mutable accumulator
   (`messages[]` / `errors[]` / `warnings[]`).
-- `Application/Health/Check/DTO/Response` — output; `success` is a property
-  hook computing `errors === []`.
+- `Application/Health/Check/DTO/Response` — output (`final readonly`); `success`
+  is set in the constructor to `errors === []`.
 - `Application/Health/Check/DTO/HttpProbeTarget` — VO that bundles
   url + method + expected status codes + timeout for `HttpClientChecker`.
 
-All DTOs use PHP 8.4 readonly + asymmetric visibility / property hooks where
-they reduce boilerplate.
+DTOs are readonly where possible (PHP 8.2); `CheckResult` is the mutable
+accumulator, read-only for callers through PHPStan only.
 
 ## Configuration surface
 

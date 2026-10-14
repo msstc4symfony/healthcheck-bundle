@@ -11,6 +11,8 @@ use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\LockStoreCh
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\TimeoutCheckerDecorator;
 use Msstc4Symfony\HealthCheckBundle\DependencyInjection\HealthCheckerDeferredConstructionPass;
 use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\DependentReadinessCheckerFixture;
+use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\InheritedConstructorCheckerFixture;
+use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\LabelFromDependencyCheckerFixture;
 use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\SuccessChecker;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\Argument\ServiceClosureArgument;
@@ -24,9 +26,9 @@ final class HealthCheckerDeferredConstructionPassTest extends TestCase
     public function testWrapsReadinessOnlyCheckerInDeferredDecorator(): void
     {
         $container = new ContainerBuilder();
-        $container->setDefinition('healthcheck.checker.store', new Definition(DependentReadinessCheckerFixture::class)->addTag(CheckInterface::class));
+        $container->setDefinition('healthcheck.checker.store', (new Definition(DependentReadinessCheckerFixture::class))->addTag(CheckInterface::class));
 
-        new HealthCheckerDeferredConstructionPass()->process($container);
+        (new HealthCheckerDeferredConstructionPass())->process($container);
 
         $outer = $container->getDefinition('healthcheck.checker.store');
         self::assertSame(DeferredReadinessCheckerDecorator::class, $outer->getClass());
@@ -44,11 +46,11 @@ final class HealthCheckerDeferredConstructionPassTest extends TestCase
     {
         $container = new ContainerBuilder();
         $container->setDefinition('healthcheck.checker.store.inner', new Definition(DependentReadinessCheckerFixture::class));
-        $container->setDefinition('healthcheck.checker.store', new Definition(TimeoutCheckerDecorator::class)
+        $container->setDefinition('healthcheck.checker.store', (new Definition(TimeoutCheckerDecorator::class))
             ->setArguments([new Reference('healthcheck.checker.store.inner'), 2000])
             ->addTag(CheckInterface::class));
 
-        new HealthCheckerDeferredConstructionPass()->process($container);
+        (new HealthCheckerDeferredConstructionPass())->process($container);
 
         self::assertSame(DeferredReadinessCheckerDecorator::class, $container->getDefinition('healthcheck.checker.store')->getClass());
         self::assertSame(TimeoutCheckerDecorator::class, $container->getDefinition('healthcheck.checker.store.deferred_inner')->getClass());
@@ -58,14 +60,14 @@ final class HealthCheckerDeferredConstructionPassTest extends TestCase
     public function testResolvesTheClassOfAChildDefinitionThroughItsParents(): void
     {
         $container = new ContainerBuilder();
-        $container->setDefinition('app.checker.base', new Definition(DependentReadinessCheckerFixture::class)->setAbstract(true));
-        $container->setDefinition('app.checker.template', new ChildDefinition('app.checker.base')->setAbstract(true));
+        $container->setDefinition('app.checker.base', (new Definition(DependentReadinessCheckerFixture::class))->setAbstract(true));
+        $container->setDefinition('app.checker.template', (new ChildDefinition('app.checker.base'))->setAbstract(true));
         $container->setDefinition('app.checker.inner', new ChildDefinition('app.checker.template'));
-        $container->setDefinition('app.checker', new Definition(TimeoutCheckerDecorator::class)
+        $container->setDefinition('app.checker', (new Definition(TimeoutCheckerDecorator::class))
             ->setArguments([new Reference('app.checker.inner'), 2000])
             ->addTag(CheckInterface::class));
 
-        new HealthCheckerDeferredConstructionPass()->process($container);
+        (new HealthCheckerDeferredConstructionPass())->process($container);
 
         $outer = $container->getDefinition('app.checker');
         self::assertSame(DeferredReadinessCheckerDecorator::class, $outer->getClass());
@@ -76,12 +78,12 @@ final class HealthCheckerDeferredConstructionPassTest extends TestCase
     public function testLabelsAChildDefinitionWithItsOwnReplacedArguments(): void
     {
         $container = new ContainerBuilder();
-        $container->setDefinition('app.lock.template', new Definition(LockStoreChecker::class, [new Reference('app.store'), 'parent-name'])->setAbstract(true));
-        $container->setDefinition('app.lock', new ChildDefinition('app.lock.template')
+        $container->setDefinition('app.lock.template', (new Definition(LockStoreChecker::class, [new Reference('app.store'), 'parent-name']))->setAbstract(true));
+        $container->setDefinition('app.lock', (new ChildDefinition('app.lock.template'))
             ->replaceArgument(1, 'child-name')
             ->addTag(CheckInterface::class));
 
-        new HealthCheckerDeferredConstructionPass()->process($container);
+        (new HealthCheckerDeferredConstructionPass())->process($container);
 
         self::assertSame('Lock store (child-name)', $container->getDefinition('app.lock')->getArgument(1));
     }
@@ -89,12 +91,12 @@ final class HealthCheckerDeferredConstructionPassTest extends TestCase
     public function testLabelsAChildDefinitionWhoseNamedArgumentReplacesAPositionalParentArgument(): void
     {
         $container = new ContainerBuilder();
-        $container->setDefinition('app.lock.template', new Definition(LockStoreChecker::class, [new Reference('app.store'), 'parent-name'])->setAbstract(true));
-        $container->setDefinition('app.lock', new ChildDefinition('app.lock.template')
+        $container->setDefinition('app.lock.template', (new Definition(LockStoreChecker::class, [new Reference('app.store'), 'parent-name']))->setAbstract(true));
+        $container->setDefinition('app.lock', (new ChildDefinition('app.lock.template'))
             ->setArgument('$name', 'child-name')
             ->addTag(CheckInterface::class));
 
-        new HealthCheckerDeferredConstructionPass()->process($container);
+        (new HealthCheckerDeferredConstructionPass())->process($container);
 
         self::assertSame('Lock store (child-name)', $container->getDefinition('app.lock')->getArgument(1));
     }
@@ -105,10 +107,10 @@ final class HealthCheckerDeferredConstructionPassTest extends TestCase
     public function testLeavesAChildDefinitionWithCircularParentsUntouched(): void
     {
         $container = new ContainerBuilder();
-        $container->setDefinition('app.a', new ChildDefinition('app.b')->addTag(CheckInterface::class));
+        $container->setDefinition('app.a', (new ChildDefinition('app.b'))->addTag(CheckInterface::class));
         $container->setDefinition('app.b', new ChildDefinition('app.a'));
 
-        new HealthCheckerDeferredConstructionPass()->process($container);
+        (new HealthCheckerDeferredConstructionPass())->process($container);
 
         self::assertInstanceOf(ChildDefinition::class, $container->getDefinition('app.a'));
         self::assertFalse($container->hasDefinition('app.a.deferred_inner'));
@@ -117,9 +119,9 @@ final class HealthCheckerDeferredConstructionPassTest extends TestCase
     public function testLeavesAChildDefinitionWithAMissingParentUntouched(): void
     {
         $container = new ContainerBuilder();
-        $container->setDefinition('app.checker', new ChildDefinition('app.missing')->addTag(CheckInterface::class));
+        $container->setDefinition('app.checker', (new ChildDefinition('app.missing'))->addTag(CheckInterface::class));
 
-        new HealthCheckerDeferredConstructionPass()->process($container);
+        (new HealthCheckerDeferredConstructionPass())->process($container);
 
         self::assertInstanceOf(ChildDefinition::class, $container->getDefinition('app.checker'));
         self::assertFalse($container->hasDefinition('app.checker.deferred_inner'));
@@ -128,12 +130,12 @@ final class HealthCheckerDeferredConstructionPassTest extends TestCase
     public function testChildDefinitionClassOverridesItsParents(): void
     {
         $container = new ContainerBuilder();
-        $container->setDefinition('app.checker.template', new Definition(DependentReadinessCheckerFixture::class)->setAbstract(true));
-        $container->setDefinition('app.checker', new ChildDefinition('app.checker.template')
+        $container->setDefinition('app.checker.template', (new Definition(DependentReadinessCheckerFixture::class))->setAbstract(true));
+        $container->setDefinition('app.checker', (new ChildDefinition('app.checker.template'))
             ->setClass(SuccessChecker::class)
             ->addTag(CheckInterface::class));
 
-        new HealthCheckerDeferredConstructionPass()->process($container);
+        (new HealthCheckerDeferredConstructionPass())->process($container);
 
         self::assertInstanceOf(ChildDefinition::class, $container->getDefinition('app.checker'));
         self::assertFalse($container->hasDefinition('app.checker.deferred_inner'));
@@ -142,12 +144,12 @@ final class HealthCheckerDeferredConstructionPassTest extends TestCase
     public function testLeavesCheckersThatMaySupportLivelinessUntouched(): void
     {
         $container = new ContainerBuilder();
-        $container->setDefinition('app.checker', new Definition(SuccessChecker::class)->addTag(CheckInterface::class));
-        $container->setDefinition('app.timed', new Definition(TimeoutCheckerDecorator::class)
+        $container->setDefinition('app.checker', (new Definition(SuccessChecker::class))->addTag(CheckInterface::class));
+        $container->setDefinition('app.timed', (new Definition(TimeoutCheckerDecorator::class))
             ->setArguments([new Reference('app.checker'), 2000])
             ->addTag(CheckInterface::class));
 
-        new HealthCheckerDeferredConstructionPass()->process($container);
+        (new HealthCheckerDeferredConstructionPass())->process($container);
 
         self::assertSame(SuccessChecker::class, $container->getDefinition('app.checker')->getClass());
         self::assertSame(TimeoutCheckerDecorator::class, $container->getDefinition('app.timed')->getClass());
@@ -157,13 +159,13 @@ final class HealthCheckerDeferredConstructionPassTest extends TestCase
     public function testLabelsFailuresLikeTheCheckerItselfWithoutBuildingTheTarget(): void
     {
         $container = new ContainerBuilder();
-        $container->setDefinition('healthcheck.checker..lock.default.store.abc.inner', new Definition(LockStoreChecker::class)
+        $container->setDefinition('healthcheck.checker..lock.default.store.abc.inner', (new Definition(LockStoreChecker::class))
             ->setArguments([new Reference('.lock.default.store.abc'), '.lock.default.store.abc']));
-        $container->setDefinition('healthcheck.checker..lock.default.store.abc', new Definition(TimeoutCheckerDecorator::class)
+        $container->setDefinition('healthcheck.checker..lock.default.store.abc', (new Definition(TimeoutCheckerDecorator::class))
             ->setArguments([new Reference('healthcheck.checker..lock.default.store.abc.inner'), 2000])
             ->addTag(CheckInterface::class));
 
-        new HealthCheckerDeferredConstructionPass()->process($container);
+        (new HealthCheckerDeferredConstructionPass())->process($container);
 
         self::assertSame('Lock store (.lock.default.store.abc)', $container->getDefinition('healthcheck.checker..lock.default.store.abc')->getArgument(1));
     }
@@ -171,23 +173,48 @@ final class HealthCheckerDeferredConstructionPassTest extends TestCase
     public function testFallsBackToCheckerClassAndServiceWhenLabelIsUnavailable(): void
     {
         $container = new ContainerBuilder();
-        $container->setDefinition('healthcheck.checker.app.lock', new Definition(LockStoreChecker::class)
+        $container->setDefinition('healthcheck.checker.app.lock', (new Definition(LockStoreChecker::class))
             ->setArguments([new Reference('app.lock'), '%missing.parameter%'])
             ->addTag(CheckInterface::class));
 
-        new HealthCheckerDeferredConstructionPass()->process($container);
+        (new HealthCheckerDeferredConstructionPass())->process($container);
 
         self::assertSame('LockStoreChecker (app.lock)', $container->getDefinition('healthcheck.checker.app.lock')->getArgument(1));
+    }
+
+    public function testFallsBackWhenTheLabelNeedsMoreThanScalarArguments(): void
+    {
+        $container = new ContainerBuilder();
+        $container->setDefinition('healthcheck.checker.app.dependent', (new Definition(LabelFromDependencyCheckerFixture::class))
+            ->setArguments([new Reference('app.dependency'), 'Named'])
+            ->addTag(CheckInterface::class));
+
+        (new HealthCheckerDeferredConstructionPass())->process($container);
+
+        self::assertSame('LabelFromDependencyCheckerFixture (app.dependent)', $container->getDefinition('healthcheck.checker.app.dependent')->getArgument(1));
+    }
+
+    public function testLabelsACheckerWithAnInheritedConstructorAndPrivateOrProtectedPromotedProperties(): void
+    {
+        $container = new ContainerBuilder();
+        $container->setParameter('app.name', 'primary');
+        $container->setDefinition('healthcheck.checker.app.named', (new Definition(InheritedConstructorCheckerFixture::class))
+            ->setArguments([new Reference('app.dependency'), '%app.name%', 'redis'])
+            ->addTag(CheckInterface::class));
+
+        (new HealthCheckerDeferredConstructionPass())->process($container);
+
+        self::assertSame('Named (primary, redis)', $container->getDefinition('healthcheck.checker.app.named')->getArgument(1));
     }
 
     public function testWrapsElasticaCheckerWithoutTheElasticaPackage(): void
     {
         $container = new ContainerBuilder();
-        $container->setDefinition('healthcheck.checker.elastica.client', new Definition(ElasticaConnectionChecker::class)
+        $container->setDefinition('healthcheck.checker.elastica.client', (new Definition(ElasticaConnectionChecker::class))
             ->setArguments([new Reference('elastica.client'), 'elastica.client'])
             ->addTag(CheckInterface::class));
 
-        new HealthCheckerDeferredConstructionPass()->process($container);
+        (new HealthCheckerDeferredConstructionPass())->process($container);
 
         $outer = $container->getDefinition('healthcheck.checker.elastica.client');
         self::assertSame(DeferredReadinessCheckerDecorator::class, $outer->getClass());
@@ -197,11 +224,11 @@ final class HealthCheckerDeferredConstructionPassTest extends TestCase
     public function testLeavesTimeoutDecoratorWhoseInnerServiceIsMissing(): void
     {
         $container = new ContainerBuilder();
-        $container->setDefinition('app.timed', new Definition(TimeoutCheckerDecorator::class)
+        $container->setDefinition('app.timed', (new Definition(TimeoutCheckerDecorator::class))
             ->setArguments([new Reference('app.missing'), 2000])
             ->addTag(CheckInterface::class));
 
-        new HealthCheckerDeferredConstructionPass()->process($container);
+        (new HealthCheckerDeferredConstructionPass())->process($container);
 
         self::assertSame(TimeoutCheckerDecorator::class, $container->getDefinition('app.timed')->getClass());
     }
@@ -209,11 +236,11 @@ final class HealthCheckerDeferredConstructionPassTest extends TestCase
     public function testLeavesTimeoutDecoratorWhoseInnerIsNotAReference(): void
     {
         $container = new ContainerBuilder();
-        $container->setDefinition('app.timed', new Definition(TimeoutCheckerDecorator::class)
+        $container->setDefinition('app.timed', (new Definition(TimeoutCheckerDecorator::class))
             ->setArguments([new Definition(DependentReadinessCheckerFixture::class), 2000])
             ->addTag(CheckInterface::class));
 
-        new HealthCheckerDeferredConstructionPass()->process($container);
+        (new HealthCheckerDeferredConstructionPass())->process($container);
 
         self::assertSame(TimeoutCheckerDecorator::class, $container->getDefinition('app.timed')->getClass());
     }
@@ -221,10 +248,10 @@ final class HealthCheckerDeferredConstructionPassTest extends TestCase
     public function testDoesNotWrapAnAlreadyDeferredChecker(): void
     {
         $container = new ContainerBuilder();
-        $container->setDefinition('healthcheck.checker.store', new Definition(DependentReadinessCheckerFixture::class)->addTag(CheckInterface::class));
+        $container->setDefinition('healthcheck.checker.store', (new Definition(DependentReadinessCheckerFixture::class))->addTag(CheckInterface::class));
 
-        new HealthCheckerDeferredConstructionPass()->process($container);
-        new HealthCheckerDeferredConstructionPass()->process($container);
+        (new HealthCheckerDeferredConstructionPass())->process($container);
+        (new HealthCheckerDeferredConstructionPass())->process($container);
 
         self::assertSame(DeferredReadinessCheckerDecorator::class, $container->getDefinition('healthcheck.checker.store')->getClass());
         self::assertSame(DependentReadinessCheckerFixture::class, $container->getDefinition('healthcheck.checker.store.deferred_inner')->getClass());

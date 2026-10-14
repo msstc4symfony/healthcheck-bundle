@@ -20,7 +20,7 @@ final readonly class EntityManagerDetector implements CheckerDetectorInterface
     {
         foreach (array_keys($container->getDefinitions()) as $id) {
             if (preg_match('/^doctrine\.orm\.(\w+)_entity_manager$/Ss', $id, $match) === 1) {
-                yield sprintf('healthcheck.checker.%s', $id) => new Definition(EntityManagerChecker::class)
+                yield sprintf('healthcheck.checker.%s', $id) => (new Definition(EntityManagerChecker::class))
                     ->addArgument(new Reference($id))
                     ->addArgument($match[1])
                 ;

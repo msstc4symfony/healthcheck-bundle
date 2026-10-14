@@ -15,8 +15,8 @@ jobs:
 
 - Jobs: standard-check (verifier), PHP lint, PHPStan (`phpstan-ci.neon`),
   PHP-CS-Fixer, Rector, deptrac, composer validate + audit, PHPUnit on
-  PHP {8.4, 8.5} × Symfony {7.4, 8.x} plus a `--prefer-lowest` cell
-  (PHP 8.4, Symfony 7.4), PHPUnit without optional libraries, Roave BC check
+  PHP {8.2, 8.3, 8.4, 8.5} × Symfony {7.4, 8.x} (Symfony 8 from PHP 8.4) plus a
+  `--prefer-lowest` cell (PHP 8.2, Symfony 7.4), PHPUnit without optional libraries, Roave BC check
   (blocking, against the latest stable tag), Infection (push to `main`, blocking below 72 % MSI / covered MSI). Inputs and behaviour: `bundle-standard/README.md`.
 - `extensions` covers every checker's client extension; with fewer, the
   Kafka / Memcache / Memcached checker tests are skipped, not run.

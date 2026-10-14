@@ -11,7 +11,7 @@ use RuntimeException;
  */
 final class UnconstructibleDependencyFixture
 {
-    public const string FAILURE = 'dependency cannot be constructed';
+    public const FAILURE = 'dependency cannot be constructed';
 
     public function __construct()
     {

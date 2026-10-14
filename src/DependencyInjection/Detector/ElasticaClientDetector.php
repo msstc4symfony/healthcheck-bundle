@@ -25,7 +25,7 @@ final readonly class ElasticaClientDetector implements CheckerDetectorInterface
                 continue;
             }
 
-            yield sprintf('healthcheck.checker.%s', $id) => new Definition(ElasticaConnectionChecker::class)
+            yield sprintf('healthcheck.checker.%s', $id) => (new Definition(ElasticaConnectionChecker::class))
                     ->addArgument(new Reference($id))
                     ->addArgument($id)
             ;

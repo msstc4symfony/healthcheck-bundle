@@ -1,15 +1,20 @@
 # Conventions
 
-## PHP 8.4 features in use
+## PHP features in use
 
-The bundle hard-requires PHP 8.4. Don't propose downgrades.
+The bundle runs on PHP 8.2 (since 1.3.0; 1.0–1.2 required 8.4). Only 8.2 syntax;
+8.4 functions (`array_any`) come from `symfony/polyfill-php84`.
 
-- **Asymmetric visibility** (`public private(set) array $messages`) on
-  `CheckResult` and `Request` — accumulators that are public-read but only
-  mutable through the class's own setters.
-- **Typed class constants** (`public const string TAG = ...`) on
-  interface contracts (`CheckInterface::PROBE_KEY`, `CheckerDetectorInterface::TAG`).
-- **Property hooks** on `Response::$success` (computes from `errors`).
+- **Read-only for callers** without asymmetric visibility: `CheckResult`'s public
+  arrays carry `@readonly` + `@phpstan-allow-private-mutation` — PHPStan rejects writes
+  from outside, the class's own `add*()` / `resetTrailing()` may write. PHP itself does
+  not enforce it. `Request` uses `public readonly`.
+- **Class constants without a native type** (PHP 8.2 has none); interface constants
+  (`CheckInterface::PROBE_KEY`, `CheckerDetectorInterface::TAG`) are not `final` (BC).
+- **`Response::$success`** is a readonly property set in the constructor (was a property
+  hook); cached responses use the `msstc4symfony_healthcheck.v2.` key prefix.
+- **No anonymous readonly classes**: a test double extending a readonly class
+  (`AbstractReadinessChecker`) is a named `final readonly` fixture in `tests/Mock/`.
 - **`#[Override]`** on every implementation of a parent / interface method.
   Rector applies `AddOverrideAttributeToOverriddenMethodsRector`; respect it.
 - **First-class callable syntax** (`self::method(...)`) is used in places

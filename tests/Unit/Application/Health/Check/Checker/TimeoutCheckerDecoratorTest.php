@@ -27,7 +27,7 @@ final class TimeoutCheckerDecoratorTest extends TestCase
             $r->addMessage('Inner passed');
         });
 
-        $result = new TimeoutCheckerDecorator($inner, 1000)
+        $result = (new TimeoutCheckerDecorator($inner, 1000))
             ->check(new CheckResult(), new Context(CheckTypeEnum::READINESS))
         ;
 
@@ -42,7 +42,7 @@ final class TimeoutCheckerDecoratorTest extends TestCase
             $r->addMessage('Inner would have passed');
         });
 
-        $result = new TimeoutCheckerDecorator($inner, 10) // 10ms budget
+        $result = (new TimeoutCheckerDecorator($inner, 10)) // 10ms budget
             ->check(new CheckResult(), new Context(CheckTypeEnum::READINESS))
         ;
 
@@ -62,7 +62,7 @@ final class TimeoutCheckerDecoratorTest extends TestCase
             $r->addMessage('Inner');
         });
 
-        $result = new TimeoutCheckerDecorator($inner, 10)
+        $result = (new TimeoutCheckerDecorator($inner, 10))
             ->check($result, new Context(CheckTypeEnum::READINESS))
         ;
 
@@ -74,8 +74,8 @@ final class TimeoutCheckerDecoratorTest extends TestCase
 
     private function makeInner(Closure $body): CheckInterface
     {
-        return new readonly class($body) implements CheckInterface {
-            public function __construct(private Closure $body)
+        return new class($body) implements CheckInterface {
+            public function __construct(private readonly Closure $body)
             {
             }
 

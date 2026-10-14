@@ -29,7 +29,7 @@ final class HttpClientTargetDetectorTest extends TestCase
             ],
         ]);
 
-        $detected = iterator_to_array(new HttpClientTargetDetector()->detect($container));
+        $detected = iterator_to_array((new HttpClientTargetDetector())->detect($container));
 
         $checker = $detected['healthcheck.checker.http_client.upstream'];
         self::assertSame(HttpClientChecker::class, $checker->getClass());
@@ -58,7 +58,7 @@ final class HttpClientTargetDetectorTest extends TestCase
             ],
         ]);
 
-        $detected = iterator_to_array(new HttpClientTargetDetector()->detect($container));
+        $detected = iterator_to_array((new HttpClientTargetDetector())->detect($container));
 
         $checker = $detected['healthcheck.checker.http_client.upstream'];
         self::assertEquals(new Reference('app.custom_http_client'), $checker->getArgument(0));
@@ -66,7 +66,7 @@ final class HttpClientTargetDetectorTest extends TestCase
 
     public function testDetectReturnsEmptyWhenParameterMissing(): void
     {
-        self::assertSame([], iterator_to_array(new HttpClientTargetDetector()->detect(new ContainerBuilder())));
+        self::assertSame([], iterator_to_array((new HttpClientTargetDetector())->detect(new ContainerBuilder())));
     }
 
     public function testDetectReturnsEmptyWhenParameterEmpty(): void
@@ -74,6 +74,6 @@ final class HttpClientTargetDetectorTest extends TestCase
         $container = new ContainerBuilder();
         $container->setParameter(ContainerIds::PARAM_HTTP_CLIENT_TARGETS, []);
 
-        self::assertSame([], iterator_to_array(new HttpClientTargetDetector()->detect($container)));
+        self::assertSame([], iterator_to_array((new HttpClientTargetDetector())->detect($container)));
     }
 }

@@ -19,7 +19,7 @@ final readonly class FlysystemDetector implements CheckerDetectorInterface
     public function detect(ContainerBuilder $container): iterable
     {
         foreach (array_keys($container->findTaggedServiceIds('flysystem.storage')) as $id) {
-            yield sprintf('healthcheck.checker.%s', $id) => new Definition(FlysystemChecker::class)
+            yield sprintf('healthcheck.checker.%s', $id) => (new Definition(FlysystemChecker::class))
                 ->addArgument(new Reference($id))
                 ->addArgument($id)
             ;

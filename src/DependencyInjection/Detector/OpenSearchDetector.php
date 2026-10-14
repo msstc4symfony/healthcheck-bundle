@@ -25,7 +25,7 @@ final readonly class OpenSearchDetector implements CheckerDetectorInterface
                 continue;
             }
 
-            yield sprintf('healthcheck.checker.%s', $id) => new Definition(OpenSearchChecker::class)
+            yield sprintf('healthcheck.checker.%s', $id) => (new Definition(OpenSearchChecker::class))
                 ->addArgument(new Reference($id))
                 ->addArgument($id)
             ;

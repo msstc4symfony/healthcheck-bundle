@@ -26,7 +26,7 @@ final class ElasticsearchReadinessTest extends TestCase
         $config = class_exists(Transport::class)
             ? ['hosts' => [$url]]
             : ['host' => parse_url($url, PHP_URL_HOST), 'port' => parse_url($url, PHP_URL_PORT)];
-        $result = new ElasticaConnectionChecker(new Client($config), 'main')->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+        $result = (new ElasticaConnectionChecker(new Client($config), 'main'))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
         self::assertMatchesRegularExpression(
             '/^Elastica connection \(main\) passed \(cluster status: (green|yellow)\)$/',

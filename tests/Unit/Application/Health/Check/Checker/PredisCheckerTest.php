@@ -46,7 +46,7 @@ final class PredisCheckerTest extends TestCase
             ->willReturn(new Status('OK'))
         ;
 
-        $result = new PredisChecker($client)->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+        $result = (new PredisChecker($client))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
         self::assertSame(['Redis connection passed'], $result->messages);
         self::assertSame([], $result->errors);
@@ -73,7 +73,7 @@ final class PredisCheckerTest extends TestCase
         $client = self::createStub(Client::class);
         $client->method('__call')->willReturn($reply());
 
-        $result = new PredisChecker($client)->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+        $result = (new PredisChecker($client))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
         self::assertSame([$expectedError], $result->errors);
         self::assertSame([], $result->messages);
@@ -84,7 +84,7 @@ final class PredisCheckerTest extends TestCase
         $client = self::createStub(Client::class);
         $client->method('__call')->willThrowException(new ServerException('NOAUTH Authentication required.'));
 
-        $result = new PredisChecker($client)->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+        $result = (new PredisChecker($client))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
         self::assertSame(['Redis connection failed (NOAUTH Authentication required.)'], $result->errors);
         self::assertSame([], $result->messages);
@@ -94,7 +94,7 @@ final class PredisCheckerTest extends TestCase
     {
         $client = new Client('tcp://127.0.0.1:1', ['parameters' => ['timeout' => 1]]);
 
-        $result = new PredisChecker($client)->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+        $result = (new PredisChecker($client))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
         self::assertSame([], $result->messages);
         self::assertCount(1, $result->errors);

@@ -20,7 +20,7 @@ final class OpenSearchDetectorTest extends TestCase
         $container = new ContainerBuilder();
         $container->setDefinition('opensearch.client.main', new Definition(Client::class));
 
-        $detected = iterator_to_array(new OpenSearchDetector()->detect($container));
+        $detected = iterator_to_array((new OpenSearchDetector())->detect($container));
 
         $checker = $detected['healthcheck.checker.opensearch.client.main'];
         self::assertSame(OpenSearchChecker::class, $checker->getClass());
@@ -34,6 +34,6 @@ final class OpenSearchDetectorTest extends TestCase
         $container->setDefinition('app.other', new Definition(stdClass::class));
         $container->setDefinition('app.classless', new Definition());
 
-        self::assertSame([], iterator_to_array(new OpenSearchDetector()->detect($container)));
+        self::assertSame([], iterator_to_array((new OpenSearchDetector())->detect($container)));
     }
 }

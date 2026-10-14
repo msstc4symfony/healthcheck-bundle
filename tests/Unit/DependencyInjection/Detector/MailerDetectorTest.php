@@ -22,7 +22,7 @@ final class MailerDetectorTest extends TestCase
         $container = new ContainerBuilder();
         $container->setDefinition('mailer.smtp', new Definition(SmtpTransport::class));
 
-        $detected = iterator_to_array(new MailerDetector()->detect($container));
+        $detected = iterator_to_array((new MailerDetector())->detect($container));
 
         $checker = $detected['healthcheck.checker.mailer.smtp'];
         self::assertSame(MailerChecker::class, $checker->getClass());
@@ -37,7 +37,7 @@ final class MailerDetectorTest extends TestCase
         $container = new ContainerBuilder();
         $container->setDefinition('mailer.esmtp', new Definition(EsmtpTransport::class));
 
-        $detected = iterator_to_array(new MailerDetector()->detect($container));
+        $detected = iterator_to_array((new MailerDetector())->detect($container));
 
         self::assertArrayHasKey('healthcheck.checker.mailer.esmtp', $detected);
     }
@@ -48,6 +48,6 @@ final class MailerDetectorTest extends TestCase
         $container->setDefinition('app.other', new Definition(stdClass::class));
         $container->setDefinition('app.classless', new Definition());
 
-        self::assertSame([], iterator_to_array(new MailerDetector()->detect($container)));
+        self::assertSame([], iterator_to_array((new MailerDetector())->detect($container)));
     }
 }

@@ -21,6 +21,12 @@ use Symfony\Component\DependencyInjection\Attribute\Exclude;
 #[Exclude]
 final readonly class CachedActionDecorator implements ActionInterface
 {
+    /**
+     * v2 since 1.3.0: Response::$success became a stored property, so responses cached by earlier
+     * versions lack it.
+     */
+    private const KEY_PREFIX = 'msstc4symfony_healthcheck.v2';
+
     public function __construct(
         private ActionInterface $inner,
         private CacheItemPoolInterface $cache,
@@ -72,6 +78,6 @@ final readonly class CachedActionDecorator implements ActionInterface
     {
         $optionsHash = hash('sha256', json_encode(self::canonicalize($request->options), JSON_THROW_ON_ERROR));
 
-        return sprintf('msstc4symfony_healthcheck.%s.%s', $request->type->value, $optionsHash);
+        return sprintf('%s.%s.%s', self::KEY_PREFIX, $request->type->value, $optionsHash);
     }
 }

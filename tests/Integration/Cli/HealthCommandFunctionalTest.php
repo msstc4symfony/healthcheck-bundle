@@ -21,7 +21,7 @@ final class HealthCommandFunctionalTest extends KernelTestCase
 {
     protected function setUp(): void
     {
-        new Filesystem()->remove(sys_get_temp_dir() . '/msstc4symfony-healthcheck-bundle-test');
+        (new Filesystem())->remove(sys_get_temp_dir() . '/msstc4symfony-healthcheck-bundle-test');
     }
 
     #[Override]

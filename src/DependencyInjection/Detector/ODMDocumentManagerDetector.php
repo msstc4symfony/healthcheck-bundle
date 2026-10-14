@@ -20,7 +20,7 @@ final readonly class ODMDocumentManagerDetector implements CheckerDetectorInterf
     {
         foreach (array_keys($container->getDefinitions()) as $id) {
             if (preg_match('/^doctrine_mongodb\.odm\.(\w+)_document_manager$/Ss', $id, $match) === 1) {
-                yield sprintf('healthcheck.checker.%s', $id) => new Definition(ODMConnectionChecker::class)
+                yield sprintf('healthcheck.checker.%s', $id) => (new Definition(ODMConnectionChecker::class))
                         ->addArgument(new Reference($id))
                         ->addArgument($match[1])
                 ;

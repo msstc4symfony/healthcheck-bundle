@@ -27,7 +27,7 @@ final class LockStoreDetectorTest extends TestCase
         $container = new ContainerBuilder();
         $container->setDefinition('lock.default.store', new Definition(InMemoryStore::class));
 
-        $detected = iterator_to_array(new LockStoreDetector()->detect($container));
+        $detected = iterator_to_array((new LockStoreDetector())->detect($container));
 
         $checker = $detected['healthcheck.checker.lock.default.store'];
         self::assertSame(LockStoreChecker::class, $checker->getClass());
@@ -42,7 +42,7 @@ final class LockStoreDetectorTest extends TestCase
         $container->setDefinition('lock.in_memory', new Definition(InMemoryStore::class));
         $container->setDefinition('lock.flock', new Definition(FlockStore::class));
 
-        $detected = iterator_to_array(new LockStoreDetector()->detect($container));
+        $detected = iterator_to_array((new LockStoreDetector())->detect($container));
 
         self::assertArrayHasKey('healthcheck.checker.lock.in_memory', $detected);
         self::assertArrayHasKey('healthcheck.checker.lock.flock', $detected);
@@ -54,7 +54,7 @@ final class LockStoreDetectorTest extends TestCase
         $container = new ContainerBuilder();
         $container->setDefinition('lock.iface', new Definition(PersistingStoreInterface::class));
 
-        $detected = iterator_to_array(new LockStoreDetector()->detect($container));
+        $detected = iterator_to_array((new LockStoreDetector())->detect($container));
 
         self::assertArrayHasKey('healthcheck.checker.lock.iface', $detected);
     }
@@ -70,12 +70,12 @@ final class LockStoreDetectorTest extends TestCase
         $container = new ContainerBuilder();
         $container->setDefinition('.lock.flock.store', new Definition(FlockStore::class));
         $container->setDefinition('.lock.semaphore.store', new Definition(SemaphoreStore::class));
-        $container->setDefinition('.lock.default.store.abc123', new Definition(PersistingStoreInterface::class)
+        $container->setDefinition('.lock.default.store.abc123', (new Definition(PersistingStoreInterface::class))
             ->setFactory([StoreFactory::class, 'createStore'])
             ->setArguments(['redis://redis:6379/0'])
             ->addTag('lock.store'));
 
-        $detected = iterator_to_array(new LockStoreDetector()->detect($container));
+        $detected = iterator_to_array((new LockStoreDetector())->detect($container));
 
         self::assertSame(['healthcheck.checker..lock.default.store.abc123'], array_keys($detected));
     }
@@ -85,9 +85,9 @@ final class LockStoreDetectorTest extends TestCase
     {
         $container = new ContainerBuilder();
         $container->setDefinition('.lock.flock.store', new Definition(FlockStore::class));
-        $container->setDefinition('.lock.semaphore.store', new Definition(SemaphoreStore::class)->addTag('lock.store'));
+        $container->setDefinition('.lock.semaphore.store', (new Definition(SemaphoreStore::class))->addTag('lock.store'));
 
-        $detected = iterator_to_array(new LockStoreDetector()->detect($container));
+        $detected = iterator_to_array((new LockStoreDetector())->detect($container));
 
         self::assertSame(['healthcheck.checker..lock.semaphore.store'], array_keys($detected));
     }
@@ -98,7 +98,7 @@ final class LockStoreDetectorTest extends TestCase
         $container->setDefinition('.lock.default.store.abc123', $this->frameworkStore());
         $container->setDefinition('lock.default.factory', $this->resourceFactory('.lock.default.store.abc123'));
 
-        $detected = iterator_to_array(new LockStoreDetector()->detect($container));
+        $detected = iterator_to_array((new LockStoreDetector())->detect($container));
 
         self::assertSame(['healthcheck.checker.lock.default'], array_keys($detected));
         self::assertEquals(new Reference('.lock.default.store.abc123'), $detected['healthcheck.checker.lock.default']->getArgument(0));
@@ -112,7 +112,7 @@ final class LockStoreDetectorTest extends TestCase
         $container->setDefinition('lock.reports.factory', $this->resourceFactory('.lock.default.store.abc123'));
         $container->setDefinition('lock.default.factory', $this->resourceFactory('.lock.default.store.abc123'));
 
-        $detected = iterator_to_array(new LockStoreDetector()->detect($container));
+        $detected = iterator_to_array((new LockStoreDetector())->detect($container));
 
         self::assertSame(['healthcheck.checker.lock.default+lock.reports'], array_keys($detected));
         self::assertSame('lock.default, lock.reports', $detected['healthcheck.checker.lock.default+lock.reports']->getArgument(1));
@@ -123,11 +123,11 @@ final class LockStoreDetectorTest extends TestCase
         $container = new ContainerBuilder();
         $container->setDefinition('.lock.invoice.store.aaa', $this->frameworkStore());
         $container->setDefinition('.lock.invoice.store.bbb', $this->frameworkStore());
-        $container->setDefinition('.lock.invoice.store.ccc', new ChildDefinition('lock.store.combined.abstract')
+        $container->setDefinition('.lock.invoice.store.ccc', (new ChildDefinition('lock.store.combined.abstract'))
             ->replaceArgument(0, [new Reference('.lock.invoice.store.aaa'), new Reference('.lock.invoice.store.bbb')]));
         $container->setDefinition('lock.invoice.factory', $this->resourceFactory('.lock.invoice.store.ccc'));
 
-        $detected = iterator_to_array(new LockStoreDetector()->detect($container));
+        $detected = iterator_to_array((new LockStoreDetector())->detect($container));
 
         self::assertSame(['healthcheck.checker.lock.invoice[0]', 'healthcheck.checker.lock.invoice[1]'], array_keys($detected), 'the untagged combined store itself is not probed');
         self::assertEquals(new Reference('.lock.invoice.store.aaa'), $detected['healthcheck.checker.lock.invoice[0]']->getArgument(0));
@@ -139,11 +139,11 @@ final class LockStoreDetectorTest extends TestCase
     public function testLabelsAPredefinedStoreSharedByResourcesWithEveryResource(): void
     {
         $container = new ContainerBuilder();
-        $container->setDefinition('.lock.flock.store', new Definition(FlockStore::class)->addTag('lock.store'));
+        $container->setDefinition('.lock.flock.store', (new Definition(FlockStore::class))->addTag('lock.store'));
         $container->setDefinition('lock.default.factory', $this->resourceFactory('.lock.flock.store'));
         $container->setDefinition('lock.reports.factory', $this->resourceFactory('.lock.flock.store'));
 
-        $detected = iterator_to_array(new LockStoreDetector()->detect($container));
+        $detected = iterator_to_array((new LockStoreDetector())->detect($container));
 
         self::assertSame(['healthcheck.checker.lock.default+lock.reports'], array_keys($detected));
         self::assertEquals(new Reference('.lock.flock.store'), $detected['healthcheck.checker.lock.default+lock.reports']->getArgument(0));
@@ -154,12 +154,12 @@ final class LockStoreDetectorTest extends TestCase
     {
         $container = new ContainerBuilder();
         $container->setDefinition('.lock.default.store.abc123', $this->frameworkStore());
-        $container->setDefinition('lock.default.factory', new ChildDefinition('lock.factory.abstract')->setArguments([new Reference('.lock.default.store.abc123')]));
+        $container->setDefinition('lock.default.factory', (new ChildDefinition('lock.factory.abstract'))->setArguments([new Reference('.lock.default.store.abc123')]));
         $container->setDefinition('app.lock.other.factory', $this->resourceFactory('.lock.default.store.abc123'));
         $container->setDefinition('lock.other.factory.decorated', $this->resourceFactory('.lock.default.store.abc123'));
-        $container->setDefinition('lock.plain.factory', new ChildDefinition('app.factory')->replaceArgument(0, new Reference('.lock.default.store.abc123')));
+        $container->setDefinition('lock.plain.factory', (new ChildDefinition('app.factory'))->replaceArgument(0, new Reference('.lock.default.store.abc123')));
 
-        $detected = iterator_to_array(new LockStoreDetector()->detect($container));
+        $detected = iterator_to_array((new LockStoreDetector())->detect($container));
 
         self::assertSame(['healthcheck.checker.lock.default'], array_keys($detected));
     }
@@ -168,13 +168,13 @@ final class LockStoreDetectorTest extends TestCase
     {
         $container = new ContainerBuilder();
         $container->setDefinition('.lock.invoice.store.aaa', $this->frameworkStore());
-        $container->setDefinition('.lock.invoice.store.combined', new ChildDefinition('lock.store.combined.abstract')
+        $container->setDefinition('.lock.invoice.store.combined', (new ChildDefinition('lock.store.combined.abstract'))
             ->replaceArgument(0, [5 => new Reference('.lock.invoice.store.aaa')]));
         $container->setDefinition('lock.invoice.factory', $this->resourceFactory('.lock.invoice.store.combined'));
-        $container->setDefinition('.lock.other.store.ccc', new ChildDefinition('app.store.template')->replaceArgument(0, [new Reference('.lock.invoice.store.aaa')])->addTag('lock.store'));
+        $container->setDefinition('.lock.other.store.ccc', (new ChildDefinition('app.store.template'))->replaceArgument(0, [new Reference('.lock.invoice.store.aaa')])->addTag('lock.store'));
         $container->setDefinition('lock.other.factory', $this->resourceFactory('.lock.other.store.ccc'));
 
-        $detected = iterator_to_array(new LockStoreDetector()->detect($container));
+        $detected = iterator_to_array((new LockStoreDetector())->detect($container));
 
         self::assertSame('lock.invoice[0]', $detected['healthcheck.checker.lock.invoice[0]']->getArgument(1));
     }
@@ -185,7 +185,7 @@ final class LockStoreDetectorTest extends TestCase
         $container->setDefinition('.lock.default.store.abc123', $this->frameworkStore());
         $container->setDefinition('lock.default.factory', new Definition(stdClass::class));
 
-        $detected = iterator_to_array(new LockStoreDetector()->detect($container));
+        $detected = iterator_to_array((new LockStoreDetector())->detect($container));
 
         self::assertSame('.lock.default.store.abc123', $detected['healthcheck.checker..lock.default.store.abc123']->getArgument(1));
     }
@@ -195,7 +195,7 @@ final class LockStoreDetectorTest extends TestCase
         $container = new ContainerBuilder();
         $container->setDefinition('.some.internal.store', new Definition(PersistingStoreInterface::class));
 
-        self::assertSame([], iterator_to_array(new LockStoreDetector()->detect($container)));
+        self::assertSame([], iterator_to_array((new LockStoreDetector())->detect($container)));
     }
 
     public function testDetectIgnoresUnrelatedAndClasslessDefinitions(): void
@@ -204,12 +204,12 @@ final class LockStoreDetectorTest extends TestCase
         $container->setDefinition('app.other', new Definition(stdClass::class));
         $container->setDefinition('app.classless', new Definition());
 
-        self::assertSame([], iterator_to_array(new LockStoreDetector()->detect($container)));
+        self::assertSame([], iterator_to_array((new LockStoreDetector())->detect($container)));
     }
 
     private function frameworkStore(): Definition
     {
-        return new Definition(PersistingStoreInterface::class)
+        return (new Definition(PersistingStoreInterface::class))
             ->setFactory([StoreFactory::class, 'createStore'])
             ->setArguments(['redis://redis:6379/0'])
             ->addTag('lock.store')
@@ -218,6 +218,6 @@ final class LockStoreDetectorTest extends TestCase
 
     private function resourceFactory(string $storeId): ChildDefinition
     {
-        return new ChildDefinition('lock.factory.abstract')->replaceArgument(0, new Reference($storeId));
+        return (new ChildDefinition('lock.factory.abstract'))->replaceArgument(0, new Reference($storeId));
     }
 }

@@ -34,7 +34,7 @@ final readonly class MailerDetector implements CheckerDetectorInterface
                 continue;
             }
 
-            yield sprintf('healthcheck.checker.%s', $id) => new Definition(MailerChecker::class)
+            yield sprintf('healthcheck.checker.%s', $id) => (new Definition(MailerChecker::class))
                 ->addArgument(new Reference($id))
                 ->addArgument($id)
             ;

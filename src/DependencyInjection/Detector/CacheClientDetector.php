@@ -29,7 +29,7 @@ final readonly class CacheClientDetector implements CheckerDetectorInterface
     /**
      * @var array<string, class-string<AbstractReadinessChecker>> client class => checker class
      */
-    private const array CHECKERS = [
+    private const CHECKERS = [
         Client::class => PredisChecker::class,
         Redis::class => RedisChecker::class,
         RedisCluster::class => RedisClusterChecker::class,
@@ -53,7 +53,7 @@ final readonly class CacheClientDetector implements CheckerDetectorInterface
                 continue;
             }
 
-            yield sprintf('healthcheck.checker.%s', $id) => new Definition($checkerClass)
+            yield sprintf('healthcheck.checker.%s', $id) => (new Definition($checkerClass))
                     ->addArgument(new Reference($id))
             ;
         }

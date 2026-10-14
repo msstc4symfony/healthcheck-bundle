@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Msstc4Symfony\HealthCheckBundle\Test\Unit\Application\Health\Check\Checker;
 
 use Closure;
-use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\AbstractReadinessChecker;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\Context;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
+use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\ClosureReadinessCheckerFixture;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
@@ -102,31 +102,8 @@ final class AbstractReadinessCheckerTest extends TestCase
      * @param Closure(): ?string $probe
      * @param (Closure(): ?string)|null $skipReason
      */
-    private function makeChecker(Closure $probe, ?Closure $skipReason = null): AbstractReadinessChecker
+    private function makeChecker(Closure $probe, ?Closure $skipReason = null): ClosureReadinessCheckerFixture
     {
-        return new readonly class($probe, $skipReason) extends AbstractReadinessChecker {
-            /**
-             * @param Closure(): ?string $probe
-             * @param (Closure(): ?string)|null $skip
-             */
-            public function __construct(private Closure $probe, private ?Closure $skip)
-            {
-            }
-
-            protected function doCheck(): ?string
-            {
-                return ($this->probe)();
-            }
-
-            protected function skipReason(): ?string
-            {
-                return $this->skip instanceof Closure ? ($this->skip)() : null;
-            }
-
-            protected function label(): string
-            {
-                return 'Probe (test)';
-            }
-        };
+        return new ClosureReadinessCheckerFixture($probe, $skipReason);
     }
 }

@@ -6,12 +6,14 @@ under `.claude/docs/`; this file stays lean.
 ## What this is
 
 A Symfony bundle exposing Kubernetes-style **liveliness** and **readiness**
-health checks. Targets PHP >= 8.4 and Symfony 7.4 / 8.x. Library code
+health checks. Targets PHP >= 8.2 and Symfony 7.4 / 8.x. Library code
 only — no host application in the repo.
 
-PHP 8.4 is mandatory: the bundle uses asymmetric visibility, typed class
-constants, property hooks, and `#[Override]` everywhere. Do not propose
-backports.
+PHP 8.2 is the floor (since 1.3.0): no asymmetric visibility, property hooks,
+typed class constants, anonymous readonly classes or `new X()->m()`;
+`#[Override]` is used everywhere (harmless on 8.2). Read-only-for-callers
+state uses PHPStan `@readonly` + `@phpstan-allow-private-mutation`
+(`CheckResult`).
 
 ## Common commands
 
@@ -77,7 +79,7 @@ Read these when the task touches the area:
 - [`.claude/docs/architecture.md`](.claude/docs/architecture.md) — layer
   rules, compiler-pass chain, detector contract, AbstractReadinessChecker
   template, DTOs.
-- [`.claude/docs/conventions.md`](.claude/docs/conventions.md) — PHP 8.4
+- [`.claude/docs/conventions.md`](.claude/docs/conventions.md) — PHP 8.2
   idioms, naming, file headers, test conventions, comment policy.
 - [`.claude/docs/testing.md`](.claude/docs/testing.md) — unit vs
   integration suite split, TestKernel pattern, SafeEventDispatcher in

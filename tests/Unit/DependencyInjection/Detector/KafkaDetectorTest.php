@@ -21,7 +21,7 @@ final class KafkaDetectorTest extends TestCase
         $container = new ContainerBuilder();
         $container->setDefinition('kafka.producer', new Definition(Producer::class));
 
-        $detected = iterator_to_array(new KafkaDetector()->detect($container));
+        $detected = iterator_to_array((new KafkaDetector())->detect($container));
 
         $checker = $detected['healthcheck.checker.kafka.producer'];
         self::assertSame(KafkaChecker::class, $checker->getClass());
@@ -34,7 +34,7 @@ final class KafkaDetectorTest extends TestCase
         $container = new ContainerBuilder();
         $container->setDefinition('kafka.consumer', new Definition(KafkaConsumer::class));
 
-        $detected = iterator_to_array(new KafkaDetector()->detect($container));
+        $detected = iterator_to_array((new KafkaDetector())->detect($container));
 
         self::assertSame(KafkaChecker::class, $detected['healthcheck.checker.kafka.consumer']->getClass());
     }
@@ -45,6 +45,6 @@ final class KafkaDetectorTest extends TestCase
         $container->setDefinition('app.other', new Definition(stdClass::class));
         $container->setDefinition('app.classless', new Definition());
 
-        self::assertSame([], iterator_to_array(new KafkaDetector()->detect($container)));
+        self::assertSame([], iterator_to_array((new KafkaDetector())->detect($container)));
     }
 }

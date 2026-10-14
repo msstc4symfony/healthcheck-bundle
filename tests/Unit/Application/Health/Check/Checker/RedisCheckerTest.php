@@ -26,7 +26,7 @@ final class RedisCheckerTest extends TestCase
         $redis = self::createStub(Redis::class);
         $redis->method('set')->willReturn(true);
 
-        $result = new RedisChecker($redis)->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+        $result = (new RedisChecker($redis))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
         self::assertSame(['Redis connection passed'], $result->messages);
         self::assertSame([], $result->errors);
@@ -37,7 +37,7 @@ final class RedisCheckerTest extends TestCase
         $redis = self::createStub(Redis::class);
         $redis->method('set')->willReturn(false);
 
-        $result = new RedisChecker($redis)->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+        $result = (new RedisChecker($redis))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
         self::assertSame(['Redis connection failed (SET command returned false)'], $result->errors);
         self::assertSame([], $result->messages);

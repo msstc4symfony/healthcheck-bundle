@@ -28,11 +28,11 @@ use Symfony\Component\Lock\Store\StoreFactory;
  */
 final readonly class LockStoreDetector implements CheckerDetectorInterface, WrappedTargetDetectorInterface
 {
-    private const string FRAMEWORK_STORE_TAG = 'lock.store';
+    private const FRAMEWORK_STORE_TAG = 'lock.store';
 
-    private const string FRAMEWORK_FACTORY_TEMPLATE = 'lock.factory.abstract';
+    private const FRAMEWORK_FACTORY_TEMPLATE = 'lock.factory.abstract';
 
-    private const string FRAMEWORK_COMBINED_STORE_TEMPLATE = 'lock.store.combined.abstract';
+    private const FRAMEWORK_COMBINED_STORE_TEMPLATE = 'lock.store.combined.abstract';
 
     /**
      * @return iterable<string, Definition>
@@ -54,7 +54,7 @@ final readonly class LockStoreDetector implements CheckerDetectorInterface, Wrap
             $labels = $resourceLabels[$id] ?? [$id];
             sort($labels);
 
-            yield sprintf('healthcheck.checker.%s', implode('+', $labels)) => new Definition(LockStoreChecker::class)
+            yield sprintf('healthcheck.checker.%s', implode('+', $labels)) => (new Definition(LockStoreChecker::class))
                 ->addArgument(new Reference($id))
                 ->addArgument(implode(', ', $labels))
             ;

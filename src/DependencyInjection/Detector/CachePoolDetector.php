@@ -47,7 +47,7 @@ final readonly class CachePoolDetector implements CheckerDetectorInterface
                 continue;
             }
 
-            yield sprintf('healthcheck.checker.cache.pool.%s', $name) => new Definition(CacheChecker::class)
+            yield sprintf('healthcheck.checker.cache.pool.%s', $name) => (new Definition(CacheChecker::class))
                     ->addArgument(new Reference($id))
                     ->addArgument($name)
                     ->addArgument($parentName)

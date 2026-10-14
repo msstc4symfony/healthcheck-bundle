@@ -17,21 +17,21 @@ use Symfony\Component\Routing\Attribute\Route;
 
 final class HealthController extends AbstractController
 {
-    private const string STATUS_HEADER = 'Status';
+    private const STATUS_HEADER = 'Status';
 
-    private const string PING_RESPONSE = 'pong';
+    private const PING_RESPONSE = 'pong';
 
-    private const string FORMAT_JSON = 'json';
+    private const FORMAT_JSON = 'json';
 
-    private const string FORMAT_PARAMETER = '_format';
+    private const FORMAT_PARAMETER = '_format';
 
-    private const string RESULT_UP = 'up';
+    private const RESULT_UP = 'up';
 
-    private const string RESULT_DOWN = 'down';
+    private const RESULT_DOWN = 'down';
 
-    private const string CONTENT_TYPE_PLAIN = 'text/plain';
+    private const CONTENT_TYPE_PLAIN = 'text/plain';
 
-    private const array NEGOTIATED_HEADERS = ['Vary' => 'Accept'];
+    private const NEGOTIATED_HEADERS = ['Vary' => 'Accept'];
 
     public function __construct(
         private readonly ActionInterface $action,

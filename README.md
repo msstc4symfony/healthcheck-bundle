@@ -2,7 +2,7 @@
 
 ![Build Status](https://github.com/msstc4symfony/healthcheck-bundle/actions/workflows/checks.yml/badge.svg?branch=main)
 [![codecov](https://codecov.io/github/msstc4symfony/healthcheck-bundle/branch/main/graph/badge.svg?token=NO9FYTJMSU)](https://codecov.io/github/msstc4symfony/healthcheck-bundle/branch/main)
-[![PHP Version](https://img.shields.io/badge/PHP-%3E%3D8.4-787CB5?logo=php&logoColor=white)](https://php.net)
+[![PHP Version](https://img.shields.io/badge/PHP-%3E%3D8.2-787CB5?logo=php&logoColor=white)](https://php.net)
 [![Symfony Versions](https://img.shields.io/badge/Symfony-7.4%20%7C%208.x-000000?logo=symfony&logoColor=white)](https://symfony.com)
 [![PHPStan](https://img.shields.io/badge/PHPStan-level%2010-2a5ea7)](https://phpstan.org)
 [![Last commit](https://img.shields.io/github/last-commit/msstc4symfony/healthcheck-bundle/main)](https://github.com/msstc4symfony/healthcheck-bundle/commits/main)
@@ -18,8 +18,8 @@ A Symfony bundle for comprehensive health checking of your application and its e
 
 ## Requirements
 
-- PHP >= 8.4
-- Symfony 7.4 | 8.x
+- PHP >= 8.2 (bundle 1.0–1.2 needs PHP 8.4)
+- Symfony 7.4 | 8.x (Symfony 8 needs PHP 8.4)
 
 ## Installation
 

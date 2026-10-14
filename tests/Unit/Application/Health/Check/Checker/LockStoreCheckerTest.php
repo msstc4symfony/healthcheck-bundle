@@ -35,7 +35,7 @@ final class LockStoreCheckerTest extends TestCase
         $store->expects(self::once())->method('save');
         $store->expects(self::once())->method('delete');
 
-        $result = new LockStoreChecker($store, 'default')->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+        $result = (new LockStoreChecker($store, 'default'))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
         self::assertSame(['Lock store (default) passed'], $result->messages);
         self::assertSame([], $result->errors);
@@ -47,7 +47,7 @@ final class LockStoreCheckerTest extends TestCase
         $store->expects(self::once())->method('save');
         $store->expects(self::once())->method('delete')->willThrowException(new RuntimeException('cleanup boom'));
 
-        $result = new LockStoreChecker($store, 'default')->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+        $result = (new LockStoreChecker($store, 'default'))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
         // delete failure is suppressed: the save succeeded → the checker should report passed.
         self::assertSame(['Lock store (default) passed'], $result->messages);
@@ -59,7 +59,7 @@ final class LockStoreCheckerTest extends TestCase
         $store = self::createStub(PersistingStoreInterface::class);
         $store->method('save')->willThrowException(new RuntimeException('store unavailable'));
 
-        $result = new LockStoreChecker($store, 'default')->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+        $result = (new LockStoreChecker($store, 'default'))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
         self::assertCount(1, $result->errors);
         self::assertStringContainsString('default', $result->errors[0]);

@@ -32,7 +32,7 @@ final class ServiceClassTest extends TestCase
     public function testResolvesTheClassThroughTheParentChain(): void
     {
         $container = new ContainerBuilder();
-        $container->setDefinition('prototype', new Definition(ArrayIterator::class)->setAbstract(true));
+        $container->setDefinition('prototype', (new Definition(ArrayIterator::class))->setAbstract(true));
         $container->setDefinition('middle', new ChildDefinition('prototype'));
 
         $leaf = new ChildDefinition('middle');

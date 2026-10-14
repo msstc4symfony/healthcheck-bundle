@@ -26,7 +26,7 @@ final class ReadinessDependencyIsolationTest extends TestCase
     #[Override]
     protected function setUp(): void
     {
-        new Filesystem()->remove(sys_get_temp_dir() . '/msstc4symfony-healthcheck-bundle-test');
+        (new Filesystem())->remove(sys_get_temp_dir() . '/msstc4symfony-healthcheck-bundle-test');
 
         $this->kernel = new TestKernel('broken_readiness_dependency', false, static function (ContainerConfigurator $container): void {
             $services = $container->services();

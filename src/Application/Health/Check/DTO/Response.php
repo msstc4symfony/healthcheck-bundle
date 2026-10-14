@@ -6,12 +6,13 @@ namespace Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO;
 
 use Symfony\Component\DependencyInjection\Attribute\Exclude;
 
+/**
+ * Cached serialized by CachedActionDecorator: a change to its properties needs a new KEY_PREFIX there.
+ */
 #[Exclude]
-final class Response
+final readonly class Response
 {
-    public bool $success {
-        get => $this->errors === [];
-    }
+    public bool $success;
 
     /**
      * @param string[] $errors
@@ -19,9 +20,10 @@ final class Response
      * @param string[] $warnings
      */
     public function __construct(
-        public readonly array $errors,
-        public readonly array $messages,
-        public readonly array $warnings,
+        public array $errors,
+        public array $messages,
+        public array $warnings,
     ) {
+        $this->success = $errors === [];
     }
 }

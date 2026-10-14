@@ -33,7 +33,7 @@ final class MailerCheckerTest extends TestCase
     {
         $transport = self::createStub(SmtpTransport::class);
 
-        $result = new MailerChecker($transport, 'smtp')->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+        $result = (new MailerChecker($transport, 'smtp'))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
         self::assertSame(['Mailer SMTP (smtp) passed'], $result->messages);
         self::assertSame([], $result->errors);
@@ -46,7 +46,7 @@ final class MailerCheckerTest extends TestCase
         // the checker is required to swallow the underlying exception and emit a generic message.
         $transport->method('start')->willThrowException(new RuntimeException('smtp://user:s3cret@host: connect timeout'));
 
-        $result = new MailerChecker($transport, 'smtp')->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+        $result = (new MailerChecker($transport, 'smtp'))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
         self::assertCount(1, $result->errors);
         self::assertStringContainsString('smtp', $result->errors[0]);

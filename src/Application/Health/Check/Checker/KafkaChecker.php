@@ -12,7 +12,7 @@ use Symfony\Component\DependencyInjection\Attribute\Exclude;
 #[Exclude]
 final readonly class KafkaChecker extends AbstractReadinessChecker
 {
-    private const int METADATA_TIMEOUT_MS = 2000;
+    private const METADATA_TIMEOUT_MS = 2000;
 
     public function __construct(
         private Producer|KafkaConsumer $connection,

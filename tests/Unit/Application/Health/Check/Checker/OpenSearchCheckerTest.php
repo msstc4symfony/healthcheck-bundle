@@ -38,7 +38,7 @@ final class OpenSearchCheckerTest extends TestCase
         $client = self::createStub(Client::class);
         $client->method('cluster')->willReturn($cluster);
 
-        $result = new OpenSearchChecker($client, 'main')->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+        $result = (new OpenSearchChecker($client, 'main'))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
         self::assertSame(['OpenSearch (main) passed'], $result->messages);
         self::assertSame([], $result->errors);
@@ -52,7 +52,7 @@ final class OpenSearchCheckerTest extends TestCase
         $client = self::createStub(Client::class);
         $client->method('cluster')->willReturn($cluster);
 
-        $result = new OpenSearchChecker($client, 'main')->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+        $result = (new OpenSearchChecker($client, 'main'))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
         self::assertCount(1, $result->errors);
         self::assertStringContainsString('main', $result->errors[0]);

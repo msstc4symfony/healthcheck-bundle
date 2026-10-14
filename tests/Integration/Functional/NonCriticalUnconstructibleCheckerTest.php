@@ -35,7 +35,7 @@ final class NonCriticalUnconstructibleCheckerTest extends TestCase
     #[Override]
     protected function setUp(): void
     {
-        new Filesystem()->remove(sys_get_temp_dir() . '/msstc4symfony-healthcheck-bundle-test');
+        (new Filesystem())->remove(sys_get_temp_dir() . '/msstc4symfony-healthcheck-bundle-test');
 
         $this->kernel = new TestKernel('non_critical_unconstructible', false, static function (ContainerConfigurator $container): void {
             $container->extension(ContainerIds::ALIAS, ['non_critical' => [DependentReadinessCheckerFixture::class]]);

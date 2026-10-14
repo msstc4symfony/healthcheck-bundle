@@ -34,7 +34,7 @@ final class RedisClusterCheckerTest extends TestCase
             ->willReturn(true)
         ;
 
-        $result = new RedisClusterChecker($cluster)->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+        $result = (new RedisClusterChecker($cluster))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
         self::assertSame(['Redis cluster connection passed'], $result->messages);
         self::assertSame([], $result->errors);
@@ -45,7 +45,7 @@ final class RedisClusterCheckerTest extends TestCase
         $cluster = self::createStub(RedisCluster::class);
         $cluster->method('set')->willReturn(false);
 
-        $result = new RedisClusterChecker($cluster)->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+        $result = (new RedisClusterChecker($cluster))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
         self::assertSame(['Redis cluster connection failed (SET command returned false)'], $result->errors);
         self::assertSame([], $result->messages);
@@ -56,7 +56,7 @@ final class RedisClusterCheckerTest extends TestCase
         $cluster = self::createStub(RedisCluster::class);
         $cluster->method('set')->willThrowException(new RedisClusterException("Couldn't map cluster keyspace using any provided seed"));
 
-        $result = new RedisClusterChecker($cluster)->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+        $result = (new RedisClusterChecker($cluster))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
         self::assertSame(["Redis cluster connection failed (Couldn't map cluster keyspace using any provided seed)"], $result->errors);
         self::assertSame([], $result->messages);

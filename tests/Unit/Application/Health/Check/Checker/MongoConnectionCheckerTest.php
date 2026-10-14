@@ -35,7 +35,7 @@ final class MongoConnectionCheckerTest extends TestCase
         $client = self::createStub(Client::class);
         $client->method('listDatabaseNames')->willReturn(new ArrayIterator(['admin', 'app']));
 
-        $result = new MongoConnectionChecker($client, 'default')->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+        $result = (new MongoConnectionChecker($client, 'default'))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
         self::assertSame(['Mongo connection (default) passed'], $result->messages);
         self::assertSame([], $result->errors);
@@ -46,7 +46,7 @@ final class MongoConnectionCheckerTest extends TestCase
         $client = self::createStub(Client::class);
         $client->method('listDatabaseNames')->willThrowException(new RuntimeException('boom'));
 
-        $result = new MongoConnectionChecker($client, 'default')->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+        $result = (new MongoConnectionChecker($client, 'default'))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
         self::assertCount(1, $result->errors);
         self::assertStringContainsString('default', $result->errors[0]);

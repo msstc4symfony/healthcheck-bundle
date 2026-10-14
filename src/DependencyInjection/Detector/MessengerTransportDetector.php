@@ -24,7 +24,7 @@ final readonly class MessengerTransportDetector implements CheckerDetectorInterf
             // is impossible here — no defensive fallback needed.)
             $name = (string) preg_replace('/^messenger\.transport\./', '', (string) $id);
 
-            yield sprintf('healthcheck.checker.%s', $id) => new Definition(MessengerTransportChecker::class)
+            yield sprintf('healthcheck.checker.%s', $id) => (new Definition(MessengerTransportChecker::class))
                 ->addArgument(new Reference($id))
                 ->addArgument($name)
             ;

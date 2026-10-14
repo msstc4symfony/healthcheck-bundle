@@ -47,7 +47,7 @@ final readonly class HealthCheckerTimeoutDecorationPass implements CompilerPassI
 
             $timeout = $overrides[$id] ?? $defaultTimeout;
 
-            $decorator = new Definition(TimeoutCheckerDecorator::class)
+            $decorator = (new Definition(TimeoutCheckerDecorator::class))
                 ->setAutowired(true)
                 ->addArgument(new Reference($innerId))
                 ->addArgument($timeout)

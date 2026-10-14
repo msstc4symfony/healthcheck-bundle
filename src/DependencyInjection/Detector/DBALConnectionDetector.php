@@ -20,7 +20,7 @@ final readonly class DBALConnectionDetector implements CheckerDetectorInterface
     {
         foreach (array_keys($container->getDefinitions()) as $id) {
             if (preg_match('/^doctrine\.dbal\.(\w+)_connection$/Ss', $id, $match) === 1) {
-                yield sprintf('healthcheck.checker.%s', $id) => new Definition(DBALConnectionChecker::class)
+                yield sprintf('healthcheck.checker.%s', $id) => (new Definition(DBALConnectionChecker::class))
                         ->addArgument(new Reference($id))
                         ->addArgument($match[1])
                 ;

@@ -29,7 +29,7 @@ final class LockStoreSelectionTest extends TestCase
             self::markTestSkipped('symfony/lock is not installed');
         }
 
-        new Filesystem()->remove(sys_get_temp_dir() . '/msstc4symfony-healthcheck-bundle-test');
+        (new Filesystem())->remove(sys_get_temp_dir() . '/msstc4symfony-healthcheck-bundle-test');
     }
 
     /**

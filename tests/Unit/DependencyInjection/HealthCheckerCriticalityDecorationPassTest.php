@@ -22,10 +22,10 @@ final class HealthCheckerCriticalityDecorationPassTest extends TestCase
         $container = new ContainerBuilder();
         $container->setDefinition(
             'healthcheck.checker.cache',
-            new Definition(stdClass::class)->addTag(CheckInterface::class),
+            (new Definition(stdClass::class))->addTag(CheckInterface::class),
         );
 
-        new HealthCheckerCriticalityDecorationPass()->process($container);
+        (new HealthCheckerCriticalityDecorationPass())->process($container);
 
         self::assertSame(stdClass::class, $container->getDefinition('healthcheck.checker.cache')->getClass());
     }
@@ -38,14 +38,14 @@ final class HealthCheckerCriticalityDecorationPassTest extends TestCase
         ]);
         $container->setDefinition(
             'healthcheck.checker.cache',
-            new Definition(stdClass::class)->addTag(CheckInterface::class),
+            (new Definition(stdClass::class))->addTag(CheckInterface::class),
         );
         $container->setDefinition(
             'healthcheck.checker.db',
-            new Definition(stdClass::class)->addTag(CheckInterface::class),
+            (new Definition(stdClass::class))->addTag(CheckInterface::class),
         );
 
-        new HealthCheckerCriticalityDecorationPass()->process($container);
+        (new HealthCheckerCriticalityDecorationPass())->process($container);
 
         $outer = $container->getDefinition('healthcheck.checker.cache');
         self::assertSame(NonCriticalCheckerDecorator::class, $outer->getClass());
@@ -66,7 +66,7 @@ final class HealthCheckerCriticalityDecorationPassTest extends TestCase
             'healthcheck.checker.does_not_exist',
         ]);
 
-        new HealthCheckerCriticalityDecorationPass()->process($container);
+        (new HealthCheckerCriticalityDecorationPass())->process($container);
 
         self::assertFalse($container->hasDefinition('healthcheck.checker.does_not_exist'));
     }
@@ -85,11 +85,11 @@ final class HealthCheckerCriticalityDecorationPassTest extends TestCase
 
         $container->setDefinition(
             'healthcheck.checker.cache',
-            new Definition(stdClass::class)->addTag(CheckInterface::class),
+            (new Definition(stdClass::class))->addTag(CheckInterface::class),
         );
 
-        new HealthCheckerTimeoutDecorationPass()->process($container);
-        new HealthCheckerCriticalityDecorationPass()->process($container);
+        (new HealthCheckerTimeoutDecorationPass())->process($container);
+        (new HealthCheckerCriticalityDecorationPass())->process($container);
 
         // Outermost: NonCriticalCheckerDecorator
         $outer = $container->getDefinition('healthcheck.checker.cache');

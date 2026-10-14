@@ -86,13 +86,36 @@ final class CachedActionDecoratorTest extends TestCase
         self::assertSame(1, $inner->callCount, 'options arrays with the same keys but different order must hit the same cache entry');
     }
 
+    /**
+     * Before 1.3.0 Response::$success was computed, so responses cached then unserialize without it.
+     */
+    public function testIgnoresResponsesCachedByEarlierVersions(): void
+    {
+        $inner = new RecordingActionFixture(new Response([], ['inner ran'], []));
+        $cache = new ArrayAdapter();
+        $stale = $cache->getItem('msstc4symfony_healthcheck.readiness.' . hash('sha256', json_encode([], JSON_THROW_ON_ERROR)));
+        // A 1.2 payload: "success" was a computed property and is not serialized.
+        $stale->set(unserialize(sprintf(
+            'O:%d:"%s":3:{s:6:"errors";a:0:{}s:8:"messages";a:1:{i:0;s:13:"cached by 1.2";}s:8:"warnings";a:0:{}}',
+            strlen(Response::class),
+            Response::class,
+        )));
+
+        $cache->save($stale);
+
+        $response = (new CachedActionDecorator($inner, $cache, 5))->run(new Request(CheckTypeEnum::READINESS));
+
+        self::assertSame(['inner ran'], $response->messages);
+        self::assertSame(1, $inner->callCount);
+    }
+
     public function testCachePollutionFallsThroughAndEvicts(): void
     {
         $inner = new RecordingActionFixture(new Response([], ['inner ran'], []));
         $cache = new ArrayAdapter();
 
         // Seed the same cache key with a foreign value (simulates another consumer of the pool).
-        $polluted = $cache->getItem('msstc4symfony_healthcheck.readiness.' . hash('sha256', json_encode([], JSON_THROW_ON_ERROR)));
+        $polluted = $cache->getItem('msstc4symfony_healthcheck.v2.readiness.' . hash('sha256', json_encode([], JSON_THROW_ON_ERROR)));
         $polluted->set(new stdClass());
 
         $cache->save($polluted);

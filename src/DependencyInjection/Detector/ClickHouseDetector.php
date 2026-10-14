@@ -25,7 +25,7 @@ final readonly class ClickHouseDetector implements CheckerDetectorInterface
                 continue;
             }
 
-            yield sprintf('healthcheck.checker.%s', $id) => new Definition(ClickHouseChecker::class)
+            yield sprintf('healthcheck.checker.%s', $id) => (new Definition(ClickHouseChecker::class))
                 ->addArgument(new Reference($id))
                 ->addArgument($id)
             ;

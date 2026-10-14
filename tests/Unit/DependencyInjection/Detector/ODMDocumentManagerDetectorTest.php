@@ -22,7 +22,7 @@ final class ODMDocumentManagerDetectorTest extends TestCase
             new Definition(DocumentManager::class),
         );
 
-        $detected = iterator_to_array(new ODMDocumentManagerDetector()->detect($container));
+        $detected = iterator_to_array((new ODMDocumentManagerDetector())->detect($container));
 
         $checker = $detected['healthcheck.checker.doctrine_mongodb.odm.default_document_manager'];
         self::assertSame(ODMConnectionChecker::class, $checker->getClass());
@@ -36,6 +36,6 @@ final class ODMDocumentManagerDetectorTest extends TestCase
         $container->setDefinition('doctrine_mongodb.odm.something_else', new Definition(DocumentManager::class));
         $container->setDefinition('doctrine_mongodb.odm.default_connection', new Definition(DocumentManager::class));
 
-        self::assertSame([], iterator_to_array(new ODMDocumentManagerDetector()->detect($container)));
+        self::assertSame([], iterator_to_array((new ODMDocumentManagerDetector())->detect($container)));
     }
 }

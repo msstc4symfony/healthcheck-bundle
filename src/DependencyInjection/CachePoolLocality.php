@@ -25,7 +25,7 @@ use Symfony\Component\DependencyInjection\Reference;
  */
 final class CachePoolLocality
 {
-    private const array LOCAL_ADAPTERS = [
+    private const LOCAL_ADAPTERS = [
         ApcuAdapter::class,
         ArrayAdapter::class,
         FilesystemAdapter::class,
@@ -37,7 +37,7 @@ final class CachePoolLocality
 
     // FrameworkBundle's "cache.adapter.system" (APCu + PHP files) is declared as AdapterInterface
     // built by this factory, so its class alone does not reveal the adapter.
-    private const string SYSTEM_CACHE_FACTORY_METHOD = 'createSystemCache';
+    private const SYSTEM_CACHE_FACTORY_METHOD = 'createSystemCache';
 
     public static function isLocal(ContainerBuilder $container, Definition $pool): bool
     {

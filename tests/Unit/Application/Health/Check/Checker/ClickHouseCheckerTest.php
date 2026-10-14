@@ -34,7 +34,7 @@ final class ClickHouseCheckerTest extends TestCase
         $client = self::createStub(Client::class);
         $client->method('ping')->willReturn(true);
 
-        $result = new ClickHouseChecker($client, 'analytics')->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+        $result = (new ClickHouseChecker($client, 'analytics'))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
         self::assertSame(['ClickHouse (analytics) passed'], $result->messages);
         self::assertSame([], $result->errors);
@@ -45,7 +45,7 @@ final class ClickHouseCheckerTest extends TestCase
         $client = self::createStub(Client::class);
         $client->method('ping')->willReturn(false);
 
-        $result = new ClickHouseChecker($client, 'analytics')->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+        $result = (new ClickHouseChecker($client, 'analytics'))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
         self::assertSame(['ClickHouse (analytics) failed (ping returned false)'], $result->errors);
     }
@@ -55,7 +55,7 @@ final class ClickHouseCheckerTest extends TestCase
         $client = self::createStub(Client::class);
         $client->method('ping')->willThrowException(new RuntimeException('connection refused'));
 
-        $result = new ClickHouseChecker($client, 'analytics')->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+        $result = (new ClickHouseChecker($client, 'analytics'))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
         self::assertCount(1, $result->errors);
         self::assertStringContainsString('connection refused', $result->errors[0]);

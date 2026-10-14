@@ -22,7 +22,7 @@ final class FlysystemDetectorTest extends TestCase
 
         $container->setDefinition('uploads.storage', $fs);
 
-        $detected = iterator_to_array(new FlysystemDetector()->detect($container));
+        $detected = iterator_to_array((new FlysystemDetector())->detect($container));
 
         $checker = $detected['healthcheck.checker.uploads.storage'];
         self::assertSame(FlysystemChecker::class, $checker->getClass());
@@ -35,6 +35,6 @@ final class FlysystemDetectorTest extends TestCase
         $container = new ContainerBuilder();
         $container->setDefinition('uploads.untagged', new Definition(Filesystem::class));
 
-        self::assertSame([], iterator_to_array(new FlysystemDetector()->detect($container)));
+        self::assertSame([], iterator_to_array((new FlysystemDetector())->detect($container)));
     }
 }

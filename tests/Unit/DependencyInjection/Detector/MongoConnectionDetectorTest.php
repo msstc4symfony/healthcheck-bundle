@@ -19,7 +19,7 @@ final class MongoConnectionDetectorTest extends TestCase
         $container = new ContainerBuilder();
         $container->setDefinition('doctrine_mongodb.odm.default_connection', new Definition(Client::class));
 
-        $detected = iterator_to_array(new MongoConnectionDetector()->detect($container));
+        $detected = iterator_to_array((new MongoConnectionDetector())->detect($container));
 
         $checker = $detected['healthcheck.checker.doctrine_mongodb.odm.default_connection'];
         self::assertSame(MongoConnectionChecker::class, $checker->getClass());
@@ -33,6 +33,6 @@ final class MongoConnectionDetectorTest extends TestCase
         $container->setDefinition('doctrine_mongodb.something_else', new Definition(Client::class));
         $container->setDefinition('doctrine_mongodb.odm.default_document_manager', new Definition(Client::class));
 
-        self::assertSame([], iterator_to_array(new MongoConnectionDetector()->detect($container)));
+        self::assertSame([], iterator_to_array((new MongoConnectionDetector())->detect($container)));
     }
 }

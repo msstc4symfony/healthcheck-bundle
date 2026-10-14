@@ -35,7 +35,7 @@ final class EntityManagerCheckerTest extends TestCase
     {
         $em = $this->buildEntityManagerStub();
 
-        $result = new EntityManagerChecker($em, 'default')->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+        $result = (new EntityManagerChecker($em, 'default'))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
         self::assertSame(['EntityManager (default) passed'], $result->messages);
         self::assertSame([], $result->errors);
@@ -53,7 +53,7 @@ final class EntityManagerCheckerTest extends TestCase
         $em = self::createStub(EntityManagerInterface::class);
         $em->method('getConnection')->willReturn($connection);
 
-        $result = new EntityManagerChecker($em, 'default')->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+        $result = (new EntityManagerChecker($em, 'default'))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
         self::assertCount(1, $result->errors);
         self::assertStringContainsString('default', $result->errors[0]);

@@ -23,7 +23,7 @@ final readonly class DoctrineMigrationsDetector implements CheckerDetectorInterf
             return;
         }
 
-        yield 'healthcheck.checker.doctrine_migrations' => new Definition(DoctrineMigrationsChecker::class)
+        yield 'healthcheck.checker.doctrine_migrations' => (new Definition(DoctrineMigrationsChecker::class))
             ->addArgument(new Reference(DependencyFactory::class))
         ;
     }

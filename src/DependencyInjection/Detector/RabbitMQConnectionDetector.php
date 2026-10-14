@@ -19,7 +19,7 @@ final readonly class RabbitMQConnectionDetector implements CheckerDetectorInterf
     public function detect(ContainerBuilder $container): iterable
     {
         foreach (array_keys($container->findTaggedServiceIds('old_sound_rabbit_mq.connection')) as $id) {
-            yield sprintf('healthcheck.checker.%s', $id) => new Definition(RabbitmqChecker::class)
+            yield sprintf('healthcheck.checker.%s', $id) => (new Definition(RabbitmqChecker::class))
                     ->addArgument(new Reference($id))
             ;
         }

@@ -35,7 +35,7 @@ final class FlysystemCheckerTest extends TestCase
         $fs = self::createStub(FilesystemOperator::class);
         $fs->method('fileExists')->willReturn(false);
 
-        $result = new FlysystemChecker($fs, 'uploads')->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+        $result = (new FlysystemChecker($fs, 'uploads'))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
         self::assertSame(['Flysystem (uploads) passed'], $result->messages);
         self::assertSame([], $result->errors);
@@ -46,7 +46,7 @@ final class FlysystemCheckerTest extends TestCase
         $fs = self::createStub(FilesystemOperator::class);
         $fs->method('fileExists')->willThrowException(UnableToCheckExistence::forLocation('.healthcheck-probe', new RuntimeException('S3 unreachable')));
 
-        $result = new FlysystemChecker($fs, 'uploads')->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+        $result = (new FlysystemChecker($fs, 'uploads'))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
         self::assertCount(1, $result->errors);
         self::assertStringContainsString('uploads', $result->errors[0]);

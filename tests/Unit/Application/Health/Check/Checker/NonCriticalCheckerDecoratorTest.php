@@ -22,7 +22,7 @@ final class NonCriticalCheckerDecoratorTest extends TestCase
             $r->addMessage('Inner passed');
         });
 
-        $result = new NonCriticalCheckerDecorator($inner)
+        $result = (new NonCriticalCheckerDecorator($inner))
             ->check(new CheckResult(), new Context(CheckTypeEnum::READINESS))
         ;
 
@@ -37,7 +37,7 @@ final class NonCriticalCheckerDecoratorTest extends TestCase
             $r->addError('something broke');
         });
 
-        $result = new NonCriticalCheckerDecorator($inner)
+        $result = (new NonCriticalCheckerDecorator($inner))
             ->check(new CheckResult(), new Context(CheckTypeEnum::READINESS))
         ;
 
@@ -54,7 +54,7 @@ final class NonCriticalCheckerDecoratorTest extends TestCase
             $r->addError('demoted error');
         });
 
-        $result = new NonCriticalCheckerDecorator($inner)
+        $result = (new NonCriticalCheckerDecorator($inner))
             ->check($result, new Context(CheckTypeEnum::READINESS))
         ;
 
@@ -64,7 +64,7 @@ final class NonCriticalCheckerDecoratorTest extends TestCase
 
     public function testDemotesThrownExceptionIntoRedactedWarningNamingTheChecker(): void
     {
-        $result = new NonCriticalCheckerDecorator(new ThrowingChecker('Connection to redis://app:s3cret@redis:6379 refused'))
+        $result = (new NonCriticalCheckerDecorator(new ThrowingChecker('Connection to redis://app:s3cret@redis:6379 refused')))
             ->check(new CheckResult(), new Context(CheckTypeEnum::READINESS))
         ;
 
@@ -90,7 +90,7 @@ final class NonCriticalCheckerDecoratorTest extends TestCase
             throw new RuntimeException('boom');
         });
 
-        $result = new NonCriticalCheckerDecorator($inner)
+        $result = (new NonCriticalCheckerDecorator($inner))
             ->check($result, new Context(CheckTypeEnum::READINESS))
         ;
 
@@ -101,8 +101,8 @@ final class NonCriticalCheckerDecoratorTest extends TestCase
 
     private function makeInner(Closure $body): CheckInterface
     {
-        return new readonly class($body) implements CheckInterface {
-            public function __construct(private Closure $body)
+        return new class($body) implements CheckInterface {
+            public function __construct(private readonly Closure $body)
             {
             }
 

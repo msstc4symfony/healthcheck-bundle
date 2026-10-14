@@ -26,7 +26,7 @@ final readonly class KafkaDetector implements CheckerDetectorInterface
                 continue;
             }
 
-            yield sprintf('healthcheck.checker.%s', $id) => new Definition(KafkaChecker::class)
+            yield sprintf('healthcheck.checker.%s', $id) => (new Definition(KafkaChecker::class))
                 ->addArgument(new Reference($id))
                 ->addArgument($id)
             ;

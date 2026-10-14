@@ -34,7 +34,7 @@ final class RabbitmqCheckerTest extends TestCase
         $connection = self::createStub(AbstractConnection::class);
         $connection->method('isConnected')->willReturn(true);
 
-        $result = new RabbitmqChecker($connection)->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+        $result = (new RabbitmqChecker($connection))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
         self::assertSame(['RabbitMQ connection passed'], $result->messages);
         self::assertSame([], $result->errors);
@@ -45,7 +45,7 @@ final class RabbitmqCheckerTest extends TestCase
         $connection = self::createStub(AbstractConnection::class);
         $connection->method('isConnected')->willReturn(false);
 
-        $result = new RabbitmqChecker($connection)->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+        $result = (new RabbitmqChecker($connection))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
         self::assertSame(['RabbitMQ connection failed (not connected after reconnect)'], $result->errors);
         self::assertSame([], $result->messages);
@@ -56,7 +56,7 @@ final class RabbitmqCheckerTest extends TestCase
         $connection = self::createStub(AbstractConnection::class);
         $connection->method('reconnect')->willThrowException(new RuntimeException('boom'));
 
-        $result = new RabbitmqChecker($connection)->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+        $result = (new RabbitmqChecker($connection))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
         self::assertCount(1, $result->errors);
         self::assertStringContainsString('boom', $result->errors[0]);

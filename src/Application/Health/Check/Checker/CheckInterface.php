@@ -11,7 +11,7 @@ use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 #[AutoconfigureTag(CheckInterface::class)]
 interface CheckInterface
 {
-    public const string PROBE_KEY = '__healthcheck';
+    public const PROBE_KEY = '__healthcheck';
 
     public function isSupport(Context $context): bool;
 

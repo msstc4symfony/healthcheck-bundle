@@ -19,10 +19,10 @@ final class HealthCheckerTimeoutDecorationPassTest extends TestCase
     public function testSkipsWhenConfigParamNotSet(): void
     {
         $container = new ContainerBuilder();
-        $inner = new Definition(Action::class)->addTag(CheckInterface::class);
+        $inner = (new Definition(Action::class))->addTag(CheckInterface::class);
         $container->setDefinition('healthcheck.checker.foo', $inner);
 
-        new HealthCheckerTimeoutDecorationPass()->process($container);
+        (new HealthCheckerTimeoutDecorationPass())->process($container);
 
         self::assertSame(Action::class, $container->getDefinition('healthcheck.checker.foo')->getClass());
         self::assertFalse($container->hasDefinition('healthcheck.checker.foo.inner'));
@@ -34,12 +34,12 @@ final class HealthCheckerTimeoutDecorationPassTest extends TestCase
         $container->setParameter(ContainerIds::PARAM_DEFAULT_TIMEOUT_MS, 2000);
         $container->setParameter(ContainerIds::PARAM_TIMEOUT_OVERRIDES, []);
 
-        $a = new Definition(stdClass::class)->addTag(CheckInterface::class);
-        $b = new Definition(stdClass::class)->addTag(CheckInterface::class);
+        $a = (new Definition(stdClass::class))->addTag(CheckInterface::class);
+        $b = (new Definition(stdClass::class))->addTag(CheckInterface::class);
         $container->setDefinition('healthcheck.checker.a', $a);
         $container->setDefinition('healthcheck.checker.b', $b);
 
-        new HealthCheckerTimeoutDecorationPass()->process($container);
+        (new HealthCheckerTimeoutDecorationPass())->process($container);
 
         foreach (['a', 'b'] as $name) {
             $outer = $container->getDefinition('healthcheck.checker.' . $name);
@@ -63,14 +63,14 @@ final class HealthCheckerTimeoutDecorationPassTest extends TestCase
 
         $container->setDefinition(
             'healthcheck.checker.slow',
-            new Definition(stdClass::class)->addTag(CheckInterface::class),
+            (new Definition(stdClass::class))->addTag(CheckInterface::class),
         );
         $container->setDefinition(
             'healthcheck.checker.fast',
-            new Definition(stdClass::class)->addTag(CheckInterface::class),
+            (new Definition(stdClass::class))->addTag(CheckInterface::class),
         );
 
-        new HealthCheckerTimeoutDecorationPass()->process($container);
+        (new HealthCheckerTimeoutDecorationPass())->process($container);
 
         self::assertSame(10_000, $container->getDefinition('healthcheck.checker.slow')->getArgument(1));
         self::assertSame(2000, $container->getDefinition('healthcheck.checker.fast')->getArgument(1));
@@ -84,7 +84,7 @@ final class HealthCheckerTimeoutDecorationPassTest extends TestCase
 
         $container->setDefinition(
             'healthcheck.checker.x',
-            new Definition(stdClass::class)->addTag(CheckInterface::class),
+            (new Definition(stdClass::class))->addTag(CheckInterface::class),
         );
 
         $pass = new HealthCheckerTimeoutDecorationPass();

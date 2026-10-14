@@ -4,6 +4,24 @@ All notable changes to this bundle are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions follow
 [Semantic Versioning](https://semver.org/); dates are UTC.
 
+## [1.3.0] - 2026-10-14
+
+### Added
+
+- `symfony/polyfill-php84` (`array_any` on PHP 8.2/8.3) and `symfony/var-exporter` dependencies.
+
+### Changed
+
+- Requires PHP 8.2 instead of 8.4 (Symfony 8 still needs PHP 8.4).
+- `Request::$type` / `$options` are `public readonly` (were `public private(set)`); reading is unchanged.
+- `CheckResult::$messages` / `$errors` / `$warnings` are plain public properties marked `@readonly` for
+  PHPStan: PHP 8.2 has no asymmetric visibility, so only static analysis rejects writes from outside.
+- `Response` is a `final readonly` class; `$success` is set in the constructor instead of a property hook.
+  Cached responses use the key prefix `msstc4symfony_healthcheck.v2.`: entries cached by 1.0–1.2 are ignored.
+- The label of a checker whose target fails to construct is read through `VarExporter\Instantiator` instead
+  of a PHP 8.4 lazy ghost; it now also works when the checker inherits its constructor.
+- Class constants no longer declare a native type (PHP 8.2 has none); values are unchanged.
+
 ## [1.2.0] - 2026-10-07
 
 ### Changed
@@ -73,6 +91,7 @@ First release of `msstc4symfony/healthcheck-bundle` (namespace `Msstc4Symfony\He
 - PHP >= 8.4, Symfony ^7.4|^8.0, `psr/log` ^3.0.
 - The client library of each checked service (Doctrine, Redis, Kafka, ...) is optional.
 
+[1.3.0]: https://github.com/msstc4symfony/healthcheck-bundle/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/msstc4symfony/healthcheck-bundle/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/msstc4symfony/healthcheck-bundle/compare/v1.0.2...v1.1.0
 [1.0.2]: https://github.com/msstc4symfony/healthcheck-bundle/compare/v1.0.1...v1.0.2

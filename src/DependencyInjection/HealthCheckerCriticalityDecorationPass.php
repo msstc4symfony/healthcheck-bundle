@@ -46,7 +46,7 @@ final readonly class HealthCheckerCriticalityDecorationPass implements CompilerP
             $container->setDefinition($innerId, $inner);
             $container->removeDefinition($id);
 
-            $decorator = new Definition(NonCriticalCheckerDecorator::class)
+            $decorator = (new Definition(NonCriticalCheckerDecorator::class))
                 ->setAutowired(true)
                 ->addArgument(new Reference($innerId))
                 ->addTag(CheckInterface::class)

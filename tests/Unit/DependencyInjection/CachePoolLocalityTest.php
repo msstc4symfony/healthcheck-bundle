@@ -20,7 +20,7 @@ final class CachePoolLocalityTest extends TestCase
     public function testSystemCacheFactoryIsLocal(): void
     {
         $container = new ContainerBuilder();
-        $container->setDefinition('cache.adapter.system', new Definition(AdapterInterface::class)->setFactory([AbstractAdapter::class, 'createSystemCache']));
+        $container->setDefinition('cache.adapter.system', (new Definition(AdapterInterface::class))->setFactory([AbstractAdapter::class, 'createSystemCache']));
 
         self::assertTrue(CachePoolLocality::isLocal($container, new ChildDefinition('cache.adapter.system')));
     }
@@ -28,9 +28,9 @@ final class CachePoolLocalityTest extends TestCase
     public function testChildFactoryOverridesParentFactory(): void
     {
         $container = new ContainerBuilder();
-        $container->setDefinition('cache.adapter.system', new Definition(AdapterInterface::class)->setFactory([AbstractAdapter::class, 'createSystemCache']));
+        $container->setDefinition('cache.adapter.system', (new Definition(AdapterInterface::class))->setFactory([AbstractAdapter::class, 'createSystemCache']));
 
-        self::assertFalse(CachePoolLocality::isLocal($container, new ChildDefinition('cache.adapter.system')->setFactory([RedisAdapter::class, 'createConnection'])));
+        self::assertFalse(CachePoolLocality::isLocal($container, (new ChildDefinition('cache.adapter.system'))->setFactory([RedisAdapter::class, 'createConnection'])));
     }
 
     public function testChildClassOverridesParentClass(): void
@@ -38,7 +38,7 @@ final class CachePoolLocalityTest extends TestCase
         $container = new ContainerBuilder();
         $container->setDefinition('cache.adapter.array', new Definition(ArrayAdapter::class));
 
-        self::assertFalse(CachePoolLocality::isLocal($container, new ChildDefinition('cache.adapter.array')->setClass(RedisAdapter::class)));
+        self::assertFalse(CachePoolLocality::isLocal($container, (new ChildDefinition('cache.adapter.array'))->setClass(RedisAdapter::class)));
     }
 
     public function testChainWithoutAdaptersIsNotLocal(): void

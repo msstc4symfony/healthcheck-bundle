@@ -29,7 +29,7 @@ final class MemcacheCheckerTest extends TestCase
         $client = self::createStub(Memcache::class);
         $client->method('set')->willReturn(true);
 
-        $result = new MemcacheChecker($client)->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+        $result = (new MemcacheChecker($client))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
         self::assertSame(['Memcache connection passed'], $result->messages);
         self::assertSame([], $result->errors);
@@ -40,7 +40,7 @@ final class MemcacheCheckerTest extends TestCase
         $client = self::createStub(Memcache::class);
         $client->method('set')->willReturn(false);
 
-        $result = new MemcacheChecker($client)->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+        $result = (new MemcacheChecker($client))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
         self::assertSame(['Memcache connection failed (SET command returned false)'], $result->errors);
         self::assertSame([], $result->messages);
@@ -51,7 +51,7 @@ final class MemcacheCheckerTest extends TestCase
         $client = self::createStub(Memcache::class);
         $client->method('set')->willThrowException(new RuntimeException('boom'));
 
-        $result = new MemcacheChecker($client)->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+        $result = (new MemcacheChecker($client))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
 
         self::assertCount(1, $result->errors);
         self::assertStringContainsString('boom', $result->errors[0]);

@@ -28,7 +28,7 @@ final class HealthControllerFunctionalTest extends WebTestCase
             self::markTestSkipped('symfony/browser-kit is not installed');
         }
 
-        new Filesystem()->remove(sys_get_temp_dir() . '/msstc4symfony-healthcheck-bundle-test');
+        (new Filesystem())->remove(sys_get_temp_dir() . '/msstc4symfony-healthcheck-bundle-test');
     }
 
     #[Override]

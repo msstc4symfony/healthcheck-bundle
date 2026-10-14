@@ -43,7 +43,7 @@ sequential is fine — the codebase is small.
 
 ## Rector
 
-PHP 8.4 set + prepared sets for
+PHP 8.2 set (`withPhpVersion(PHP_82)`) + prepared sets for
 deadCode/codeQuality/codingStyle/typeDeclarations/privatization/instanceOf/earlyReturn,
 plus Symfony+Doctrine quality. A small skip list (see `rector.php`) avoids
 specific rules that fight the project's idioms — respect those when

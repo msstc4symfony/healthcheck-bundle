@@ -154,7 +154,7 @@ final class HealthCheckBundle extends AbstractBundle
     {
         $innerServiceId = Action::class;
         if ($parallel) {
-            $container->setDefinition(ContainerIds::SERVICE_PARALLEL_ACTION, new Definition(ParallelAction::class)->setAutowired(true));
+            $container->setDefinition(ContainerIds::SERVICE_PARALLEL_ACTION, (new Definition(ParallelAction::class))->setAutowired(true));
             $innerServiceId = ContainerIds::SERVICE_PARALLEL_ACTION;
 
             // Dropped so that introspection ("debug:container Action") reflects the active wiring.
@@ -169,7 +169,7 @@ final class HealthCheckBundle extends AbstractBundle
                 throw new LogicException(sprintf('The "%s.cache.pool" option must be a service id.', ContainerIds::ALIAS));
             }
 
-            $container->setDefinition(ContainerIds::SERVICE_CACHED_ACTION, new Definition(CachedActionDecorator::class)
+            $container->setDefinition(ContainerIds::SERVICE_CACHED_ACTION, (new Definition(CachedActionDecorator::class))
                 ->setArgument(0, new Reference($innerServiceId))
                 ->setArgument(1, new Reference($pool))
                 ->setArgument(2, $cache['ttl_seconds']));

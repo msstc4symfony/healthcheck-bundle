@@ -33,14 +33,14 @@ final readonly class HttpClientTargetDetector implements CheckerDetectorInterfac
                 ? new Reference($cfg['client'])
                 : new Reference(HttpClientInterface::class);
 
-            $target = new Definition(HttpProbeTarget::class)
+            $target = (new Definition(HttpProbeTarget::class))
                 ->setArgument(0, $cfg['url'])
                 ->setArgument(1, $cfg['method'])
                 ->setArgument(2, $cfg['expected_status_codes'])
                 ->setArgument(3, $cfg['timeout_seconds'])
             ;
 
-            yield sprintf('healthcheck.checker.http_client.%s', $name) => new Definition(HttpClientChecker::class)
+            yield sprintf('healthcheck.checker.http_client.%s', $name) => (new Definition(HttpClientChecker::class))
                 ->addArgument($clientRef)
                 ->addArgument($name)
                 ->addArgument($target)

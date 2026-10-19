@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Msstc4Symfony\HealthCheckBundle\Test\Unit\DependencyInjection\Detector;
 
 use Doctrine\ORM\EntityManagerInterface;
-use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\EntityManagerChecker;
 use Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector\EntityManagerDetector;
+use Msstc4Symfony\HealthCheckBundle\Infrastructure\Checker\EntityManagerChecker;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;

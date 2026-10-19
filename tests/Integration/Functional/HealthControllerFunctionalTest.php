@@ -22,6 +22,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
  */
 final class HealthControllerFunctionalTest extends WebTestCase
 {
+    #[Override]
     protected function setUp(): void
     {
         if (!class_exists(AbstractBrowser::class)) {

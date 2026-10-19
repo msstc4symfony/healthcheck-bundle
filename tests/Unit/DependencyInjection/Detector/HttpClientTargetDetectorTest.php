@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Msstc4Symfony\HealthCheckBundle\Test\Unit\DependencyInjection\Detector;
 
-use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\HttpClientChecker;
-use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\HttpProbeTarget;
 use Msstc4Symfony\HealthCheckBundle\DependencyInjection\ContainerIds;
 use Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector\HttpClientTargetDetector;
+use Msstc4Symfony\HealthCheckBundle\Infrastructure\Checker\HttpClientChecker;
+use Msstc4Symfony\HealthCheckBundle\Infrastructure\Checker\HttpProbeTarget;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;

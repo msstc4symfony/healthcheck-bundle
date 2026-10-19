@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector;
 
 use Doctrine\Migrations\DependencyFactory;
-use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\DoctrineMigrationsChecker;
+use Msstc4Symfony\HealthCheckBundle\Infrastructure\Checker\DoctrineMigrationsChecker;
 use Override;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
 
+/**
+ * @internal
+ */
 final readonly class DoctrineMigrationsDetector implements CheckerDetectorInterface
 {
     /**

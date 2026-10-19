@@ -6,6 +6,7 @@ namespace Msstc4Symfony\HealthCheckBundle\Test\Unit\Application\Health\Check\Eve
 
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Event\SafeEventDispatcher;
 use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Event\RecordingDispatcherFixture;
+use Override;
 use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use RuntimeException;
@@ -35,6 +36,7 @@ final class SafeEventDispatcherTest extends TestCase
         $this->expectNotToPerformAssertions();
 
         $exploding = new class implements EventDispatcherInterface {
+            #[Override]
             public function dispatch(object $event): object
             {
                 throw new RuntimeException('listener exploded');

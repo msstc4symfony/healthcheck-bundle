@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Msstc4Symfony\HealthCheckBundle\Test\Integration\Functional;
 
-use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CacheChecker;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CheckInterface;
+use Msstc4Symfony\HealthCheckBundle\Infrastructure\Checker\CacheChecker;
 use Msstc4Symfony\HealthCheckBundle\Test\Integration\Kernel\TestKernel;
+use Override;
 use PHPUnit\Framework\TestCase;
 use Predis\Client;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
@@ -24,6 +25,7 @@ final class CachePoolSelectionTest extends TestCase
 {
     private const SYSTEM_POOLS = ['cache.system', 'cache.validator', 'cache.serializer', 'cache.property_info'];
 
+    #[Override]
     protected function setUp(): void
     {
         (new Filesystem())->remove(sys_get_temp_dir() . '/msstc4symfony-healthcheck-bundle-test');

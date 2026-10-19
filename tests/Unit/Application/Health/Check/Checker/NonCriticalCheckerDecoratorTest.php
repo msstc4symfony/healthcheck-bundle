@@ -11,6 +11,7 @@ use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\Context;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
 use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\ThrowingChecker;
+use Override;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
@@ -106,11 +107,13 @@ final class NonCriticalCheckerDecoratorTest extends TestCase
             {
             }
 
+            #[Override]
             public function isSupport(Context $context): bool
             {
                 return true;
             }
 
+            #[Override]
             public function check(CheckResult $result, Context $context): CheckResult
             {
                 ($this->body)($result);

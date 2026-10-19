@@ -15,6 +15,9 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
+/**
+ * @internal
+ */
 final class HealthController extends AbstractController
 {
     private const STATUS_HEADER = 'Status';

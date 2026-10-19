@@ -16,6 +16,8 @@ use Symfony\Component\DependencyInjection\Attribute\Exclude;
  * Note: in synchronous PHP this is post-hoc detection only — the inner check
  * still runs to completion. Real interrupting requires either pcntl_alarm
  * (CLI-only, second resolution) or driver-level async I/O.
+ *
+ * @internal
  */
 #[Exclude]
 final readonly class TimeoutCheckerDecorator implements CheckInterface, CheckerDecoratorInterface

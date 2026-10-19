@@ -70,6 +70,7 @@ final class TestKernel extends Kernel
         }
     }
 
+    #[Override]
     public function registerBundles(): iterable
     {
         return [

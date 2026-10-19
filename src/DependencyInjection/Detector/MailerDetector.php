@@ -4,14 +4,17 @@ declare(strict_types=1);
 
 namespace Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector;
 
-use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\MailerChecker;
 use Msstc4Symfony\HealthCheckBundle\DependencyInjection\ServiceClass;
+use Msstc4Symfony\HealthCheckBundle\Infrastructure\Checker\MailerChecker;
 use Override;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\Mailer\Transport\Smtp\SmtpTransport;
 
+/**
+ * @internal
+ */
 final readonly class MailerDetector implements CheckerDetectorInterface
 {
     /**

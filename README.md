@@ -209,6 +209,7 @@ use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CheckInterf
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\Context;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
+use Override;
 
 class CustomServiceChecker implements CheckInterface
 {
@@ -217,6 +218,7 @@ class CustomServiceChecker implements CheckInterface
     ) {
     }
 
+    #[Override]
     public function isSupport(Context $context): bool
     {
         // This checker only runs in readiness mode
@@ -224,6 +226,7 @@ class CustomServiceChecker implements CheckInterface
         return CheckTypeEnum::READINESS === $context->type;
     }
 
+    #[Override]
     public function check(CheckResult $result, Context $context): CheckResult
     {
         try {
@@ -243,17 +246,22 @@ class CustomServiceChecker implements CheckInterface
 Readiness-only checkers can extend `AbstractReadinessChecker`, which formats the output and masks credentials in failure messages. `doCheck()` throws to fail; a returned string is appended to the success line. `AbstractReadinessChecker` is a readonly class, so a subclass must be a named `readonly class` (PHP 8.2 has no anonymous readonly classes):
 
 ```php
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\AbstractReadinessChecker;
+use Override;
+
 final readonly class SearchChecker extends AbstractReadinessChecker
 {
     public function __construct(private SearchClient $client)
     {
     }
 
+    #[Override]
     protected function doCheck(): ?string
     {
         return 'cluster status: ' . $this->client->health(); // "Search passed (cluster status: green)"
     }
 
+    #[Override]
     protected function label(): string
     {
         return 'Search';
@@ -283,7 +291,7 @@ Pools on local adapters (e.g. `cache.app` on the filesystem) are not probed auto
 ```yaml
 services:
     app.healthcheck.cache_app:
-        class: Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CacheChecker
+        class: Msstc4Symfony\HealthCheckBundle\Infrastructure\Checker\CacheChecker
         arguments: ['@cache.app', 'cache.app', ~] # pool, pool id, parent pool id (none)
         tags:
             - 'Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CheckInterface'
@@ -296,6 +304,7 @@ If the pool later moves to a remote adapter, the bundle probes it on its own —
 If your checker should run in both modes, return `true` for both types:
 
 ```php
+#[Override]
 public function isSupport(Context $context): bool
 {
     // Runs in both liveliness and readiness checks
@@ -306,6 +315,7 @@ public function isSupport(Context $context): bool
 ### Checker Only for Liveness
 
 ```php
+#[Override]
 public function isSupport(Context $context): bool
 {
     // Only runs in liveliness checks
@@ -341,6 +351,28 @@ Both options take checker service ids. An id no checker has fails the container 
 - Symfony HttpClient (HTTP probes): `timeout` is an idle timeout (no data received), `max_duration` caps the total request time.
 
 Even with these set, the bundle only reports an over-limit probe after the fact; the client options are what keep it from blocking.
+
+## Public API
+
+Applications use, implement or configure only these; every other class is `@internal` and may change in a minor
+release.
+
+| Namespace `Msstc4Symfony\HealthCheckBundle\` | Classes |
+|---|---|
+| `Application\Health\Check\Checker` | `CheckInterface`, `AbstractReadinessChecker`, `CheckerDecoratorInterface` |
+| `Application\Health\Check\DTO` | `CheckResult`, `Context`, `Request`, `Response` |
+| `Application\Health\Check\Enum` | `CheckTypeEnum` |
+| `Application\Health\Check\Event` | `HealthCheckRunStartedEvent`, `HealthCheckerCompletedEvent`, `HealthCheckRunCompletedEvent` |
+| `Application\Health\Check` | `ActionInterface` |
+| `Infrastructure\Checker` | every built-in checker (`DBALConnectionChecker`, `RedisChecker`, …): registered and decorated by class; `HttpProbeTarget` (targets of a manually registered `HttpClientChecker`) |
+| `DependencyInjection\Detector` | `CheckerDetectorInterface`, `WrappedTargetDetectorInterface` — third-party detectors (tag `healthcheck.detector`, autoconfigured) |
+| (root) | `HealthCheckBundle` |
+
+The configuration keys under `msstc4symfony_healthcheck`, the routes and the console commands are public too.
+
+Upgrading from 1.x: 2.0 moved the built-in checkers from `Application\Health\Check\Checker\` to
+`Infrastructure\Checker\` (with `HttpProbeTarget`) and the compiler passes to `DependencyInjection\CompilerPass\` — see the
+CHANGELOG.
 
 ## Docker Compose Integration Example
 You can configure health checks for your services in `docker-compose.yaml`:

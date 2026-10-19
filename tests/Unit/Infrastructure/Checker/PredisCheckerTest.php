@@ -1,0 +1,105 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Msstc4Symfony\HealthCheckBundle\Test\Unit\Infrastructure\Checker;
+
+use Closure;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CheckInterface;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\Context;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
+use Msstc4Symfony\HealthCheckBundle\Infrastructure\Checker\PredisChecker;
+use Override;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\TestCase;
+use Predis\Client;
+use Predis\Response\Error;
+use Predis\Response\ResponseInterface;
+use Predis\Response\ServerException;
+use Predis\Response\Status;
+
+final class PredisCheckerTest extends TestCase
+{
+    #[Override]
+    protected function setUp(): void
+    {
+        if (!class_exists(Client::class)) {
+            self::markTestSkipped('predis/predis is not installed');
+        }
+    }
+
+    public function testIsSupportReadinessOnly(): void
+    {
+        $checker = new PredisChecker(self::createStub(Client::class));
+
+        self::assertTrue($checker->isSupport(new Context(CheckTypeEnum::READINESS)));
+        self::assertFalse($checker->isSupport(new Context(CheckTypeEnum::LIVELINESS)));
+    }
+
+    public function testCheckWritesTheProbeKeyWithOneSecondTtl(): void
+    {
+        $client = $this->createMock(Client::class);
+        $client->expects(self::once())
+            ->method('__call')
+            ->with('set', self::callback(static fn (array $arguments): bool => $arguments[0] === CheckInterface::PROBE_KEY
+                && is_string($arguments[1]) && ctype_digit($arguments[1])
+                && array_slice($arguments, 2) === ['EX', 1]))
+            ->willReturn(new Status('OK'))
+        ;
+
+        $result = (new PredisChecker($client))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+
+        self::assertSame(['Redis connection passed'], $result->messages);
+        self::assertSame([], $result->errors);
+    }
+
+    /**
+     * The replies are built lazily: data providers run before setUp() skips the test without predis.
+     *
+     * @return iterable<string, array{Closure(): ?ResponseInterface, non-empty-string}>
+     */
+    public static function nonOkReplies(): iterable
+    {
+        yield 'queued status' => [static fn (): ResponseInterface => new Status('QUEUED'), 'Redis connection failed (SET command returned QUEUED)'];
+        yield 'error reply without exceptions' => [static fn (): ResponseInterface => new Error("READONLY You can't write against a read only replica."), "Redis connection failed (SET command returned READONLY You can't write against a read only replica.)"];
+        yield 'no reply' => [static fn (): ?ResponseInterface => null, 'Redis connection failed (SET command returned null)'];
+    }
+
+    /**
+     * @param Closure(): ?ResponseInterface $reply
+     */
+    #[DataProvider('nonOkReplies')]
+    public function testCheckFailsOnNonOkReply(Closure $reply, string $expectedError): void
+    {
+        $client = self::createStub(Client::class);
+        $client->method('__call')->willReturn($reply());
+
+        $result = (new PredisChecker($client))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+
+        self::assertSame([$expectedError], $result->errors);
+        self::assertSame([], $result->messages);
+    }
+
+    public function testCheckFailsOnServerException(): void
+    {
+        $client = self::createStub(Client::class);
+        $client->method('__call')->willThrowException(new ServerException('NOAUTH Authentication required.'));
+
+        $result = (new PredisChecker($client))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+
+        self::assertSame(['Redis connection failed (NOAUTH Authentication required.)'], $result->errors);
+        self::assertSame([], $result->messages);
+    }
+
+    public function testCheckFailsWhenNoServerListens(): void
+    {
+        $client = new Client('tcp://127.0.0.1:1', ['parameters' => ['timeout' => 1]]);
+
+        $result = (new PredisChecker($client))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+
+        self::assertSame([], $result->messages);
+        self::assertCount(1, $result->errors);
+        self::assertStringStartsWith('Redis connection failed (', $result->errors[0]);
+    }
+}

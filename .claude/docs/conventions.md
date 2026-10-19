@@ -23,6 +23,8 @@ The bundle runs on PHP 8.2 (since 1.3.0; 1.0–1.2 required 8.4). Only 8.2 synta
 
 ## File / namespace conventions
 
+- Layout and family rules: stage B spec (`docs/superpowers/specs/2026-10-17-stage-b-conventions-design.md` at
+  the msstc4symfony root) — canonical layers, `@internal` outside the Public API (majors only), `#[\Override]` everywhere.
 - PSR-4 root: `Msstc4Symfony\HealthCheckBundle\` → `src/`.
 - Test PSR-4 root: `Msstc4Symfony\HealthCheckBundle\Test\` → `tests/` (`Unit/`,
   `Integration/`, `Mock/`; layout shared by every bundle of `bundle-standard`).

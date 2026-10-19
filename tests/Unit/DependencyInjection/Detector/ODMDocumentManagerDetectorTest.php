@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Msstc4Symfony\HealthCheckBundle\Test\Unit\DependencyInjection\Detector;
 
 use Doctrine\ODM\MongoDB\DocumentManager;
-use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\ODMConnectionChecker;
 use Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector\ODMDocumentManagerDetector;
+use Msstc4Symfony\HealthCheckBundle\Infrastructure\Checker\ODMConnectionChecker;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;

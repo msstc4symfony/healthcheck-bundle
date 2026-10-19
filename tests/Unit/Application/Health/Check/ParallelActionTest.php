@@ -20,6 +20,7 @@ use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\F
 use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\SuccessChecker;
 use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\ThrowingChecker;
 use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Event\RecordingDispatcherFixture;
+use Override;
 use PHPUnit\Framework\TestCase;
 
 final class ParallelActionTest extends TestCase
@@ -139,11 +140,13 @@ final class ParallelActionTest extends TestCase
     private function makeReadinessOnlyChecker(): CheckInterface
     {
         return new class implements CheckInterface {
+            #[Override]
             public function isSupport(Context $context): bool
             {
                 return $context->type === CheckTypeEnum::READINESS;
             }
 
+            #[Override]
             public function check(CheckResult $result, Context $context): CheckResult
             {
                 $result->addMessage('readiness-only ran');

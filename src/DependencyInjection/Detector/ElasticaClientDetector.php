@@ -5,13 +5,16 @@ declare(strict_types=1);
 namespace Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector;
 
 use Elastica\Client;
-use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\ElasticaConnectionChecker;
 use Msstc4Symfony\HealthCheckBundle\DependencyInjection\ServiceClass;
+use Msstc4Symfony\HealthCheckBundle\Infrastructure\Checker\ElasticaConnectionChecker;
 use Override;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
 
+/**
+ * @internal
+ */
 final readonly class ElasticaClientDetector implements CheckerDetectorInterface
 {
     /**

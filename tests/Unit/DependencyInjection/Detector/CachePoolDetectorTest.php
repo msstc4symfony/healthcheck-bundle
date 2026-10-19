@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Msstc4Symfony\HealthCheckBundle\Test\Unit\DependencyInjection\Detector;
 
-use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CacheChecker;
 use Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector\CachePoolDetector;
+use Msstc4Symfony\HealthCheckBundle\Infrastructure\Checker\CacheChecker;
 use Msstc4Symfony\HealthCheckBundle\Test\Mock\Cache\FilesystemAdapterSubclassFixture;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;

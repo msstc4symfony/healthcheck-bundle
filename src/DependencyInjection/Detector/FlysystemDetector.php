@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector;
 
-use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\FlysystemChecker;
+use Msstc4Symfony\HealthCheckBundle\Infrastructure\Checker\FlysystemChecker;
 use Override;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
 
+/**
+ * @internal
+ */
 final readonly class FlysystemDetector implements CheckerDetectorInterface
 {
     /**

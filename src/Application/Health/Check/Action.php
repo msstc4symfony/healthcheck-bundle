@@ -17,6 +17,9 @@ use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Event\SafeEventDisp
 use Override;
 use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 
+/**
+ * @internal
+ */
 final readonly class Action implements ActionInterface
 {
     /**

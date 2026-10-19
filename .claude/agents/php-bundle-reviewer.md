@@ -14,12 +14,12 @@ Default sources of diff: `git diff main...HEAD` for a branch, `git diff` + `git 
 ## Project facts you must hold in mind
 
 - Namespace root `Msstc4Symfony\HealthCheckBundle\` → `src/` (PSR-4). Tests: `Msstc4Symfony\HealthCheckBundle\Test\Unit\` → `tests/Unit/`, `...\Test\Mock\` → `tests/Mock/`.
-- Three layers under `src/`: `Application/Health/Check/` (use case `Action`, DTOs, `CheckTypeEnum`, `Checker/*`), `Presentation/` (`Controller/HealthController` + console commands), `DependencyInjection/` (`ContainerIds`, four compiler passes, `Detector/*`); the config tree and service loading live in `HealthCheckBundle` (an `AbstractBundle`). New files belong in the right layer.
+- Canonical bundle-standard v3 layers under `src/`: `Application/Health/Check/` (contracts, decorators, `CheckerClass`, Action runners, DTOs, events, `CheckTypeEnum`), `Infrastructure/Checker/` (the 21 built-in checkers + `HttpProbeTarget`), `Presentation/` (`Controller/HealthController` + console commands), `DependencyInjection/` (`ContainerIds`, `Detector/*`, `CompilerPass/` with the four passes); wiring in `HealthCheckBundle`.
 - `final` on classes by default. `AbstractHealthCommand` and `AbstractReadinessChecker` are the inheritance points on purpose (`.claude/docs/architecture.md` "Не-final классы"). DTOs use promoted `readonly` props; `CheckResult` is intentionally mutable (checkers push into `messages[]` / `errors[]`).
 - `CheckInterface` carries `#[AutoconfigureTag(CheckInterface::class)]`. Any user-side implementor in an autoconfigured service path is tagged automatically. `Action` consumes them via `#[AutowireIterator(CheckInterface::class)]`. A checker filters its participation with `isSupport(Context)`.
-- `Resources/config/services.php` PSR-4-loads `src/` but **excludes** the top-level `DependencyInjection/*.php` and the concrete classes in `Application/Health/Check/Checker/` (checkers are built by detectors). The interfaces must stay in the scan or `#[AutoconfigureTag]` stops working (`.claude/docs/known-issues.md`). A new top-level directory in `src/` that lands inside the loader without considering these excludes is a red flag.
+- `Resources/config/services.php` PSR-4-loads `src/` but **excludes** the top-level `DependencyInjection/*.php`, the whole `DependencyInjection/CompilerPass/` and `Infrastructure/Checker/`, and the decorators, `AbstractReadinessChecker` and `CheckerClass` in `Application/Health/Check/Checker/` (checkers are built by detectors). The interfaces must stay in the scan or `#[AutoconfigureTag]` stops working (`.claude/docs/known-issues.md`). A new top-level directory in `src/` that lands inside the loader without considering these excludes is a red flag.
 - Auto-detection lives in `DependencyInjection/Detector/*Detector` (`CheckerDetectorInterface::detect()`), run by `HealthCheckerAutoDetectionPass`, which auto-wires and tags `CheckInterface::class` on every yielded definition. New infrastructure scans are new detectors mirroring their siblings.
-- Public API surface that downstream apps depend on: HTTP routes `/_/healthcheck/{ping,readiness,liveliness}`, commands `healthcheck:liveliness` (alias `healthcheck`) and `healthcheck:readiness`, and the types `CheckInterface`, `CheckTypeEnum`, `CheckResult`, `Context`, `Request`, `Response`. Breaking these is a major-version change — call it out explicitly.
+- Public API surface that downstream apps depend on: the README "Public API" section (classes, detector interfaces and the `healthcheck.detector` tag, configuration keys), the HTTP routes `/_/healthcheck/{ping,readiness,liveliness}` and the commands `healthcheck:liveliness` (alias `healthcheck`) / `healthcheck:readiness`. Everything else is `@internal`; a change to a listed item is a BC break.
 
 ## Strict tooling — CI will run these on your behalf
 
@@ -31,7 +31,7 @@ Default sources of diff: `git diff main...HEAD` for a branch, `git diff` + `git 
 
 ## Review checklist
 
-1. **Layer hygiene** — checker logic in `Application/Health/Check/Checker/`, never in controllers/commands; DTOs without behavior; DI wiring only in the extension.
+1. **Layer hygiene** — external-system checkers in `Infrastructure/Checker/`, check contracts and decorators in `Application/Health/Check/Checker/`, never in controllers/commands; compiler passes in `DependencyInjection/CompilerPass/`; DTOs without behavior; DI wiring only in the extension.
 2. **Auto-detection drift** — for a new infrastructure type: covered by a detector or only by user-side autoconfigure? Either is fine, but the choice should be deliberate and consistent with siblings.
 3. **Exception discipline in `check()`** — broad try/catch around the underlying client call, errors translated into `$result->errors[]`. An exception escaping `check()` short-circuits every later checker in `Action`'s loop. Flag any uncaught path.
 4. **`isSupport()` correctness** — readiness-only for external infra; liveliness-only or both only when justified.

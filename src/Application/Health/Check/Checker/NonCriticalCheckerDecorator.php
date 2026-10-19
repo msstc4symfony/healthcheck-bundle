@@ -19,6 +19,8 @@ use Throwable;
  * On demotion, any partial messages/warnings added by the inner are discarded (symmetric
  * with TimeoutCheckerDecorator's "override-stripping" policy) so we don't simultaneously
  * report "checker A passed (message)" and "checker A failed (warning)" for the same run.
+ *
+ * @internal
  */
 #[Exclude]
 final readonly class NonCriticalCheckerDecorator implements CheckInterface, CheckerDecoratorInterface

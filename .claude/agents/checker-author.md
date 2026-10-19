@@ -16,16 +16,16 @@ If the caller did not already provide them, ask in one round:
 3. **Detection model** — one of:
    - **user-supplied**: a single concrete service the host application registers; autoconfigure tags it via `CheckInterface`. No detector.
    - **auto-detected**: bundle scans the container for matching definitions. Specify the rule: class FQN match, service-id regex, or container tag name. Compiler-pass change required.
-4. **Underlying client probe** — the cheap call that proves liveness (`ping`, `isConnected`, `SELECT 1`, etc.). When in doubt, look at sibling checkers in `src/Application/Health/Check/Checker/` for the closest analogue and reuse its probe shape.
+4. **Underlying client probe** — the cheap call that proves liveness (`ping`, `isConnected`, `SELECT 1`, etc.). When in doubt, look at sibling checkers in `src/Infrastructure/Checker/` for the closest analogue and reuse its probe shape.
 
 If the user names a target library by ecosystem (e.g. "Pulsar", "Kafka"), grep `composer.json` and `composer.lock` to confirm the package isn't already there before assuming a new dep is needed.
 
 ## File locations and names
 
-- Checker class: `src/Application/Health/Check/Checker/<Name>Checker.php`
-  Namespace: `Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker`.
-- Unit test: `tests/Unit/Application/Health/Check/Checker/<Name>CheckerTest.php`
-  Namespace: `Msstc4Symfony\HealthCheckBundle\Test\Unit\Application\Health\Check\Checker`.
+- Checker class: `src/Infrastructure/Checker/<Name>Checker.php` (keep `#[Exclude]`; it implements `CheckInterface` or extends `AbstractReadinessChecker` from `Application\Health\Check\Checker`; public API, so no `@internal`)
+  Namespace: `Msstc4Symfony\HealthCheckBundle\Infrastructure\Checker`.
+- Unit test: `tests/Unit/Infrastructure/Checker/<Name>CheckerTest.php`
+  Namespace: `Msstc4Symfony\HealthCheckBundle\Test\Unit\Infrastructure\Checker`.
 - Detector (auto-detected mode only): `src/DependencyInjection/Detector/<Name>Detector.php` implementing `CheckerDetectorInterface` (stateless, zero-argument constructor), yielding `healthcheck.checker.<service id>` => `Definition`, plus a unit test under `tests/Unit/DependencyInjection/Detector/`.
 
 Do **not** edit `src/Resources/config/services.php` — it intentionally excludes the concrete checker classes and already loads `Detector/`.

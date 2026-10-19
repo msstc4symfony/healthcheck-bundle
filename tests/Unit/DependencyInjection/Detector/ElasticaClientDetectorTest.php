@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Msstc4Symfony\HealthCheckBundle\Test\Unit\DependencyInjection\Detector;
 
 use Elastica\Client;
-use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\ElasticaConnectionChecker;
 use Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector\ElasticaClientDetector;
+use Msstc4Symfony\HealthCheckBundle\Infrastructure\Checker\ElasticaConnectionChecker;
 use Msstc4Symfony\HealthCheckBundle\Test\Mock\Elastica\SubclassedClient;
 use PHPUnit\Framework\TestCase;
 use stdClass;

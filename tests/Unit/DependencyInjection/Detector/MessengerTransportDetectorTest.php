@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Msstc4Symfony\HealthCheckBundle\Test\Unit\DependencyInjection\Detector;
 
-use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\MessengerTransportChecker;
 use Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector\MessengerTransportDetector;
+use Msstc4Symfony\HealthCheckBundle\Infrastructure\Checker\MessengerTransportChecker;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;

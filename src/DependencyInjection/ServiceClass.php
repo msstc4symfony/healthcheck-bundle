@@ -16,6 +16,8 @@ use Symfony\Component\DependencyInjection\Exception\ServiceNotFoundException;
  * is_subclass_of() autoloads the class, and a class whose parent comes from a package that is
  * not installed (e.g. security-core's UserPasswordValidator without symfony/validator) is a
  * fatal error. The container's reflection survives that and also resolves "%param%" classes.
+ *
+ * @internal
  */
 final class ServiceClass
 {

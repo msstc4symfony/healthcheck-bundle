@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Msstc4Symfony\HealthCheckBundle\Test\Unit\DependencyInjection\Detector;
 
-use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\MemcacheChecker;
-use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\MemcachedChecker;
-use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\PredisChecker;
-use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\RedisChecker;
-use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\RedisClusterChecker;
 use Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector\CacheClientDetector;
+use Msstc4Symfony\HealthCheckBundle\Infrastructure\Checker\MemcacheChecker;
+use Msstc4Symfony\HealthCheckBundle\Infrastructure\Checker\MemcachedChecker;
+use Msstc4Symfony\HealthCheckBundle\Infrastructure\Checker\PredisChecker;
+use Msstc4Symfony\HealthCheckBundle\Infrastructure\Checker\RedisChecker;
+use Msstc4Symfony\HealthCheckBundle\Infrastructure\Checker\RedisClusterChecker;
 use Msstc4Symfony\HealthCheckBundle\Test\Mock\Predis\SubclassedClient;
 use Msstc4Symfony\HealthCheckBundle\Test\Mock\Redis\SubclassedRedis;
 use Msstc4Symfony\HealthCheckBundle\Test\Mock\Redis\SubclassedRedisCluster;

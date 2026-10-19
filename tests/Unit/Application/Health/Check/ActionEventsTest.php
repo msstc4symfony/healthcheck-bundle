@@ -18,6 +18,7 @@ use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Event\SafeEventDisp
 use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\FailChecker;
 use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\SuccessChecker;
 use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Event\RecordingDispatcherFixture;
+use Override;
 use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use RuntimeException;
@@ -86,6 +87,7 @@ final class ActionEventsTest extends TestCase
     public function testBuggyListenerDoesNotFailProbe(): void
     {
         $dispatcher = new class implements EventDispatcherInterface {
+            #[Override]
             public function dispatch(object $event): object
             {
                 throw new RuntimeException('listener exploded');

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector;
 
-use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\LockStoreChecker;
 use Msstc4Symfony\HealthCheckBundle\DependencyInjection\ServiceClass;
+use Msstc4Symfony\HealthCheckBundle\Infrastructure\Checker\LockStoreChecker;
 use Override;
 use Symfony\Component\DependencyInjection\ChildDefinition;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -25,6 +25,8 @@ use Symfony\Component\Lock\Store\StoreFactory;
  * credentials and changes with it. The checker id joins the names with "+"
  * ("healthcheck.checker.lock.default+lock.reports") so non_critical / timeouts keys stay stable;
  * the label joins them with ", ". A store no resource uses keeps its service id.
+ *
+ * @internal
  */
 final readonly class LockStoreDetector implements CheckerDetectorInterface, WrappedTargetDetectorInterface
 {

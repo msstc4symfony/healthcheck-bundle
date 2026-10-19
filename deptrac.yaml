@@ -1,20 +1,41 @@
+# Canonical layers of the msstc4symfony bundle standard (stage B spec, section 2).
+# Copy as-is; replace the BundleRoot value with ^<bundle class>$ (deptrac reads an unanchored regex: anchors and
+# doubled backslashes, e.g. ^Msstc4Symfony\\FooBundle\\FooBundle$).
+# A bundle may drop dependencies from the ruleset, never add them.
 deptrac:
     paths:
         - ./src
 
-    exclude_files:
-        - '#.*test.*#i'
-
     layers:
+        - name: Domain
+          collectors:
+              - type: directory
+                value: src/Domain/(Entity|Document|ValueObject|Enum|Event|Repository|DocumentRepository)/.*
+
+        - name: DomainService
+          collectors:
+              - type: directory
+                value: src/Domain/(Service|Helper|Specification)/.*
+
         - name: Application
           collectors:
               - type: directory
                 value: src/Application/.*
 
+        - name: Infrastructure
+          collectors:
+              - type: directory
+                value: src/Infrastructure/.*
+
         - name: Presentation
           collectors:
               - type: directory
                 value: src/Presentation/.*
+
+        - name: Framework
+          collectors:
+              - type: directory
+                value: src/Framework/.*
 
         - name: DependencyInjection
           collectors:
@@ -24,22 +45,25 @@ deptrac:
         - name: BundleRoot
           collectors:
               - type: classLike
-                value: Msstc4Symfony\\HealthCheckBundle\\HealthCheckBundle
+                value: ^Msstc4Symfony\\HealthCheckBundle\\HealthCheckBundle$
 
     ruleset:
-        # Domain core must never reach back into Presentation or wiring layers.
+        # Check contracts, the run actions, decorators, DTOs and events.
         Application: ~
 
-        # Presentation owns the HTTP / CLI entry points; it consumes Application.
+        # Checkers probing external systems (DBAL, Redis, Kafka, ...) implement Application contracts.
+        Infrastructure:
+            - Application
+
+        # HTTP controller and console commands.
         Presentation:
             - Application
 
-        # DependencyInjection wires Application services; it must not depend on Presentation.
+        # Detectors and passes register and decorate checkers by class.
         DependencyInjection:
             - Application
+            - Infrastructure
 
-        # The bundle entrypoint composes the DI layer. It is allowed to mention
-        # Application types (e.g. CheckInterface) and DependencyInjection detectors.
         BundleRoot:
             - Application
             - DependencyInjection

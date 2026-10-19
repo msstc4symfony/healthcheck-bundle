@@ -4,6 +4,33 @@ All notable changes to this bundle are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions follow
 [Semantic Versioning](https://semver.org/); dates are UTC.
 
+## [2.0.0-rc.1] - 2026-10-19
+
+### Added
+
+- README "Public API": the classes, configuration keys, routes and commands applications may rely on.
+
+### Changed
+
+- The 21 built-in checkers moved from `Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\<X>Checker`
+  to `Msstc4Symfony\HealthCheckBundle\Infrastructure\Checker\<X>Checker` (`Cache`, `ClickHouse`, `DBALConnection`,
+  `DoctrineMigrations`, `ElasticaConnection`, `EntityManager`, `Flysystem`, `HttpClient`, `Kafka`, `LockStore`,
+  `Mailer`, `Memcache`, `Memcached`, `MessengerTransport`, `MongoConnection`, `ODMConnection`, `OpenSearch`, `Predis`,
+  `Rabbitmq`, `Redis`, `RedisCluster`) — update service definitions and decorations that name them.
+  `CheckInterface`, `AbstractReadinessChecker`, `CheckerDecoratorInterface` and the decorators stay in place.
+- `Msstc4Symfony\HealthCheckBundle\DependencyInjection\HealthChecker{AutoDetection,CriticalityDecoration,DeferredConstruction,TimeoutDecoration}Pass`
+  → `Msstc4Symfony\HealthCheckBundle\DependencyInjection\CompilerPass\…`.
+- `Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\HttpProbeTarget` →
+  `Msstc4Symfony\HealthCheckBundle\Infrastructure\Checker\HttpProbeTarget`.
+- Run events (`HealthCheckerCompletedEvent::$checkerClass`) and the timeout, non-critical and parallel failure
+  messages name the new FQCNs of the built-in checkers — update listeners, metric labels or alerts matching the old.
+- Classes outside the README "Public API" are `@internal` (Action runners, `CachedActionDecorator`,
+  `CredentialRedactor`, `SafeEventDispatcher`, the built-in decorators, `DependencyInjection\*` except the two detector
+  interfaces, `Presentation\*`).
+- PHPStan enforces `#[\Override]` on every overriding or implementing method (`checkMissingOverrideMethodAttribute`).
+- Configuration keys, routes and console commands are unchanged.
+- Adopts bundle-standard v3 (canonical hex layout, anchored deptrac `BundleRoot`).
+
 ## [1.3.0] - 2026-10-14
 
 ### Added
@@ -91,6 +118,7 @@ First release of `msstc4symfony/healthcheck-bundle` (namespace `Msstc4Symfony\He
 - PHP >= 8.4, Symfony ^7.4|^8.0, `psr/log` ^3.0.
 - The client library of each checked service (Doctrine, Redis, Kafka, ...) is optional.
 
+[2.0.0-rc.1]: https://github.com/msstc4symfony/healthcheck-bundle/compare/v1.3.0...v2.0.0-rc.1
 [1.3.0]: https://github.com/msstc4symfony/healthcheck-bundle/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/msstc4symfony/healthcheck-bundle/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/msstc4symfony/healthcheck-bundle/compare/v1.0.2...v1.1.0

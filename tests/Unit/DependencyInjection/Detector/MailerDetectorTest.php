@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Msstc4Symfony\HealthCheckBundle\Test\Unit\DependencyInjection\Detector;
 
-use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\MailerChecker;
 use Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector\MailerDetector;
+use Msstc4Symfony\HealthCheckBundle\Infrastructure\Checker\MailerChecker;
 use PHPUnit\Framework\Attributes\RequiresMethod;
 use PHPUnit\Framework\TestCase;
 use stdClass;

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector;
 
-use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CacheChecker;
 use Msstc4Symfony\HealthCheckBundle\DependencyInjection\CachePoolLocality;
+use Msstc4Symfony\HealthCheckBundle\Infrastructure\Checker\CacheChecker;
 use Override;
 use Symfony\Component\DependencyInjection\ChildDefinition;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -17,6 +17,8 @@ use Symfony\Component\DependencyInjection\Reference;
  * adapters). Pools living in process memory or on the local disk — FrameworkBundle's system pools
  * (cache.system, cache.validator, cache.serializer, …) and a filesystem cache.app — are skipped
  * (see CachePoolLocality).
+ *
+ * @internal
  */
 final readonly class CachePoolDetector implements CheckerDetectorInterface
 {

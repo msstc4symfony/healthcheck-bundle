@@ -5,13 +5,16 @@ declare(strict_types=1);
 namespace Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector;
 
 use ClickHouseDB\Client;
-use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\ClickHouseChecker;
 use Msstc4Symfony\HealthCheckBundle\DependencyInjection\ServiceClass;
+use Msstc4Symfony\HealthCheckBundle\Infrastructure\Checker\ClickHouseChecker;
 use Override;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
 
+/**
+ * @internal
+ */
 final readonly class ClickHouseDetector implements CheckerDetectorInterface
 {
     /**

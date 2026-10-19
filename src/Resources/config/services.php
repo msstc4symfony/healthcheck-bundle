@@ -13,7 +13,9 @@ return static function (ContainerConfigurator $container): void {
     $services->load('Msstc4Symfony\\HealthCheckBundle\\', '../../')
         ->exclude([
             '../../DependencyInjection/*.php',
+            '../../DependencyInjection/CompilerPass/',
             '../../Application/Health/Check/Checker/{*Checker,*Decorator,CheckerClass}.php',
+            '../../Infrastructure/Checker/',
             '../../Resources/',
             '../../HealthCheckBundle.php',
         ])

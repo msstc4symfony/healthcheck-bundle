@@ -17,6 +17,8 @@ use Symfony\Component\DependencyInjection\Attribute\Exclude;
  * Only successful responses are cached. A transient failure (100ms blip) won't trap the
  * service at "down" for the configured TTL — the next probe re-runs the chain and recovers
  * as soon as the underlying issue clears.
+ *
+ * @internal
  */
 #[Exclude]
 final readonly class CachedActionDecorator implements ActionInterface

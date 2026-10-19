@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Msstc4Symfony\HealthCheckBundle\Test\Unit\DependencyInjection\Detector;
 
-use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\KafkaChecker;
 use Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector\KafkaDetector;
+use Msstc4Symfony\HealthCheckBundle\Infrastructure\Checker\KafkaChecker;
 use PHPUnit\Framework\TestCase;
 use RdKafka\KafkaConsumer;
 use RdKafka\Producer;

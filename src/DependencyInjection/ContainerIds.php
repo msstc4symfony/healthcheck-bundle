@@ -6,6 +6,8 @@ namespace Msstc4Symfony\HealthCheckBundle\DependencyInjection;
 
 /**
  * Container parameter and service ids the bundle defines; the single source of truth for them.
+ *
+ * @internal
  */
 final readonly class ContainerIds
 {

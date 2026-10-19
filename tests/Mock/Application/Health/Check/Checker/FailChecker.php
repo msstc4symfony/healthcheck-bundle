@@ -7,14 +7,17 @@ namespace Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Che
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CheckInterface;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\Context;
+use Override;
 
 final class FailChecker implements CheckInterface
 {
+    #[Override]
     public function isSupport(Context $context): bool
     {
         return true;
     }
 
+    #[Override]
     public function check(CheckResult $result, Context $context): CheckResult
     {
         $result->addError('fail dump check');

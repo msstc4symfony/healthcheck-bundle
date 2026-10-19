@@ -28,6 +28,8 @@ use Throwable;
  * completion before returning, so no wall-clock overlap occurs — this class is sequential
  * in practice today. The wiring is in place so a future migration to async-aware drivers
  * (amphp, react) yields real parallelism without touching call sites.
+ *
+ * @internal
  */
 #[Exclude]
 final readonly class ParallelAction implements ActionInterface

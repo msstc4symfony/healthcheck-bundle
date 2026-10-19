@@ -8,6 +8,9 @@ use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
 use Override;
 use Symfony\Component\Console\Attribute\AsCommand;
 
+/**
+ * @internal
+ */
 #[AsCommand(name: 'healthcheck:liveliness', description: 'Check liveliness status', aliases: ['healthcheck'])]
 final class HealthLivelinessCommand extends AbstractHealthCommand
 {

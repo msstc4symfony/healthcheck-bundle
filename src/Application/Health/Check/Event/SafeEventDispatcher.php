@@ -14,6 +14,8 @@ use Throwable;
  *
  * Action and ParallelAction compose this instead of carrying their own copy of the
  * same fault-isolation policy.
+ *
+ * @internal
  */
 final readonly class SafeEventDispatcher
 {

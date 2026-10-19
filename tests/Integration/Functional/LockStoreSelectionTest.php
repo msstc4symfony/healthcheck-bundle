@@ -10,6 +10,7 @@ use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\Request as Chec
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\Response as CheckResponse;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
 use Msstc4Symfony\HealthCheckBundle\Test\Integration\Kernel\TestKernel;
+use Override;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -23,6 +24,7 @@ use Symfony\Component\Lock\LockFactory;
  */
 final class LockStoreSelectionTest extends TestCase
 {
+    #[Override]
     protected function setUp(): void
     {
         if (!class_exists(LockFactory::class)) {

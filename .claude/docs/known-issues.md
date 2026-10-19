@@ -73,7 +73,10 @@ directory (`DependencyInjection/`, `Checker/`) drops those, so detectors lose
 the `healthcheck.detector` tag and application checkers lose their tag:
 every probe runs with no checkers and still reports `up`. The excludes
 therefore name files (`DependencyInjection/*.php`,
-`Checker/{*Checker,*Decorator,CheckerClass}.php`).
+`Application/Health/Check/Checker/{*Checker,*Decorator,CheckerClass}.php`). Whole directories are excluded only
+when they hold no interface with `#[AutoconfigureTag]`: `DependencyInjection/CompilerPass/` and
+`Infrastructure/Checker/` (2.0) — keep it that way. The exclude paths are strings: moving a class does not update
+them (2.0 move: `HealthCheckBundleTest::testRegistersServicesButNotCheckersOrWiring` went red until they were).
 `HealthCheckBundleTest::testAutoconfigurationTagsDetectorsAndApplicationCheckers`
 guards it. Exclude globs resolve relative to `src/Resources/config/`
 (`FileLoader::findClasses()`); one that matches nothing silently loads all of

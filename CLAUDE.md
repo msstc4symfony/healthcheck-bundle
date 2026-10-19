@@ -46,14 +46,14 @@ Run a single suite: `vendor/bin/phpunit --testsuite=unit` (or `integration`).
 
 ## Architecture in 60 seconds
 
-Three layers under `src/`, enforced by DEPTRAC:
+Canonical bundle-standard v3 layers under `src/`, enforced by DEPTRAC:
 
-- `Application/Health/Check/` — domain core (Action runners, DTOs,
-  checkers, `CheckTypeEnum`).
+- `Application/Health/Check/` — core (Action runners, DTOs, check contracts, decorators, `CheckTypeEnum`).
+- `Infrastructure/Checker/` — the built-in checkers of external systems.
 - `Presentation/` — entry points (`HealthController` for
   `/_/healthcheck/{ping,readiness,liveliness}`, `healthcheck:liveliness` /
   `healthcheck:readiness` console commands).
-- `DependencyInjection/` — `ContainerIds` + 4 compiler passes + 17 detectors.
+- `DependencyInjection/` — `ContainerIds`, 17 detectors, `CompilerPass/` (4 passes).
   The config tree, `services.php` import and action-pipeline wiring live in
   `HealthCheckBundle` (an `AbstractBundle`).
 

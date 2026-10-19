@@ -54,9 +54,10 @@ refactoring.
 
 ## DEPTRAC
 
-4 layers (`Application`, `Presentation`, `DependencyInjection`,
-`BundleRoot`) enforced via `deptrac.yaml`. See `architecture.md` for the
-rule matrix.
+The canonical eight layers of bundle-standard v3 (`deptrac.yaml` = `templates/deptrac.yaml`, anchored
+`BundleRoot`); the ruleset is narrowed to `Application`, `Infrastructure`, `Presentation`, `DependencyInjection`,
+`BundleRoot`. See `architecture.md` for the rule matrix. PHPStan enforces `#[Override]`
+(`checkMissingOverrideMethodAttribute` from the template).
 
 If `make check` reports DEPTRAC violations, **fix the structural
 dependency**, don't relax the rule. The rules are tight on purpose — the

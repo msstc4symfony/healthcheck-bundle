@@ -2,20 +2,27 @@
 
 ## Layers
 
-The codebase splits into three layers under `src/`, enforced by DEPTRAC
-(`deptrac.yaml`). Cross-layer rules:
+Since 2.0 the bundle follows the canonical bundle-standard v3 layout (stage B spec,
+`docs/superpowers/specs/2026-10-17-stage-b-conventions-design.md` at the msstc4symfony root), enforced by DEPTRAC:
 
-| Layer | Allowed deps |
-|-------|--------------|
-| `Application/` | None (pure domain core) |
-| `Presentation/` | `Application` |
-| `DependencyInjection/` | `Application` |
-| `HealthCheckBundle` (root) | `Application`, `DependencyInjection` |
+| Layer | Contents | Allowed deps |
+|-------|----------|--------------|
+| `Application/Health/Check/` | `CheckInterface`, `AbstractReadinessChecker`, the checker decorators, `CheckerClass`, Action runners, DTOs, events, `CheckTypeEnum` | none |
+| `Infrastructure/Checker/` | the 21 checkers probing external systems (DBAL, Redis, Kafka, …) | `Application` |
+| `Presentation/` | `HealthController`, console commands | `Application` |
+| `DependencyInjection/` | `ContainerIds`, detectors, `CompilerPass/` (4 passes) | `Application`, `Infrastructure` |
+| `HealthCheckBundle` (root) | config tree, wiring | `Application`, `DependencyInjection` |
 
 `Application` may use Symfony **contracts** (e.g. `Psr\EventDispatcher`,
-`Symfony\Contracts\HttpClient\HttpClientInterface`, cache/lock interfaces from
-`symfony/cache` / `symfony/lock`) but must never reach into `Presentation` or
-`DependencyInjection`.
+`Symfony\Contracts\HttpClient\HttpClientInterface`, cache/lock interfaces) but never reaches into the other layers.
+`services.php` excludes `Infrastructure/Checker/` and `DependencyInjection/CompilerPass/` from the PSR-4 scan:
+checkers come only from detectors or the application (`HealthCheckBundleTest::testRegistersServicesButNotCheckersOrWiring`
+guards it — the exclude paths are strings a class move does not rewrite).
+
+Public API — README "Public API". Everything else is `@internal` (2.0): Action runners, `CachedActionDecorator`,
+`CredentialRedactor`, `SafeEventDispatcher`, the three built-in decorators, `DependencyInjection/` (except
+`CheckerDetectorInterface` and `WrappedTargetDetectorInterface` — third-party detectors implement them) and
+`Presentation/`. `HttpProbeTarget` lives in `Infrastructure/Checker/`: only `HttpClientChecker` and its detector use it.
 
 ## Execution path
 
@@ -112,10 +119,10 @@ Two paths into the iterator that `Action` consumes:
 2. **Auto-detected infrastructure checkers** — see "Detector contract" below.
 
 `Resources/config/services.php` PSR-4-loads everything under the bundle
-namespace except the top-level `DependencyInjection/*.php` (compiler passes,
-helpers), the concrete classes in `Application/Health/Check/Checker/` (built as
-`Definition`s by detectors or registered by the application), `Resources/` and
-the bundle class. Detectors under `DependencyInjection/Detector/` are loaded so
+namespace except the top-level `DependencyInjection/*.php` (helpers), the whole
+`DependencyInjection/CompilerPass/` and `Infrastructure/Checker/` (checkers are built as `Definition`s by
+detectors or registered by the application), the decorators, `AbstractReadinessChecker` and `CheckerClass` in
+`Application/Health/Check/Checker/`, `Resources/` and the bundle class. Detectors under `DependencyInjection/Detector/` are loaded so
 they receive the `healthcheck.detector` tag via autoconfigure. The interfaces
 must stay in the scan — see `known-issues.md` "`services.php` must keep the
 bundle's interfaces in the scan".
@@ -152,7 +159,7 @@ Conventions:
 system cache, chains of only such adapters) — see
 `known-issues.md` "Этап B: события, кеш-пулы, вывод".
 
-The 17 built-in detectors are listed in `tests/Unit/DependencyInjection/HealthCheckerAutoDetectionPassTest`
+The 17 built-in detectors are listed in `tests/Unit/DependencyInjection/CompilerPass/HealthCheckerAutoDetectionPassTest`
 and have per-detector unit tests under `tests/Unit/DependencyInjection/Detector/`.
 
 Adding a third-party detector: register a service implementing
@@ -211,7 +218,7 @@ fit, but it's the exception, not the norm.
   (`messages[]` / `errors[]` / `warnings[]`).
 - `Application/Health/Check/DTO/Response` — output (`final readonly`); `success`
   is set in the constructor to `errors === []`.
-- `Application/Health/Check/DTO/HttpProbeTarget` — VO that bundles
+- `Infrastructure/Checker/HttpProbeTarget` — VO that bundles
   url + method + expected status codes + timeout for `HttpClientChecker`.
 
 DTOs are readonly where possible (PHP 8.2); `CheckResult` is the mutable

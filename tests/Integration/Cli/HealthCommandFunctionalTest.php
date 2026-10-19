@@ -19,6 +19,7 @@ use Symfony\Component\Filesystem\Filesystem;
  */
 final class HealthCommandFunctionalTest extends KernelTestCase
 {
+    #[Override]
     protected function setUp(): void
     {
         (new Filesystem())->remove(sys_get_temp_dir() . '/msstc4symfony-healthcheck-bundle-test');

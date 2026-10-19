@@ -4,15 +4,18 @@ declare(strict_types=1);
 
 namespace Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector;
 
-use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\HttpClientChecker;
-use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\HttpProbeTarget;
 use Msstc4Symfony\HealthCheckBundle\DependencyInjection\ContainerIds;
+use Msstc4Symfony\HealthCheckBundle\Infrastructure\Checker\HttpClientChecker;
+use Msstc4Symfony\HealthCheckBundle\Infrastructure\Checker\HttpProbeTarget;
 use Override;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
+/**
+ * @internal
+ */
 final readonly class HttpClientTargetDetector implements CheckerDetectorInterface
 {
     /**

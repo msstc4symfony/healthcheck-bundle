@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Event;
 
+use Override;
 use Psr\EventDispatcher\EventDispatcherInterface;
 
 final class RecordingDispatcherFixture implements EventDispatcherInterface
@@ -11,6 +12,7 @@ final class RecordingDispatcherFixture implements EventDispatcherInterface
     /** @var list<object> */
     public array $events = [];
 
+    #[Override]
     public function dispatch(object $event): object
     {
         $this->events[] = $event;

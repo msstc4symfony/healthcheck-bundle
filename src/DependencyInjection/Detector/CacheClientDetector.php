@@ -7,12 +7,12 @@ namespace Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector;
 use Memcache;
 use Memcached;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\AbstractReadinessChecker;
-use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\MemcacheChecker;
-use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\MemcachedChecker;
-use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\PredisChecker;
-use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\RedisChecker;
-use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\RedisClusterChecker;
 use Msstc4Symfony\HealthCheckBundle\DependencyInjection\ServiceClass;
+use Msstc4Symfony\HealthCheckBundle\Infrastructure\Checker\MemcacheChecker;
+use Msstc4Symfony\HealthCheckBundle\Infrastructure\Checker\MemcachedChecker;
+use Msstc4Symfony\HealthCheckBundle\Infrastructure\Checker\PredisChecker;
+use Msstc4Symfony\HealthCheckBundle\Infrastructure\Checker\RedisChecker;
+use Msstc4Symfony\HealthCheckBundle\Infrastructure\Checker\RedisClusterChecker;
 use Override;
 use Predis\Client;
 use Redis;
@@ -23,6 +23,8 @@ use Symfony\Component\DependencyInjection\Reference;
 
 /**
  * Matches the client classes and their subclasses (e.g. SncRedisBundle's phpredis clients).
+ *
+ * @internal
  */
 final readonly class CacheClientDetector implements CheckerDetectorInterface
 {

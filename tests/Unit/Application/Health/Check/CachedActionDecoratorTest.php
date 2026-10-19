@@ -9,6 +9,7 @@ use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\CachedActionDecorat
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\Request;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\Response;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
+use Override;
 use PHPUnit\Framework\TestCase;
 use stdClass;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
@@ -141,6 +142,7 @@ final class RecordingActionFixture implements ActionInterface
     {
     }
 
+    #[Override]
     public function run(Request $request): Response
     {
         $this->callCount++;

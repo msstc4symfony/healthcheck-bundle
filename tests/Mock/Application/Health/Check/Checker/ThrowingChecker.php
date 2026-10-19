@@ -7,6 +7,7 @@ namespace Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Che
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CheckInterface;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\Context;
+use Override;
 use RuntimeException;
 
 final readonly class ThrowingChecker implements CheckInterface
@@ -16,11 +17,13 @@ final readonly class ThrowingChecker implements CheckInterface
     ) {
     }
 
+    #[Override]
     public function isSupport(Context $context): bool
     {
         return true;
     }
 
+    #[Override]
     public function check(CheckResult $result, Context $context): CheckResult
     {
         throw new RuntimeException($this->message);

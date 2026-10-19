@@ -10,6 +10,7 @@ use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\TimeoutChec
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\Context;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
+use Override;
 use PHPUnit\Framework\TestCase;
 
 final class TimeoutCheckerDecoratorTest extends TestCase
@@ -79,11 +80,13 @@ final class TimeoutCheckerDecoratorTest extends TestCase
             {
             }
 
+            #[Override]
             public function isSupport(Context $context): bool
             {
                 return true;
             }
 
+            #[Override]
             public function check(CheckResult $result, Context $context): CheckResult
             {
                 ($this->body)($result);

@@ -20,7 +20,7 @@ use Symfony\Component\DependencyInjection\Attribute\Exclude;
  * @internal
  */
 #[Exclude]
-final readonly class TimeoutCheckerDecorator implements CheckInterface, CheckerDecoratorInterface
+final readonly class TimeoutCheckerDecorator implements CheckInterface, CheckerDecoratorInterface, LabeledCheckerInterface
 {
     public function __construct(
         private CheckInterface $inner,
@@ -53,12 +53,18 @@ final readonly class TimeoutCheckerDecorator implements CheckInterface, CheckerD
         $result->resetTrailing($messagesBefore, $errorsBefore, $warningsBefore);
         $result->addError(sprintf(
             '%s exceeded budget (%d ms > %d ms)',
-            $this->decoratedCheckerClass(),
+            $this->checkerLabel(),
             $elapsedMs,
             $this->timeoutMs,
         ));
 
         return $result;
+    }
+
+    #[Override]
+    public function checkerLabel(): string
+    {
+        return CheckerLabel::of($this->inner);
     }
 
     #[Override]

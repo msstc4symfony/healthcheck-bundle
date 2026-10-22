@@ -58,6 +58,13 @@ final class DeferredReadinessCheckerDecoratorTest extends TestCase
         self::assertSame(['Lock store (.lock.default.store.abc) failed (Invalid DSN "redis://***@redis:6379/0")'], $result->errors);
     }
 
+    public function testExposesTheLabelWithoutBuildingTheChecker(): void
+    {
+        $decorator = new DeferredReadinessCheckerDecorator(static fn (): CheckInterface => throw new RuntimeException('must not be built'), 'Lock store (x)', SuccessChecker::class);
+
+        self::assertSame('Lock store (x)', $decorator->checkerLabel());
+    }
+
     public function testNamesTheDeferredCheckerWithoutBuildingIt(): void
     {
         $decorator = new DeferredReadinessCheckerDecorator(static fn (): CheckInterface => throw new RuntimeException('must not be built'), 'Lock store (x)', SuccessChecker::class);

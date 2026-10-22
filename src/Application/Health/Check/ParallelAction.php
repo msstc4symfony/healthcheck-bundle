@@ -6,6 +6,7 @@ namespace Msstc4Symfony\HealthCheckBundle\Application\Health\Check;
 
 use Fiber;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CheckerClass;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CheckerLabel;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CheckInterface;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\Context;
@@ -118,6 +119,6 @@ final readonly class ParallelAction implements ActionInterface
 
     private function failure(CheckInterface $checker, Throwable $e): string
     {
-        return sprintf('parallel: %s failed (%s)', CheckerClass::of($checker), CredentialRedactor::redact($e->getMessage()));
+        return sprintf('parallel: %s failed (%s)', CheckerLabel::of($checker), CredentialRedactor::redact($e->getMessage()));
     }
 }

@@ -51,7 +51,9 @@ Per-checker step:
 `@internal CheckerClass::of()` follows `CheckerDecoratorInterface::decoratedCheckerClass()`,
 implemented by the Timeout / Deferred / NonCritical decorators. The interface is
 public API: an application's own decorator implements it so reports name the
-real checker class.
+real checker class. Failure messages (timeout, non-critical, parallel) use `@internal CheckerLabel::of()`
+instead (since 2.1.0): `LabeledCheckerInterface::checkerLabel()` — `AbstractReadinessChecker` returns `label()`,
+Deferred its stored label, Timeout / NonCritical the label of their inner — else `CheckerClass::of()`.
 
 `HealthController` answers in text unless the format resolves to `json`:
 request/route format → `?_format=` → `Accept` header. Text output sections:

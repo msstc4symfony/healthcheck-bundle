@@ -100,7 +100,7 @@ Warnings:
 	Cache (cache.app) connection failed (Connection refused)
 ```
 
-`Warnings` lists failures of checkers configured as `non_critical` — including an exception thrown by such a checker, reported as `<checker class> failed (<message>)`: they are reported but do not fail the probe. Every line of a section is tab-indented; an empty section reads `Errors: none`. Responses carry `Vary: Accept`.
+`Warnings` lists failures of checkers configured as `non_critical` — including an exception thrown by such a checker, reported as `<label> failed (<message>)` (the checker class for a checker without `LabeledCheckerInterface`): they are reported but do not fail the probe. Every line of a section is tab-indented; an empty section reads `Errors: none`. Responses carry `Vary: Accept`.
 
 **JSON Response Example** — request `?_format=json` or send an `Accept: application/json` header (the query parameter wins over the header):
 ```bash
@@ -325,7 +325,9 @@ public function isSupport(Context $context): bool
 
 ### Decorating a Checker
 
-Run events and failure messages name the checker class. A decorator of your own should implement `CheckerDecoratorInterface` so they name the checker it wraps (return the wrapped decorator's `decoratedCheckerClass()` when it wraps another decorator).
+Run events name the checker class. A decorator of your own should implement `CheckerDecoratorInterface` so they name the checker it wraps (return the wrapped decorator's `decoratedCheckerClass()` when it wraps another decorator).
+
+The timeout, non-critical and parallel failure messages name the checker by `LabeledCheckerInterface::checkerLabel()`, falling back to its class: `AbstractReadinessChecker` returns its `label()`, the bundle's decorators the label of the checker they wrap. A checker that implements `CheckInterface` directly, or a decorator of your own, can implement it too — a decorator returns the `checkerLabel()` of the checker it wraps, or its class when that one has no label.
 
 ### Non-critical Checkers and Timeouts
 
@@ -359,7 +361,7 @@ release.
 
 | Namespace `Msstc4Symfony\HealthCheckBundle\` | Classes |
 |---|---|
-| `Application\Health\Check\Checker` | `CheckInterface`, `AbstractReadinessChecker`, `CheckerDecoratorInterface` |
+| `Application\Health\Check\Checker` | `CheckInterface`, `AbstractReadinessChecker`, `CheckerDecoratorInterface`, `LabeledCheckerInterface` |
 | `Application\Health\Check\DTO` | `CheckResult`, `Context`, `Request`, `Response` |
 | `Application\Health\Check\Enum` | `CheckTypeEnum` |
 | `Application\Health\Check\Event` | `HealthCheckRunStartedEvent`, `HealthCheckerCompletedEvent`, `HealthCheckRunCompletedEvent` |

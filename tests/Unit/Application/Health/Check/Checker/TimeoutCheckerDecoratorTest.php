@@ -6,12 +6,17 @@ namespace Msstc4Symfony\HealthCheckBundle\Test\Unit\Application\Health\Check\Che
 
 use Closure;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CheckInterface;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\LabeledCheckerInterface;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\TimeoutCheckerDecorator;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\Context;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
+use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\ClosureReadinessCheckerFixture;
+use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\LabeledThrowingChecker;
 use Override;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 
 final class TimeoutCheckerDecoratorTest extends TestCase
 {
@@ -73,6 +78,57 @@ final class TimeoutCheckerDecoratorTest extends TestCase
         self::assertStringContainsString('exceeded budget', $result->errors[1]);
     }
 
+    public function testNamesTheCheckerThatExceededTheBudget(): void
+    {
+        $inner = $this->makeInner(static function (): void {
+            usleep(20_000);
+        });
+
+        $result = (new TimeoutCheckerDecorator($inner, 1))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+
+        self::assertMatchesRegularExpression(
+            sprintf('/^%s exceeded budget \\(\\d+ ms > 1 ms\\)$/', preg_quote($inner::class, '/')),
+            $result->errors[0],
+        );
+    }
+
+    public function testNamesALabeledCheckerThatExceededTheBudgetByItsLabel(): void
+    {
+        $inner = new ClosureReadinessCheckerFixture(static function (): null {
+            usleep(20_000);
+
+            return null;
+        }, null);
+
+        $result = (new TimeoutCheckerDecorator($inner, 1))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+
+        self::assertMatchesRegularExpression('/^Probe \\(test\\) exceeded budget \\(\\d+ ms > 1 ms\\)$/', $result->errors[0]);
+    }
+
+    public function testExposesTheLabelOfTheCheckerItWraps(): void
+    {
+        self::assertSame(LabeledThrowingChecker::LABEL, (new TimeoutCheckerDecorator(new LabeledThrowingChecker('boom'), 10))->checkerLabel());
+    }
+
+    #[DataProvider('unusableLabels')]
+    public function testNamesTheCheckerByItsClassWhenItsLabelIsUnusable(Closure $label): void
+    {
+        $inner = $this->makeSlowLabeledInner($label);
+
+        $result = (new TimeoutCheckerDecorator($inner, 1))->check(new CheckResult(), new Context(CheckTypeEnum::READINESS));
+
+        self::assertStringStartsWith($inner::class . ' exceeded budget (', $result->errors[0]);
+    }
+
+    /**
+     * @return iterable<string, array{Closure(): string}>
+     */
+    public static function unusableLabels(): iterable
+    {
+        yield 'throwing' => [static fn (): string => throw new RuntimeException('label broken')];
+        yield 'empty' => [static fn (): string => ''];
+    }
+
     private function makeInner(Closure $body): CheckInterface
     {
         return new class($body) implements CheckInterface {
@@ -92,6 +148,41 @@ final class TimeoutCheckerDecoratorTest extends TestCase
                 ($this->body)($result);
 
                 return $result;
+            }
+        };
+    }
+
+    /**
+     * @param Closure(): string $label
+     */
+    private function makeSlowLabeledInner(Closure $label): CheckInterface
+    {
+        return new class($label) implements CheckInterface, LabeledCheckerInterface {
+            /**
+             * @param Closure(): string $label
+             */
+            public function __construct(private readonly Closure $label)
+            {
+            }
+
+            #[Override]
+            public function isSupport(Context $context): bool
+            {
+                return true;
+            }
+
+            #[Override]
+            public function check(CheckResult $result, Context $context): CheckResult
+            {
+                usleep(20_000);
+
+                return $result;
+            }
+
+            #[Override]
+            public function checkerLabel(): string
+            {
+                return ($this->label)();
             }
         };
     }

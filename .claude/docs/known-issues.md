@@ -333,10 +333,15 @@ Rector превращает литерал `[StoreFactory::class, 'createStore']
   позиционный аргумент родителя побеждал именованный у потомка.
 - **s1.** `DBALConnectionChecker` всегда шлёт dummy SELECT: `isConnected()` остаётся `true`, когда
   сервер закрыл долгоживущее соединение (worker mode).
-- **Отклонено s3** (label вместо FQCN в `NonCriticalCheckerDecorator`): у `CheckInterface` нет
-  публичного `label()` (он `protected` в `AbstractReadinessChecker`, а такие чекеры исключения
-  не бросают); новый публичный контракт — материал минорного релиза. FQCN совпадает с форматом
-  `parallel: X failed (…)` и сообщений `TimeoutCheckerDecorator`.
+- **s3 сделано в 2.1.0** (2026-10-22 UTC): метка вместо FQCN в сообщениях timeout / non-critical / parallel через
+  необязательный `LabeledCheckerInterface::checkerLabel()` (`CheckerLabel::of()` — метка или `CheckerClass::of()`).
+  Не метод `CheckInterface` (сломал бы реализации) и не `public label()` (наследник с `protected label()` —
+  fatal). Имя `checkerLabel`, а не `label`, — иначе конфликт с `protected label()` наследников
+  `AbstractReadinessChecker`. События (`HealthCheckerCompletedEvent`) по-прежнему несут класс: на нём метки метрик.
+  Реальный выигрыш у встроенных чекеров — только timeout: `AbstractReadinessChecker` сам ловит исключения, так что
+  ветки non-critical catch и `parallel: … failed` видят метку лишь у собственных чекеров с интерфейсом.
+  `CheckerLabel::of()` глотает исключение `checkerLabel()` и пустую метку → класс: вызывается в ветках отчёта
+  об ошибке, бросающая метка иначе роняла всю пробу (ревью 2.1.0, CR-001).
 - **s5** уже покрыт: `HealthCheckerAutoDetectionPassTest::testProcessPreservesChildCachePoolNameOverParent`.
 - **m5.** Порядок элементов класса `TestKernel` выправлен вручную; правило `ordered_class_elements`
   в `.php-cs-fixer.dist.php` включить нельзя — файл `ExactFileRule` в `bundle-standard` (follow-up).

@@ -11,7 +11,7 @@ use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
 use Override;
 use Throwable;
 
-abstract readonly class AbstractReadinessChecker implements CheckInterface
+abstract readonly class AbstractReadinessChecker implements CheckInterface, LabeledCheckerInterface
 {
     #[Override]
     final public function isSupport(Context $context): bool
@@ -37,6 +37,12 @@ abstract readonly class AbstractReadinessChecker implements CheckInterface
         }
 
         return $result;
+    }
+
+    #[Override]
+    public function checkerLabel(): string
+    {
+        return $this->label();
     }
 
     /**

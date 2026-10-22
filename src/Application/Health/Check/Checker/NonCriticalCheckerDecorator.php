@@ -23,7 +23,7 @@ use Throwable;
  * @internal
  */
 #[Exclude]
-final readonly class NonCriticalCheckerDecorator implements CheckInterface, CheckerDecoratorInterface
+final readonly class NonCriticalCheckerDecorator implements CheckInterface, CheckerDecoratorInterface, LabeledCheckerInterface
 {
     public function __construct(
         private CheckInterface $inner,
@@ -49,7 +49,7 @@ final readonly class NonCriticalCheckerDecorator implements CheckInterface, Chec
             $result->resetTrailing($messagesBefore, $errorsBefore, $warningsBefore);
             $result->addWarning(sprintf(
                 '%s failed (%s)',
-                CheckerClass::of($this->inner),
+                CheckerLabel::of($this->inner),
                 CredentialRedactor::redact($e->getMessage()),
             ));
 
@@ -67,6 +67,12 @@ final readonly class NonCriticalCheckerDecorator implements CheckInterface, Chec
         }
 
         return $result;
+    }
+
+    #[Override]
+    public function checkerLabel(): string
+    {
+        return CheckerLabel::of($this->inner);
     }
 
     #[Override]

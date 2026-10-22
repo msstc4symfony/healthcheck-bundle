@@ -4,6 +4,23 @@ All notable changes to this bundle are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions follow
 [Semantic Versioning](https://semver.org/); dates are UTC.
 
+## [2.1.0] - 2026-10-22
+
+### Added
+
+- `LabeledCheckerInterface::checkerLabel()`: implemented by `AbstractReadinessChecker` (its `label()`) and the
+  bundle's decorators (the label of the checker they wrap); a checker or decorator of your own may implement it. A
+  decorator of your own that implements only `CheckerDecoratorInterface` keeps the class in the messages below. A
+  subclass of `AbstractReadinessChecker` that already declares a `checkerLabel()` must declare it
+  `public function checkerLabel(): string`.
+
+### Changed
+
+- The timeout (`<checker> exceeded budget (…)`), non-critical (`<checker> failed (…)`) and parallel
+  (`parallel: <checker> failed (…)`) failure messages name a checker that implements `LabeledCheckerInterface` — every
+  built-in one — by its label, e.g. `Redis connection exceeded budget (…)`, instead of its class. Update alerts that
+  match the class. Run events still carry the class, and an empty label or one that throws falls back to the class.
+
 ## [2.0.0] - 2026-10-20
 
 No changes since 2.0.0-rc.1.
@@ -122,6 +139,7 @@ First release of `msstc4symfony/healthcheck-bundle` (namespace `Msstc4Symfony\He
 - PHP >= 8.4, Symfony ^7.4|^8.0, `psr/log` ^3.0.
 - The client library of each checked service (Doctrine, Redis, Kafka, ...) is optional.
 
+[2.1.0]: https://github.com/msstc4symfony/healthcheck-bundle/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/msstc4symfony/healthcheck-bundle/compare/v2.0.0-rc.1...v2.0.0
 [2.0.0-rc.1]: https://github.com/msstc4symfony/healthcheck-bundle/compare/v1.3.0...v2.0.0-rc.1
 [1.3.0]: https://github.com/msstc4symfony/healthcheck-bundle/compare/v1.2.0...v1.3.0

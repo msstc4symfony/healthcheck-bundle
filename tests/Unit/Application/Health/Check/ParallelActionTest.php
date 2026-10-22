@@ -16,7 +16,9 @@ use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Event\HealthCheckRu
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Event\HealthCheckRunStartedEvent;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Event\SafeEventDispatcher;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\ParallelAction;
+use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\BrokenLabelChecker;
 use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\FailChecker;
+use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\LabeledThrowingChecker;
 use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\SuccessChecker;
 use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\ThrowingChecker;
 use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Event\RecordingDispatcherFixture;
@@ -104,6 +106,36 @@ final class ParallelActionTest extends TestCase
         $checkerEvent = $dispatcher->events[1];
         self::assertInstanceOf(HealthCheckerCompletedEvent::class, $checkerEvent);
         self::assertSame(ThrowingChecker::class, $checkerEvent->checkerClass);
+    }
+
+    public function testFailureNamesALabeledCheckerBehindTheBundleDecoratorsByItsLabel(): void
+    {
+        $action = new ParallelAction(
+            [new TimeoutCheckerDecorator(new LabeledThrowingChecker('boom'), 60_000)],
+            new SafeEventDispatcher(),
+        );
+
+        self::assertSame(['parallel: Queue (main) failed (boom)'], $action->run(new Request(CheckTypeEnum::READINESS))->errors);
+    }
+
+    public function testFailureNamesTheCheckerByItsClassWhenItsLabelThrows(): void
+    {
+        $action = new ParallelAction([new BrokenLabelChecker()], new SafeEventDispatcher());
+
+        self::assertSame(
+            [sprintf('parallel: %s failed (boom)', BrokenLabelChecker::class)],
+            $action->run(new Request(CheckTypeEnum::READINESS))->errors,
+        );
+    }
+
+    public function testLabelPassesThroughTheWholeDecoratorChain(): void
+    {
+        $action = new ParallelAction(
+            [new NonCriticalCheckerDecorator(new TimeoutCheckerDecorator(new LabeledThrowingChecker('boom'), 60_000))],
+            new SafeEventDispatcher(),
+        );
+
+        self::assertSame(['Queue (main) failed (boom)'], $action->run(new Request(CheckTypeEnum::READINESS))->warnings);
     }
 
     public function testNonCriticalCheckerExceptionBecomesAWarning(): void

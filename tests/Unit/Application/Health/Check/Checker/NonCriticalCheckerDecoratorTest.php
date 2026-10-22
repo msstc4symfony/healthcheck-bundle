@@ -10,6 +10,8 @@ use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\NonCritical
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\Context;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
+use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\BrokenLabelChecker;
+use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\LabeledThrowingChecker;
 use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\ThrowingChecker;
 use Override;
 use PHPUnit\Framework\TestCase;
@@ -98,6 +100,30 @@ final class NonCriticalCheckerDecoratorTest extends TestCase
         self::assertSame(['earlier message'], $result->messages);
         self::assertSame(['earlier critical failure'], $result->errors);
         self::assertSame(['earlier warning', sprintf('%s failed (boom)', $inner::class)], $result->warnings);
+    }
+
+    public function testNamesALabeledCheckerByItsLabelWhenItThrows(): void
+    {
+        $result = (new NonCriticalCheckerDecorator(new LabeledThrowingChecker('boom')))
+            ->check(new CheckResult(), new Context(CheckTypeEnum::READINESS))
+        ;
+
+        self::assertSame(['Queue (main) failed (boom)'], $result->warnings);
+    }
+
+    public function testNamesTheCheckerByItsClassWhenItsLabelThrows(): void
+    {
+        $result = (new NonCriticalCheckerDecorator(new BrokenLabelChecker()))
+            ->check(new CheckResult(), new Context(CheckTypeEnum::READINESS))
+        ;
+
+        self::assertSame([sprintf('%s failed (boom)', BrokenLabelChecker::class)], $result->warnings);
+    }
+
+    public function testExposesTheLabelOfTheCheckerItWraps(): void
+    {
+        self::assertSame(LabeledThrowingChecker::LABEL, (new NonCriticalCheckerDecorator(new LabeledThrowingChecker('boom')))->checkerLabel());
+        self::assertSame(ThrowingChecker::class, (new NonCriticalCheckerDecorator(new ThrowingChecker('boom')))->checkerLabel());
     }
 
     private function makeInner(Closure $body): CheckInterface

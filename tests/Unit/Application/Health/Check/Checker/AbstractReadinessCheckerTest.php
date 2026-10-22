@@ -98,6 +98,11 @@ final class AbstractReadinessCheckerTest extends TestCase
         self::assertSame(['Probe (test) failed (Connection to "redis://***@redis:6379/0" refused)'], $result->errors);
     }
 
+    public function testExposesItsLabel(): void
+    {
+        self::assertSame('Probe (test)', $this->makeChecker(static fn (): null => null)->checkerLabel());
+    }
+
     /**
      * @param Closure(): ?string $probe
      * @param (Closure(): ?string)|null $skipReason

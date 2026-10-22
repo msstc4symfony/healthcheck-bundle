@@ -75,6 +75,49 @@ final class ActionEventsTest extends TestCase
         self::assertSame([null, SuccessChecker::class, FailChecker::class, null], $classes);
     }
 
+    public function testEventsCarryTheCheckerServiceIdAndTheProbeType(): void
+    {
+        $dispatcher = new RecordingDispatcherFixture();
+        $action = new Action(['app.checker.ok' => new SuccessChecker(), 'app.checker.down' => new FailChecker()], new SafeEventDispatcher($dispatcher));
+
+        $action->run(new Request(CheckTypeEnum::READINESS));
+
+        [, $ok, $down, $run] = $dispatcher->events;
+        self::assertInstanceOf(HealthCheckerCompletedEvent::class, $ok);
+        self::assertInstanceOf(HealthCheckerCompletedEvent::class, $down);
+        self::assertInstanceOf(HealthCheckRunCompletedEvent::class, $run);
+        self::assertSame(['app.checker.ok', CheckTypeEnum::READINESS], [$ok->checkerId, $ok->type]);
+        self::assertSame(['app.checker.down', CheckTypeEnum::READINESS], [$down->checkerId, $down->type]);
+        self::assertSame(CheckTypeEnum::READINESS, $run->type);
+    }
+
+    public function testANonCriticalCheckerThatFailedIsReportedAsWarned(): void
+    {
+        $dispatcher = new RecordingDispatcherFixture();
+        $action = new Action([new NonCriticalCheckerDecorator(new FailChecker()), new SuccessChecker()], new SafeEventDispatcher($dispatcher));
+
+        $action->run(new Request(CheckTypeEnum::READINESS));
+
+        [, $failed, $passed] = $dispatcher->events;
+        self::assertInstanceOf(HealthCheckerCompletedEvent::class, $failed);
+        self::assertInstanceOf(HealthCheckerCompletedEvent::class, $passed);
+        self::assertSame([true, true], [$failed->success, $failed->warned]);
+        self::assertSame([true, false], [$passed->success, $passed->warned]);
+    }
+
+    public function testCheckerIdIsNullForCheckersGivenAsAList(): void
+    {
+        $dispatcher = new RecordingDispatcherFixture();
+        $action = new Action([new SuccessChecker()], new SafeEventDispatcher($dispatcher));
+
+        $action->run(new Request(CheckTypeEnum::LIVELINESS));
+
+        $checkerEvent = $dispatcher->events[1];
+        self::assertInstanceOf(HealthCheckerCompletedEvent::class, $checkerEvent);
+        self::assertNull($checkerEvent->checkerId);
+        self::assertSame(CheckTypeEnum::LIVELINESS, $checkerEvent->type);
+    }
+
     public function testNoDispatchWhenDispatcherNull(): void
     {
         $action = new Action([new SuccessChecker()], new SafeEventDispatcher());

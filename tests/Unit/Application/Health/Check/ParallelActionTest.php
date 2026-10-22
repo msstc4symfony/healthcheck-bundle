@@ -80,6 +80,38 @@ final class ParallelActionTest extends TestCase
         self::assertFalse($checkerEvent->success);
     }
 
+    public function testEventsCarryTheCheckerServiceIdAndTheProbeType(): void
+    {
+        $dispatcher = new RecordingDispatcherFixture();
+        $action = new ParallelAction(['app.checker.ok' => new SuccessChecker(), 'app.checker.boom' => new ThrowingChecker('boom')], new SafeEventDispatcher($dispatcher));
+
+        $action->run(new Request(CheckTypeEnum::READINESS));
+
+        [, $ok, $boom, $run] = $dispatcher->events;
+        self::assertInstanceOf(HealthCheckerCompletedEvent::class, $ok);
+        self::assertInstanceOf(HealthCheckerCompletedEvent::class, $boom);
+        self::assertInstanceOf(HealthCheckRunCompletedEvent::class, $run);
+        self::assertSame(['app.checker.ok', CheckTypeEnum::READINESS, true], [$ok->checkerId, $ok->type, $ok->success]);
+        self::assertSame(['app.checker.boom', CheckTypeEnum::READINESS, false], [$boom->checkerId, $boom->type, $boom->success]);
+        self::assertSame(CheckTypeEnum::READINESS, $run->type);
+    }
+
+    public function testANonCriticalCheckerThatFailedIsReportedAsWarned(): void
+    {
+        $dispatcher = new RecordingDispatcherFixture();
+        $action = new ParallelAction([new NonCriticalCheckerDecorator(new FailChecker()), new SuccessChecker(), new ThrowingChecker('boom')], new SafeEventDispatcher($dispatcher));
+
+        $action->run(new Request(CheckTypeEnum::READINESS));
+
+        [, $failed, $passed, $thrown] = $dispatcher->events;
+        self::assertInstanceOf(HealthCheckerCompletedEvent::class, $failed);
+        self::assertInstanceOf(HealthCheckerCompletedEvent::class, $passed);
+        self::assertInstanceOf(HealthCheckerCompletedEvent::class, $thrown);
+        self::assertSame([true, true], [$failed->success, $failed->warned]);
+        self::assertSame([true, false], [$passed->success, $passed->warned]);
+        self::assertSame([false, false], [$thrown->success, $thrown->warned]);
+    }
+
     public function testRedactsCredentialsInThrownCheckerFailures(): void
     {
         $action = new ParallelAction([new ThrowingChecker('Connection to redis://app:s3cret@redis:6379 refused')], new SafeEventDispatcher());

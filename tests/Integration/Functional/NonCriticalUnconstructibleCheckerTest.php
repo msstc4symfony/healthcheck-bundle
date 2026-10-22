@@ -38,10 +38,10 @@ final class NonCriticalUnconstructibleCheckerTest extends TestCase
         (new Filesystem())->remove(sys_get_temp_dir() . '/msstc4symfony-healthcheck-bundle-test');
 
         $this->kernel = new TestKernel('non_critical_unconstructible', false, static function (ContainerConfigurator $container): void {
-            $container->extension(ContainerIds::ALIAS, ['non_critical' => [DependentReadinessCheckerFixture::class]]);
+            $container->extension(ContainerIds::ALIAS, ['non_critical' => ['app.checker.dependent']]);
             $services = $container->services();
             $services->set(UnconstructibleDependencyFixture::class);
-            $services->set(DependentReadinessCheckerFixture::class)->autowire()->tag(CheckInterface::class);
+            $services->set('app.checker.dependent', DependentReadinessCheckerFixture::class)->autowire()->tag(CheckInterface::class);
         });
         $this->kernel->boot();
     }
@@ -81,5 +81,19 @@ final class NonCriticalUnconstructibleCheckerTest extends TestCase
 
         self::assertContains(DependentReadinessCheckerFixture::class, $checkerClasses);
         self::assertNotContains(NonCriticalCheckerDecorator::class, $checkerClasses);
+    }
+
+    public function testCheckerEventCarriesTheServiceIdOfTheCheckerBehindItsDecorators(): void
+    {
+        $eventDispatcher = $this->kernel->getContainer()->get('event_dispatcher');
+        self::assertInstanceOf(EventDispatcherInterface::class, $eventDispatcher);
+        $ids = [];
+        $eventDispatcher->addListener(HealthCheckerCompletedEvent::class, static function (HealthCheckerCompletedEvent $event) use (&$ids): void {
+            $ids[$event->checkerClass] = [$event->checkerId, $event->type];
+        });
+
+        $this->kernel->handle(Request::create('/_/healthcheck/readiness'));
+
+        self::assertSame(['app.checker.dependent', CheckTypeEnum::READINESS], $ids[DependentReadinessCheckerFixture::class] ?? null);
     }
 }

@@ -6,6 +6,7 @@ namespace Msstc4Symfony\HealthCheckBundle\Application\Health\Check;
 
 use Fiber;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CheckerClass;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CheckerId;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CheckerLabel;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CheckInterface;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
@@ -36,10 +37,11 @@ use Throwable;
 final readonly class ParallelAction implements ActionInterface
 {
     /**
-     * @param iterable<CheckInterface> $healthCheckers
+     * @param iterable<array-key, CheckInterface> $healthCheckers keyed by service id in the container
      */
     public function __construct(
-        #[AutowireIterator(CheckInterface::class)]
+        // The decoration passes re-tag every checker without attributes, so Symfony keys it by its (pre-decoration) service id.
+        #[AutowireIterator(CheckInterface::class, indexAttribute: 'healthcheck_id')]
         private iterable $healthCheckers,
         private SafeEventDispatcher $eventDispatcher,
     ) {
@@ -53,14 +55,15 @@ final readonly class ParallelAction implements ActionInterface
         $context = new Context($request->type, $request->options);
         $runStartedAt = microtime(true);
 
-        /** @var list<array{checker: CheckInterface, fiber: Fiber<void, void, CheckResult, void>|null, startedAt: float, startError: Throwable|null}> $entries */
+        /** @var list<array{checker: CheckInterface, id: non-empty-string|null, fiber: Fiber<void, void, CheckResult, void>|null, startedAt: float, startError: Throwable|null}> $entries */
         $entries = [];
 
-        foreach ($this->healthCheckers as $checker) {
+        foreach ($this->healthCheckers as $id => $checker) {
             if (!$checker->isSupport($context)) {
                 continue;
             }
 
+            $checkerId = CheckerId::of($id);
             $startedAt = microtime(true);
             $fiber = new Fiber(static fn (): CheckResult => $checker->check(new CheckResult(), $context));
 
@@ -68,9 +71,9 @@ final readonly class ParallelAction implements ActionInterface
             // closure yields). Catch so one misbehaving checker cannot abort the whole drain loop.
             try {
                 $fiber->start();
-                $entries[] = ['checker' => $checker, 'fiber' => $fiber, 'startedAt' => $startedAt, 'startError' => null];
+                $entries[] = ['checker' => $checker, 'id' => $checkerId, 'fiber' => $fiber, 'startedAt' => $startedAt, 'startError' => null];
             } catch (Throwable $e) {
-                $entries[] = ['checker' => $checker, 'fiber' => null, 'startedAt' => $startedAt, 'startError' => $e];
+                $entries[] = ['checker' => $checker, 'id' => $checkerId, 'fiber' => null, 'startedAt' => $startedAt, 'startError' => $e];
             }
         }
 
@@ -81,6 +84,7 @@ final readonly class ParallelAction implements ActionInterface
             if ($entry['startError'] !== null) {
                 $combined->addError($this->failure($entry['checker'], $entry['startError']));
                 $success = false;
+                $warned = false;
             } else {
                 try {
                     /** @var CheckResult $partial */
@@ -95,9 +99,11 @@ final readonly class ParallelAction implements ActionInterface
                         $combined->addWarning($warning);
                     }
                     $success = $partial->errors === [];
+                    $warned = $partial->warnings !== [];
                 } catch (Throwable $e) {
                     $combined->addError($this->failure($entry['checker'], $e));
                     $success = false;
+                    $warned = false;
                 }
             }
 
@@ -105,6 +111,9 @@ final readonly class ParallelAction implements ActionInterface
                 CheckerClass::of($entry['checker']),
                 (microtime(true) - $entry['startedAt']) * 1000,
                 $success,
+                $entry['id'],
+                $request->type,
+                $warned,
             ));
         }
 
@@ -112,6 +121,7 @@ final readonly class ParallelAction implements ActionInterface
         $this->eventDispatcher->dispatch(new HealthCheckRunCompletedEvent(
             $response,
             (microtime(true) - $runStartedAt) * 1000,
+            $request->type,
         ));
 
         return $response;

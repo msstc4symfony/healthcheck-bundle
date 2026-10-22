@@ -354,6 +354,22 @@ Both options take checker service ids. An id no checker has fails the container 
 
 Even with these set, the bundle only reports an over-limit probe after the fact; the client options are what keep it from blocking.
 
+## Events
+
+Each probe run dispatches, through the application's event dispatcher (a listener that throws cannot fail the
+probe):
+
+- `HealthCheckRunStartedEvent` — `$request`;
+- `HealthCheckerCompletedEvent`, once per checker — `$checkerClass` (behind the bundle's decorators), `$durationMs`,
+  `$success` (no error added), `$warned` (a warning added: a non-critical checker that failed), `$checkerId` (its
+  service id) and `$type` (the probe);
+- `HealthCheckRunCompletedEvent` — `$response`, `$totalDurationMs` and `$type`.
+
+`$checkerId` and `$type` are nullable: null only in an event built by hand or from an Action given its checkers as a
+list.
+
+A run the result cache answers dispatches none of them.
+
 ## Public API
 
 Applications use, implement or configure only these; every other class is `@internal` and may change in a minor

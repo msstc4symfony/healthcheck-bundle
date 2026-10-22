@@ -22,7 +22,7 @@ final readonly class RedisChecker extends AbstractReadinessChecker
     #[Override]
     protected function doCheck(): ?string
     {
-        if (!$this->connection->set(CheckInterface::PROBE_KEY, (string) time(), 1)) {
+        if (!$this->connection->set(CheckInterface::PROBE_KEY, (string) time(), ['ex' => 1])) {
             throw new RuntimeException('SET command returned false');
         }
 

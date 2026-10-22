@@ -30,12 +30,6 @@ final class ContainerCompileTest extends KernelTestCase
         (new Filesystem())->remove(sys_get_temp_dir() . '/msstc4symfony-healthcheck-bundle-test');
     }
 
-    #[Override]
-    protected static function getKernelClass(): string
-    {
-        return TestKernel::class;
-    }
-
     public function testKernelBootsAndRegistersBundle(): void
     {
         $kernel = self::bootKernel();
@@ -87,5 +81,11 @@ final class ContainerCompileTest extends KernelTestCase
 
         self::assertNotNull($routes->get('healthcheck-liveliness'));
         self::assertSame('/_/healthcheck/liveliness', $routes->get('healthcheck-liveliness')->getPath());
+    }
+
+    #[Override]
+    protected static function getKernelClass(): string
+    {
+        return TestKernel::class;
     }
 }

@@ -32,27 +32,6 @@ final class HealthControllerFunctionalTest extends WebTestCase
         (new Filesystem())->remove(sys_get_temp_dir() . '/msstc4symfony-healthcheck-bundle-test');
     }
 
-    #[Override]
-    protected static function getKernelClass(): string
-    {
-        return TestKernel::class;
-    }
-
-    /**
-     * @param array<array-key, mixed> $options
-     */
-    #[Override]
-    protected static function createKernel(array $options = []): TestKernel
-    {
-        // Debug mode is intentionally OFF: it activates Symfony's debug logger which
-        // prints to stdout and trips beStrictAboutOutputDuringTests. Routing/container
-        // wiring is fully exercised without debug.
-        $environment = \is_string($options['environment'] ?? null) ? $options['environment'] : 'test';
-        $debug = \is_bool($options['debug'] ?? null) && $options['debug'];
-
-        return new TestKernel($environment, $debug);
-    }
-
     public function testPingReturnsPong(): void
     {
         $client = self::createClient();
@@ -136,6 +115,27 @@ final class HealthControllerFunctionalTest extends WebTestCase
 
         $this->expectException(NotFoundHttpException::class);
         $client->request(Request::METHOD_GET, '/_/healthcheck/unknown');
+    }
+
+    #[Override]
+    protected static function getKernelClass(): string
+    {
+        return TestKernel::class;
+    }
+
+    /**
+     * @param array<array-key, mixed> $options
+     */
+    #[Override]
+    protected static function createKernel(array $options = []): TestKernel
+    {
+        // Debug mode is intentionally OFF: it activates Symfony's debug logger which
+        // prints to stdout and trips beStrictAboutOutputDuringTests. Routing/container
+        // wiring is fully exercised without debug.
+        $environment = \is_string($options['environment'] ?? null) ? $options['environment'] : 'test';
+        $debug = \is_bool($options['debug'] ?? null) && $options['debug'];
+
+        return new TestKernel($environment, $debug);
     }
 
     private function assertJsonProbe(Response $response): void

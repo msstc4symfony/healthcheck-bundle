@@ -25,12 +25,6 @@ final class HealthCommandFunctionalTest extends KernelTestCase
         (new Filesystem())->remove(sys_get_temp_dir() . '/msstc4symfony-healthcheck-bundle-test');
     }
 
-    #[Override]
-    protected static function getKernelClass(): string
-    {
-        return TestKernel::class;
-    }
-
     public function testReadinessCommandRunsToCompletion(): void
     {
         $tester = $this->executeCommand('healthcheck:readiness');
@@ -61,6 +55,12 @@ final class HealthCommandFunctionalTest extends KernelTestCase
 
         $command = $application->find('healthcheck');
         self::assertSame('healthcheck:liveliness', $command->getName());
+    }
+
+    #[Override]
+    protected static function getKernelClass(): string
+    {
+        return TestKernel::class;
     }
 
     private function executeCommand(string $name): CommandTester

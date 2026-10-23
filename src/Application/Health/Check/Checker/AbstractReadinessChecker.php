@@ -8,6 +8,7 @@ use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\CredentialRedactor;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\Context;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Run\SharedProbe;
 use Override;
 use Throwable;
 
@@ -30,7 +31,29 @@ abstract readonly class AbstractReadinessChecker implements CheckInterface, Labe
                 return $result;
             }
 
-            $detail = $this->doCheck();
+            $key = $this->sharedProbeKey();
+            $shared = $key === null ? null : $context->sharedProbes->reuse($key);
+            if ($shared instanceof SharedProbe) {
+                $shared->reportTo($result, $this->label(), null);
+
+                return $result;
+            }
+
+            $startedAt = hrtime(true);
+            try {
+                $detail = $this->doCheck();
+            } catch (Throwable $e) {
+                if ($key !== null) {
+                    $context->sharedProbes->record($key, SharedProbe::failed($this->label(), CredentialRedactor::redact($e->getMessage()), $startedAt, hrtime(true)));
+                }
+
+                throw $e;
+            }
+
+            if ($key !== null) {
+                $context->sharedProbes->record($key, SharedProbe::passed($this->label(), $startedAt, hrtime(true)));
+            }
+
             $result->addMessage(sprintf('%s passed', $this->label()) . ($detail !== null ? sprintf(' (%s)', CredentialRedactor::redact($detail)) : ''));
         } catch (Throwable $e) {
             $result->addError(sprintf('%s failed (%s)', $this->label(), CredentialRedactor::redact($e->getMessage())));
@@ -66,6 +89,18 @@ abstract readonly class AbstractReadinessChecker implements CheckInterface, Labe
      * MessageCountAwareInterface, etc.).
      */
     protected function skipReason(): ?string
+    {
+        return null;
+    }
+
+    /**
+     * Override when several checkers probe one backend (e.g. cache pools on one Redis connection): within one
+     * run only the first checker with a given key really probes, the others report its outcome without probing.
+     * Only the outcome of doCheck() is shared, not a failure to build a checker service of your own.
+     *
+     * @return non-empty-string|null
+     */
+    protected function sharedProbeKey(): ?string
     {
         return null;
     }

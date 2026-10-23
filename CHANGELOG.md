@@ -4,6 +4,32 @@ All notable changes to this bundle are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions follow
 [Semantic Versioning](https://semver.org/); dates are UTC.
 
+## [2.3.0] - 2026-10-23
+
+### Added
+
+- `timeouts.probe_ms`: an optional budget for a whole probe run. A checker that has not started when the run is past
+  it is skipped and reported `<label> skipped: probe budget exhausted (N ms > M ms)` (a warning when non-critical),
+  with its `HealthCheckerCompletedEvent` (counted failed, or degraded when non-critical, ~0 ms). The first checker
+  of a run always runs. Unset or null (default) is unlimited, so behaviour is unchanged unless configured.
+- `AbstractReadinessChecker::sharedProbeKey()` (protected, default null): checkers of one backend that return the
+  same key probe it once per run, the others report the first outcome. Run state travels in `Context` (optional
+  constructor arguments, `@internal`).
+
+### Changed
+
+- Cache pools on one connection probe it once per run: pools of `RedisAdapter`, `MemcachedAdapter` and
+  `CouchbaseCollectionAdapter` that share a connection service (pools on one Redis DSN do) report the outcome of the
+  first one instead of each paying a connect timeout when the server is down. Every pool keeps its checker and id
+  (`healthcheck.checker.cache.pool.<name>`); a later pool reports `<label> passed (shared connection probed via <first>)`
+  or `<label>: shared connection probe via <first> failed: <message>`. Tag-aware Redis pools share only among
+  themselves; PDO and DBAL pools are never shared. A reused pool's own `timeouts` budget is compared with the duration of
+  the real probe, and a connection that fails while the pool is built is shared too. `CacheChecker` gets an optional
+  fourth argument (the share key). On a cluster or multi-server connection the one probe reaches one shard or server, and a failure of
+  the first pool's own namespace (a Redis ACL key pattern, its marshaller) is reported for the others too.
+- Upgrade note: a subclass of `AbstractReadinessChecker` that already declares a method named `sharedProbeKey()` with
+  an incompatible signature or visibility fatals on load; rename it.
+
 ## [2.2.0] - 2026-10-22
 
 ### Added

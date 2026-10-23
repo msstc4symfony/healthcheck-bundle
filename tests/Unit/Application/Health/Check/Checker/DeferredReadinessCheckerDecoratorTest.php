@@ -9,6 +9,7 @@ use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\DeferredRea
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\CheckResult;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\DTO\Context;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Enum\CheckTypeEnum;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Run\ProbeBudget;
 use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\SuccessChecker;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -37,6 +38,34 @@ final class DeferredReadinessCheckerDecoratorTest extends TestCase
 
         self::assertSame(['success dump check'], $result->messages);
         self::assertSame([], $result->errors);
+    }
+
+    public function testDoesNotBuildTheCheckerOnceTheProbeBudgetIsExhausted(): void
+    {
+        $built = false;
+        $decorator = new DeferredReadinessCheckerDecorator(static function () use (&$built): CheckInterface {
+            $built = true;
+
+            return new SuccessChecker();
+        }, 'Store (main)', SuccessChecker::class);
+
+        $budget = new ProbeBudget(hrtime(true) - 10_000_000_000, 100);
+        $budget->checkerFinished();
+
+        $result = $decorator->check(new CheckResult(), new Context(CheckTypeEnum::READINESS, [], $budget));
+
+        self::assertFalse($built);
+        self::assertMatchesRegularExpression('/^Store \\(main\\) skipped: probe budget exhausted \\(\\d+ ms > 100 ms\\)$/', $result->errors[0]);
+    }
+
+    public function testCountsAConstructionFailureAsAFinishedChecker(): void
+    {
+        $budget = new ProbeBudget(hrtime(true) - 10_000_000_000, 1);
+        $decorator = new DeferredReadinessCheckerDecorator(static fn (): CheckInterface => throw new RuntimeException('no'), 'Store (main)', SuccessChecker::class);
+
+        $decorator->check(new CheckResult(), new Context(CheckTypeEnum::READINESS, [], $budget));
+
+        self::assertNotNull($budget->exhaustedMessage('Next', hrtime(true)));
     }
 
     public function testReportsConstructionFailureAsThisCheckFailing(): void

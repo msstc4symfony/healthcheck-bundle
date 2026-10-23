@@ -47,7 +47,12 @@ The bundle automatically detects and registers health checkers for the following
 - **Doctrine ORM** — entity managers (`doctrine.orm.*_entity_manager`)
 - **Doctrine MongoDB ODM** — MongoDB connections + document managers
 - **Doctrine Migrations** — schema-status probe
-- **Symfony Cache Pools** — `cache.pool`-tagged services backed by infrastructure: Redis/Valkey, Memcached, PDO, Doctrine DBAL, Couchbase, third-party adapters, and chains containing one of them. Pools that live in memory or on the local disk (Array, APCu, Filesystem, PhpFiles, PhpArray, Null) — including FrameworkBundle's system pools `cache.system`, `cache.validator`, `cache.serializer`, … and a filesystem `cache.app` — are not probed
+- **Symfony Cache Pools** — `cache.pool`-tagged services backed by infrastructure, one checker per pool (`healthcheck.checker.cache.pool.<name>`, label `Cache (<name>) connection`):
+  - Probed: Redis/Valkey, Memcached, PDO, Doctrine DBAL, Couchbase, third-party adapters, and chains containing one of them.
+  - Not probed: pools in memory or on the local disk (Array, APCu, Filesystem, PhpFiles, PhpArray, Null), including FrameworkBundle's system pools `cache.system`, `cache.validator`, `cache.serializer`, … and a filesystem `cache.app`.
+  - Shared connection: pools of a `RedisAdapter`, `MemcachedAdapter` or `CouchbaseCollectionAdapter` (subclasses included) on the same connection service — pools on one Redis DSN or `provider` share it — probe it **once per run**. The first such pool really probes; the others report its outcome without touching the connection: `<label> passed (shared connection probed via <first label>)`, or `<label>: shared connection probe via <first label> failed: <message>`. With the server down this costs one connect timeout instead of one per pool. The outcome is kept for one probe run only. A reused pool reports about 0 ms in its `HealthCheckerCompletedEvent` (so per-pool latency metrics show the one real probe on the first pool and ~0 on the others), but its own `timeouts` budget is compared with the duration of the real probe: a pool with a smaller budget than the slow first one fails `exceeded budget` too. A connection that fails while the pool service is built (an eager client) is shared the same way: the target is built once. Every pool still has its checker, id, event and `non_critical` / `timeouts.overrides` key.
+  - Not shared: a `RedisTagAwareAdapter` pool shares only with other tag-aware pools on that connection (it also fails on the eviction policy); `PdoAdapter` and `DoctrineDbalAdapter` pools are each probed (they fail per table); chains, third-party adapters, and pools wired with a named (`$redis: …`) instead of a positional first argument are each probed too. A `tags: true` pool is tagged as its inner plain adapter and shares like one.
+  - The shared probe proves the connection and the first pool, not the namespace or marshaller of the others; a failure of the first pool's own namespace (a Redis ACL key pattern, its marshaller) is reported for the others too. On a cluster or multi-server connection (Redis Cluster, `RedisArray`, several Memcached servers) the one probe reaches one shard or server, so a single node down may go unseen by the pools.
 - **Redis** / **Predis** — `\Redis`, `\RedisCluster` and `Predis\Client` clients, subclasses included (see [Redis](#redis))
 - **Memcached** / **Memcache** — cache clients detected by class, subclasses included
 - **RabbitMQ** — `old_sound_rabbit_mq.connection`-tagged services
@@ -271,6 +276,8 @@ final readonly class SearchChecker extends AbstractReadinessChecker
 
 Override `skipReason()` to report `<label> skipped (<reason>)` instead of probing.
 
+Override `sharedProbeKey()` (a non-empty string, default null) when several checkers probe one backend: within one probe run only the first checker with a given key runs `doCheck()`, the others report its outcome (see the shared cache pool connection above). Only the outcome of `doCheck()` is shared: a checker of yours whose service fails while it is built is not, as the bundle learns the key of its own cache pool checkers only.
+
 ### Registering the Checker
 
 The bundle uses Symfony's autoconfiguration with the `#[AutoconfigureTag]` attribute. If your checker is in a directory with autoconfiguration enabled, it will be automatically registered.
@@ -340,7 +347,19 @@ msstc4symfony_healthcheck:
             healthcheck.checker.doctrine.dbal.default_connection: 5000
 ```
 
-Both options take checker service ids. An id no checker has fails the container build with the list of known ids. Quote ids containing brackets in YAML, e.g. `'healthcheck.checker.lock.invoice[1]'` (a combined lock store).
+`non_critical` and `timeouts.overrides` take checker service ids. An id no checker has fails the container build with the list of known ids. Quote ids containing brackets in YAML, e.g. `'healthcheck.checker.lock.invoice[1]'` (a combined lock store).
+
+#### Probe budget
+
+```yaml
+msstc4symfony_healthcheck:
+    timeouts:
+        probe_ms: 5000
+```
+
+`timeouts.probe_ms` (positive integer; unset or `~` = unlimited, the default; 0, negatives and non-integers are rejected) bounds the whole probe run. Before a checker starts, the time since the run began is compared with the budget; once it is exceeded the checker is not run and reports `<label> skipped: probe budget exhausted (<elapsed> ms > <budget> ms)` — an error, or a warning for a `non_critical` checker. The first checker of a run always runs, whatever the budget. The budget gates checkers that have **not started**; a checker already running is never interrupted (see below), so a run can still end past `probe_ms` by the length of its last checker. With `execution: parallel` the checkers still start one after another (synchronous Fibers), so it behaves the same. It is enforced by the bundle's own decorators, which wrap every checker.
+
+A skipped checker counts as **failed** (or **degraded**, when `non_critical`) in the run result and in `HealthCheckerCompletedEvent` (`$success` false, or true with `$warned`), with a duration of about 0 ms, so metrics built on the events count it as failed or degraded. A separate "skipped" status does not exist.
 
 #### Timeouts are checked after the probe returns
 
@@ -369,6 +388,8 @@ probe):
 list.
 
 A run the result cache answers dispatches none of them.
+
+A checker that reuses a shared probe (cache pools on one connection) or is skipped by `timeouts.probe_ms` completes in about 0 ms; the event carries the shared outcome (`$success` false for a failed shared probe).
 
 ## Public API
 

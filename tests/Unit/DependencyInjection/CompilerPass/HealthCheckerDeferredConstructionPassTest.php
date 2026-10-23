@@ -8,6 +8,7 @@ use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CheckInterf
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\DeferredReadinessCheckerDecorator;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\TimeoutCheckerDecorator;
 use Msstc4Symfony\HealthCheckBundle\DependencyInjection\CompilerPass\HealthCheckerDeferredConstructionPass;
+use Msstc4Symfony\HealthCheckBundle\DependencyInjection\ContainerIds;
 use Msstc4Symfony\HealthCheckBundle\Infrastructure\Checker\ElasticaConnectionChecker;
 use Msstc4Symfony\HealthCheckBundle\Infrastructure\Checker\LockStoreChecker;
 use Msstc4Symfony\HealthCheckBundle\Test\Mock\Application\Health\Check\Checker\DependentReadinessCheckerFixture;
@@ -55,6 +56,25 @@ final class HealthCheckerDeferredConstructionPassTest extends TestCase
         self::assertSame(DeferredReadinessCheckerDecorator::class, $container->getDefinition('healthcheck.checker.store')->getClass());
         self::assertSame(TimeoutCheckerDecorator::class, $container->getDefinition('healthcheck.checker.store.deferred_inner')->getClass());
         self::assertSame(DependentReadinessCheckerFixture::class, $container->getDefinition('healthcheck.checker.store')->getArgument(2));
+    }
+
+    public function testPassesTheShareKeyAndTheTimeoutBudgetToTheDeferredDecorator(): void
+    {
+        $container = new ContainerBuilder();
+        $container->setDefinition('healthcheck.checker.pool.inner', (new Definition(DependentReadinessCheckerFixture::class))->addTag(ContainerIds::TAG_SHARED_PROBE, ['key' => 'redis:c']));
+        $container->setDefinition('healthcheck.checker.pool', (new Definition(TimeoutCheckerDecorator::class))
+            ->setArguments([new Reference('healthcheck.checker.pool.inner'), 750])
+            ->addTag(CheckInterface::class));
+        $container->setDefinition('healthcheck.checker.plain', (new Definition(DependentReadinessCheckerFixture::class))->addTag(CheckInterface::class));
+
+        (new HealthCheckerDeferredConstructionPass())->process($container);
+
+        $pool = $container->getDefinition('healthcheck.checker.pool');
+        self::assertSame('redis:c', $pool->getArgument(3));
+        self::assertSame(750, $pool->getArgument(4));
+        $plain = $container->getDefinition('healthcheck.checker.plain');
+        self::assertNull($plain->getArgument(3));
+        self::assertNull($plain->getArgument(4));
     }
 
     public function testResolvesTheClassOfAChildDefinitionThroughItsParents(): void

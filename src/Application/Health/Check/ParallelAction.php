@@ -17,6 +17,7 @@ use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Event\HealthChecker
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Event\HealthCheckRunCompletedEvent;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Event\HealthCheckRunStartedEvent;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Event\SafeEventDispatcher;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Run\ProbeBudget;
 use Override;
 use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 use Symfony\Component\DependencyInjection\Attribute\Exclude;
@@ -38,12 +39,14 @@ final readonly class ParallelAction implements ActionInterface
 {
     /**
      * @param iterable<array-key, CheckInterface> $healthCheckers keyed by service id in the container
+     * @param int<1, max>|null $probeBudgetMs
      */
     public function __construct(
         // The decoration passes re-tag every checker without attributes, so Symfony keys it by its (pre-decoration) service id.
         #[AutowireIterator(CheckInterface::class, indexAttribute: 'healthcheck_id')]
         private iterable $healthCheckers,
         private SafeEventDispatcher $eventDispatcher,
+        private ?int $probeBudgetMs = null,
     ) {
     }
 
@@ -52,8 +55,8 @@ final readonly class ParallelAction implements ActionInterface
     {
         $this->eventDispatcher->dispatch(new HealthCheckRunStartedEvent($request));
 
-        $context = new Context($request->type, $request->options);
         $runStartedAt = microtime(true);
+        $context = new Context($request->type, $request->options, ProbeBudget::start($this->probeBudgetMs, hrtime(true)));
 
         /** @var list<array{checker: CheckInterface, id: non-empty-string|null, fiber: Fiber<void, void, CheckResult, void>|null, startedAt: float, startError: Throwable|null}> $entries */
         $entries = [];

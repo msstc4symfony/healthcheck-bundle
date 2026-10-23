@@ -150,6 +150,8 @@ Conventions:
   (`DependencyInjection/ServiceClass`): class or subclass, `%param%` classes and `ChildDefinition`
   parent chains resolved, exact-name fallback when the target type is not installed. This is the
   canonical pattern (Elastica, cache clients, lock stores, …); skip `isAbstract()` definitions.
+- `CachePoolDetector` (since 2.3.0) keeps one checker per pool and gives each a share key
+  (`CachePoolConnection::shareKey()`); checkers with one key probe once per run (`Context::$sharedProbes`); see `known-issues.md` "Пулы на одном соединении и бюджет пробы (2.3.0)".
 - `CacheClientDetector` (since 1.2.0) maps by `ServiceClass::is` in this order: `Predis\Client` →
   `PredisChecker`, `\Redis` → `RedisChecker`, `\RedisCluster` → `RedisClusterChecker`
   (label `Redis cluster connection`), `Memcached`, `Memcache`. All three Redis checkers probe with
@@ -215,7 +217,8 @@ fit, but it's the exception, not the norm.
 - `Application/Health/Check/DTO/Request` — input; carries `type` +
   `options`.
 - `Application/Health/Check/DTO/Context` — derived from Request for checker
-  consumption.
+  consumption; since 2.3.0 carries the optional `@internal` run state from `Application/Health/Check/Run/` (`ProbeBudget` for `timeouts.probe_ms`, checked by the
+  Timeout and Deferred decorators before a checker starts, and the per-run `SharedProbes`); one Context per run.
 - `Application/Health/Check/DTO/CheckResult` — mutable accumulator
   (`messages[]` / `errors[]` / `warnings[]`).
 - `Application/Health/Check/DTO/Response` — output (`final readonly`); `success`
@@ -256,3 +259,12 @@ The `ActionInterface` alias points at one of `Action::class`,
   liveliness / readiness console commands, which only supply `getType()`.
 
 Every other concrete class is `final` (`final readonly` where stateless).
+
+## Checker id in events (2.2.0, 2026-10-22 UTC)
+
+`Action`/`ParallelAction` take the checkers through `#[AutowireIterator(CheckInterface::class, indexAttribute: 'healthcheck_id')]`.
+The three decoration passes re-tag every checker without attributes, so `PriorityTaggedServiceTrait` falls back to the
+service id (the `container.decorator` id for a user `decorates:`) as the key: the id behind the bundle's decorators.
+`CheckerId::of()` turns the key into the event's `$checkerId` (a list key → null). Pinned by
+`CheckerEventIdTest` (own and detected checker, sequential and parallel) and `NonCriticalUnconstructibleCheckerTest`.
+metrics-bridge-healthcheck needs it: labels are not unique (every Redis client is "Redis connection").

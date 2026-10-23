@@ -272,8 +272,8 @@ Rector превращает литерал `[StoreFactory::class, 'createStore']
   `CachePoolPass` — id сервисов, после — inline `ChildDefinition` (наш pass идёт после, priority 0 <
   32). Неизвестные/сторонние адаптеры, `ProxyAdapter`, `Psr16Adapter`, `TagAwareAdapter`,
   помеченный `cache.pool` вручную, проверяются как раньше (лучше лишняя проба, чем пропущенная
-  зависимость). Несколько пулов на одном Redis (`cache.app` + наследники `cache.rate_limiter`,
-  `cache.scheduler`, …) дают по пробе на пул — дедупликации по провайдеру нет.
+  зависимость). Несколько пулов на одном Redis дедуплицируются с 2.3.0 — см. «Пулы на одном соединении
+  и бюджет пробы (2.3.0)».
 - **Неровный отступ текстового вывода** (`Messages: \nfirst\n\tsecond`) исправлен:
   заголовок секции на своей строке, каждая строка с `\t`, пустая секция — `Title: none`; так же, как в
   CLI (CLI по-прежнему опускает пустые секции и прячет `Messages` без `-v`). Ответы проб несут
@@ -408,3 +408,73 @@ every detector using it. The abstract prototype itself is skipped explicitly by 
 - **Label через `Instantiator` видит значения по умолчанию свойств** (с 1.3.0): объект создаётся без конструктора,
   но свойства с default-значением и нетипизированные (`null`) уже заполнены. `label()`, читающий такое свойство,
   вернёт строку с ним, а не fallback (ghost раньше бросал). Реальных чекеров с таким `label()` нет.
+
+## Пулы на одном соединении и бюджет пробы (2.3.0, 2026-10-23 UTC)
+
+Замер в bundles-showcase при упавшем Redis: readiness 8–22 с. Пять пулов на одном Redis (`cache.app`,
+`cache.messenger.restart_workers_signal`, `cache.http_client.pool`, `metrics.cache`, `doctrine.result_cache_pool`) —
+по `CacheChecker` на каждый, у каждого свой connect timeout, чекеры идут последовательно, а `timeouts.default_ms`
+сравнивается только после возврата вызова (`TimeoutCheckerDecorator`).
+
+- **Решение: id чекеров не меняются, делится результат пробы в рамках одного прогона** (первоначальный вариант с
+  общим id группы отвергнут ревью: пропадали id пулов, метрики, алерты). Каждый пул — свой чекер
+  `healthcheck.checker.cache.pool.<name>`; `non_critical` / `timeouts.overrides` работают на пул как раньше.
+- **Ключ — `@internal DependencyInjection\CachePoolConnection::shareKey()`**: `<kind>:<id сервиса соединения>`.
+  `CachePoolPass` (priority 32, раньше наших проходов) превращает `provider` тега `cache.pool` в `Reference` —
+  аргумент 0 адаптера (`index_0` у `ChildDefinition`); DSN даёт один `.cache_connection.<hash DSN>` на DSN, а
+  `cache.default_redis_provider` — alias на него (alias разворачивается, с защитой от цикла). Класс и аргумент 0
+  берутся по цепочке родителей (с защитой от цикла/отсутствующего родителя → null). Виды: `redis`
+  (RedisAdapter), `redis_tag_aware` (отдельный: падает по eviction policy независимо), `memcached`, `couchbase`
+  (+подклассы). PDO / DBAL не делятся (падают по таблице), сторонние адаптеры, `ChainAdapter`,
+  `TagAwareAdapter` (аргумент 0 — внутренний пул) и пулы с именованным (`$redis`) вместо позиционного аргумента 0
+  — по пробе на пул (безопасный откат). Пул `tags: true` помечен `cache.pool` как внутренний RedisAdapter, поэтому
+  делится как обычный.
+- **Механика.** `CacheChecker` (4-й аргумент `$shareKey`) переопределяет `AbstractReadinessChecker::sharedProbeKey()`;
+  `check()` смотрит `Context::$sharedProbes` (`SharedProbes`, создаётся с каждым `Context`, т.е. на каждый прогон —
+  сбрасывать нечего, воркеры/kernel.reset не затронуты). Первый чекер с ключом пробует и записывает `SharedProbe`
+  (label + отредактированная ошибка); следующие отвечают `<label> passed (shared connection probed via <first>)` или
+  `<label>: shared connection probe via <first> failed: <msg>` за ~0 мс. `SharedProbe` хранит длительность реальной пробы;
+  `TimeoutCheckerDecorator` берёт её у `SharedProbes::takeReusedDurationMs()` (ставится `reuse()`) и сравнивает с
+  СВОИМ бюджетом (`max(измеренное, повторно использованное)`), поэтому пул с меньшим timeout после медленного первого
+  тоже падает `exceeded budget`, а non_critical первый + critical поздний даёт warning + error.
+- **Eager-клиенты (Couchbase, `\Redis` с connect при создании).** Сбой при построении цели падает в
+  `DeferredReadinessCheckerDecorator`, а не в `CacheChecker`, поэтому декоратор тоже знает ключ и бюджет Timeout:
+  `CachePoolDetector` ставит тег `healthcheck.shared_probe` (`key`), `HealthCheckerDeferredConstructionPass` читает его
+  и бюджет `TimeoutCheckerDecorator` и передаёт аргументами 4 и 5. До вызова фабрики Deferred смотрит `outcomeOf(key)`
+  (не `reuse()`: иначе длительность «протечёт» следующему Timeout) и отвечает общим исходом через
+  `SharedProbe::reportTo()`; при исключении фабрики пишет `SharedProbe::failed()`.
+- **`SharedProbe::reportTo()` сначала сравнивает длительность с бюджетом,** потом смотрит ошибку: так медленная общая
+  неудача даёт `exceeded budget`, как и в пути Timeout (там `resetTrailing` заменяет ошибку). Оба пути покрыты
+  `SharedProbeBehaviourTest::testASlowSharedFailureExceedsASmallerBudgetTheSameWayInBothPaths`.
+- **Ограничения общей пробы (задокументированы в README):** на кластерном/многосерверном подключении (Redis Cluster,
+  `RedisArray`, несколько Memcached) одна проба попадает на один шард; ошибка namespace первого пула (ACL key pattern,
+  marshaller) распространяется на остальные; у пользовательских `sharedProbeKey()` шарится только исход `doCheck()` —
+  ключ для Deferred знает лишь `CachePoolDetector` (тег).
+- **Run-state классы** (`Application\Health\Check\Run\{ProbeBudget,SharedProbes,SharedProbe}`) — `@internal`, как и
+  `Context::$budget` / `$sharedProbes`; публичная точка расширения только `AbstractReadinessChecker::sharedProbeKey()`.
+  Fiber синхронные: исход пишется после завершения пробы (`??=`), при настоящем async худший случай — две пробы на ключ.
+  Бюджет проверяют и Deferred (до построения), и Timeout (не-deferred чекеры) — намеренно.
+- **Ключ и `ChildDefinition`:** числовые ключи аргументов потомка значат «добавить» (ResolveChildDefinitionsPass), позицию
+  задаёт только `index_N`; числовые ключи корневого определения — позиции.
+- **`timeouts.probe_ms`** (по умолчанию null; явный `~` принимается через `beforeNormalization()->ifNull()->thenUnset()`,
+  0/отрицательные/не-int — нет). `Context::$budget` (`Run\ProbeBudget`, часы `hrtime(true)`) создают `Action` /
+  `ParallelAction` (аргумент `$probeBudgetMs` ставится в `wireActionPipeline`, не параметром: Application не может
+  ссылаться на `ContainerIds`). Проверяют `TimeoutCheckerDecorator` и `DeferredReadinessCheckerDecorator` (до
+  построения клиента). Первый чекер прогона всегда выполняется: бюджет действует, только когда хотя бы один чекер уже
+  завершился (`ProbeBudget::checkerFinished()`: Timeout в `finally`, Deferred при ошибке построения). Пропуск —
+  обычная ошибка в `CheckResult` (`<label> skipped: probe budget exhausted (N ms > M ms)`), `NonCritical` делает её
+  warning, события штатные (`success=false` / `warned=true`, ≈0 мс), metrics-bridge-healthcheck считает `failed` /
+  `degraded` (статуса `skipped` там нет). `ParallelAction`: синхронные Fiber стартуют по очереди — семантика та же.
+  Идущий чекер не прерывается.
+- **Тесты:** `SharedCachePoolConnectionTest` (реальное ядро, порты 1/2/3 на 127.0.0.1 отказывают мгновенно, нужен
+  ext-redis); label одиночного пула несёт префикс класса родителя — прежнее поведение, тест его срезает.
+- **`CachePoolLocality::isLocal()` и цикл в цепочке родителей:** без защиты от цикла (невалидное DI; `detect()` на
+  таком определении зависнет). Защита есть только в `CachePoolConnection`.
+
+## Функциональные тесты: в CI больше чекеров, чем локально
+
+Матрица PHPUnit (bundle-standard) переносит `symfony/*` из `require-dev` в `require` с `SYMFONY_VERSION`. FrameworkBundle
+включает lock, messenger и т.п. только если пакет «доступен не только в dev» (`ContainerBuilder::willBeAvailable()`),
+поэтому в CI появляются `Lock store (lock.default)` и лишние пулы на `cache.app`, а локально — нет. Функциональный тест
+должен фильтровать отчёт по своим чекерам (`ProbeBudgetFunctionalTest->slowLines()`, `SharedCachePoolConnectionTest::POOLS`),
+а не сравнивать весь `messages`/`errors`.

@@ -53,11 +53,13 @@ Canonical bundle-standard v3 layers under `src/`, enforced by DEPTRAC:
 - `Presentation/` — entry points (`HealthController` for
   `/_/healthcheck/{ping,readiness,liveliness}`, `healthcheck:liveliness` /
   `healthcheck:readiness` console commands).
-- `DependencyInjection/` — `ContainerIds`, 17 detectors, `CompilerPass/` (4 passes).
+- `DependencyInjection/` — `ContainerIds`, 17 detectors, `CachePoolConnection` (helper, not a detector: share key of a pool), `CompilerPass/` (4 passes).
   The config tree, `services.php` import and action-pipeline wiring live in
   `HealthCheckBundle` (an `AbstractBundle`).
 
-Single execution path: `ActionInterface::run(Request) -> Response`. Action
+Single execution path: `ActionInterface::run(Request) -> Response`. `timeouts.probe_ms` (2.3.0) is a per-run
+`ProbeBudget` in `Context` that the Timeout/Deferred decorators check before starting a checker; `Context::$sharedProbes`
+holds per-run probe outcomes for checkers returning the same `sharedProbeKey()` (cache pools on one connection). Action
 runners (`Action` / `ParallelAction`) consume
 `iterable<CheckInterface>` via `#[AutowireIterator(CheckInterface::class)]`.
 

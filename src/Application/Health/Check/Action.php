@@ -15,6 +15,7 @@ use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Event\HealthChecker
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Event\HealthCheckRunCompletedEvent;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Event\HealthCheckRunStartedEvent;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Event\SafeEventDispatcher;
+use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Run\ProbeBudget;
 use Override;
 use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 
@@ -25,12 +26,14 @@ final readonly class Action implements ActionInterface
 {
     /**
      * @param iterable<array-key, CheckInterface> $healthCheckers keyed by service id in the container
+     * @param int<1, max>|null $probeBudgetMs
      */
     public function __construct(
         // The decoration passes re-tag every checker without attributes, so Symfony keys it by its (pre-decoration) service id.
         #[AutowireIterator(CheckInterface::class, indexAttribute: 'healthcheck_id')]
         private iterable $healthCheckers,
         private SafeEventDispatcher $eventDispatcher,
+        private ?int $probeBudgetMs = null,
     ) {
     }
 
@@ -40,8 +43,8 @@ final readonly class Action implements ActionInterface
         $this->eventDispatcher->dispatch(new HealthCheckRunStartedEvent($request));
 
         $result = new CheckResult();
-        $context = new Context($request->type, $request->options);
         $runStartedAt = microtime(true);
+        $context = new Context($request->type, $request->options, ProbeBudget::start($this->probeBudgetMs, hrtime(true)));
 
         foreach ($this->healthCheckers as $id => $checker) {
             if (!$checker->isSupport($context)) {

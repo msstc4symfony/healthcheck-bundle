@@ -527,6 +527,22 @@ final class HealthCheckerAutoDetectionPassTest extends TestCase
         self::assertTrue($container->hasDefinition('healthcheck.checker.app.redis'));
     }
 
+    public function testProcessKeepsEveryCachePoolCheckerEvenOnAConnectionAlreadyProbed(): void
+    {
+        $container = new ContainerBuilder();
+        $container->setDefinition('app.redis', new Definition('Redis'));
+        foreach (['a', 'b'] as $name) {
+            $container->setDefinition($name, (new Definition(RedisAdapter::class, [new Reference('app.redis')]))->addTag('cache.pool', ['name' => $name]));
+        }
+
+        $this->runPass($container);
+
+        self::assertTrue($container->hasDefinition('healthcheck.checker.app.redis'));
+        self::assertTrue($container->hasDefinition('healthcheck.checker.cache.pool.a'));
+        self::assertTrue($container->hasDefinition('healthcheck.checker.cache.pool.b'));
+        self::assertSame('redis:app.redis', $container->getDefinition('healthcheck.checker.cache.pool.a')->getArgument(3));
+    }
+
     #[RequiresMethod(PersistingStoreInterface::class, 'save')]
     public function testProcessSkipsAbstractServiceTemplates(): void
     {

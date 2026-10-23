@@ -76,6 +76,12 @@ final class HealthCheckBundle extends AbstractBundle
                     ->addDefaultsIfNotSet()
                     ->children()
                         ->integerNode('default_ms')->defaultValue(2000)->min(1)->end()
+                        ->integerNode('probe_ms')
+                            ->info('Wall-clock budget of one whole probe run; checkers not started by then are skipped and reported failed (warning when non-critical). Unset or null (default) is unlimited.')
+                            ->defaultNull()
+                            ->beforeNormalization()->ifNull()->thenUnset()->end()
+                            ->min(1)
+                        ->end()
                         ->arrayNode('overrides')
                             ->info('Service id -> timeout (ms); e.g. "healthcheck.checker.doctrine.dbal.default_connection: 5000"')
                             ->useAttributeAsKey('name')
@@ -129,7 +135,7 @@ final class HealthCheckBundle extends AbstractBundle
             ->set(ContainerIds::PARAM_NON_CRITICAL_CHECKERS, $config['non_critical'])
         ;
 
-        $this->wireActionPipeline($builder, $config['execution'] === 'parallel', $this->section($config, 'cache'));
+        $this->wireActionPipeline($builder, $config['execution'] === 'parallel', $this->section($config, 'cache'), is_int($timeouts['probe_ms']) ? $timeouts['probe_ms'] : null);
     }
 
     /**
@@ -150,11 +156,15 @@ final class HealthCheckBundle extends AbstractBundle
     /**
      * @param array<array-key, mixed> $cache
      */
-    private function wireActionPipeline(ContainerBuilder $container, bool $parallel, array $cache): void
+    private function wireActionPipeline(ContainerBuilder $container, bool $parallel, array $cache, ?int $probeBudgetMs): void
     {
         $innerServiceId = Action::class;
-        if ($parallel) {
-            $container->setDefinition(ContainerIds::SERVICE_PARALLEL_ACTION, (new Definition(ParallelAction::class))->setAutowired(true));
+        if (!$parallel) {
+            $container->getDefinition(Action::class)->setArgument('$probeBudgetMs', $probeBudgetMs);
+        } else {
+            $container->setDefinition(ContainerIds::SERVICE_PARALLEL_ACTION, (new Definition(ParallelAction::class))
+                ->setAutowired(true)
+                ->setArgument('$probeBudgetMs', $probeBudgetMs));
             $innerServiceId = ContainerIds::SERVICE_PARALLEL_ACTION;
 
             // Dropped so that introspection ("debug:container Action") reflects the active wiring.

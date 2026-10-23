@@ -8,6 +8,7 @@ use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\AbstractRea
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\CheckInterface;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\DeferredReadinessCheckerDecorator;
 use Msstc4Symfony\HealthCheckBundle\Application\Health\Check\Checker\TimeoutCheckerDecorator;
+use Msstc4Symfony\HealthCheckBundle\DependencyInjection\ContainerIds;
 use Msstc4Symfony\HealthCheckBundle\DependencyInjection\ServiceClass;
 use Override;
 use ReflectionClass;
@@ -44,7 +45,8 @@ final readonly class HealthCheckerDeferredConstructionPass implements CompilerPa
             }
 
             $definition = $container->getDefinition($id);
-            $checker = $this->flatten($container, $this->unwrapTimeout($container, $definition));
+            $unwrapped = $this->unwrapTimeout($container, $definition);
+            $checker = $this->flatten($container, $unwrapped);
             $checkerClass = $this->checkerClass($container, $checker);
             if ($checkerClass === null || !ServiceClass::is($container, $checker, AbstractReadinessChecker::class)) {
                 continue;
@@ -59,8 +61,31 @@ final readonly class HealthCheckerDeferredConstructionPass implements CompilerPa
                 ->addArgument(new ServiceClosureArgument(new Reference($innerId)))
                 ->addArgument($this->label($container, $checker, $id))
                 ->addArgument($checkerClass)
+                ->addArgument($this->shareKey($unwrapped))
+                ->addArgument($this->timeoutMs($definition))
                 ->addTag(CheckInterface::class));
         }
+    }
+
+    /**
+     * @return non-empty-string|null
+     */
+    private function shareKey(Definition $checker): ?string
+    {
+        $attributes = $checker->getTag(ContainerIds::TAG_SHARED_PROBE)[0] ?? null;
+        $key = is_array($attributes) ? ($attributes['key'] ?? null) : null;
+
+        return is_string($key) && $key !== '' ? $key : null;
+    }
+
+    /**
+     * @return positive-int|null the budget of the Timeout decorator the checker is wrapped in
+     */
+    private function timeoutMs(Definition $definition): ?int
+    {
+        $timeout = $definition->getClass() === TimeoutCheckerDecorator::class ? ($definition->getArguments()[1] ?? null) : null;
+
+        return is_int($timeout) && $timeout > 0 ? $timeout : null;
     }
 
     /**

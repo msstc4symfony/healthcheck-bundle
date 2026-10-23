@@ -53,6 +53,24 @@ final class HealthCheckBundleTest extends TestCase
         self::assertSame([], $container->getParameter('msstc4symfony_healthcheck.non_critical_checkers'));
     }
 
+    public function testProbeBudgetIsUnlimitedByDefault(): void
+    {
+        $container = $this->load([]);
+
+        self::assertNull($container->getDefinition(Action::class)->getArgument('$probeBudgetMs'));
+    }
+
+    public function testProbeBudgetReachesTheActiveRunner(): void
+    {
+        self::assertNull($this->load([['timeouts' => ['probe_ms' => null]]])->getDefinition(Action::class)->getArgument('$probeBudgetMs'));
+        self::assertSame(1500, $this->load([['timeouts' => ['probe_ms' => 1500]]])->getDefinition(Action::class)->getArgument('$probeBudgetMs'));
+        self::assertSame(1, $this->load([['timeouts' => ['probe_ms' => 1]]])->getDefinition(Action::class)->getArgument('$probeBudgetMs'));
+        self::assertSame(
+            900,
+            $this->load([['execution' => 'parallel', 'timeouts' => ['probe_ms' => 900]]])->getDefinition(ContainerIds::SERVICE_PARALLEL_ACTION)->getArgument('$probeBudgetMs'),
+        );
+    }
+
     public function testConfiguredValuesReachTheContainerParameters(): void
     {
         $container = $this->load([[
@@ -96,6 +114,9 @@ final class HealthCheckBundleTest extends TestCase
     {
         yield 'cache ttl' => [['cache' => ['ttl_seconds' => 0]]];
         yield 'default timeout' => [['timeouts' => ['default_ms' => 0]]];
+        yield 'probe budget' => [['timeouts' => ['probe_ms' => 0]]];
+        yield 'negative probe budget' => [['timeouts' => ['probe_ms' => -5]]];
+        yield 'non-integer probe budget' => [['timeouts' => ['probe_ms' => 'soon']]];
         yield 'timeout override' => [['timeouts' => ['overrides' => ['healthcheck.checker.app.redis' => 0]]]];
         yield 'http probe timeout' => [['http_client' => ['billing' => ['url' => 'https://billing.example', 'timeout_seconds' => 0]]]];
     }

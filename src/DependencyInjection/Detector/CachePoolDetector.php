@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Msstc4Symfony\HealthCheckBundle\DependencyInjection\Detector;
 
+use Msstc4Symfony\HealthCheckBundle\DependencyInjection\CachePoolConnection;
 use Msstc4Symfony\HealthCheckBundle\DependencyInjection\CachePoolLocality;
+use Msstc4Symfony\HealthCheckBundle\DependencyInjection\ContainerIds;
 use Msstc4Symfony\HealthCheckBundle\Infrastructure\Checker\CacheChecker;
 use Override;
 use Symfony\Component\DependencyInjection\ChildDefinition;
@@ -17,6 +19,10 @@ use Symfony\Component\DependencyInjection\Reference;
  * adapters). Pools living in process memory or on the local disk — FrameworkBundle's system pools
  * (cache.system, cache.validator, cache.serializer, …) and a filesystem cache.app — are skipped
  * (see CachePoolLocality).
+ *
+ * Every pool keeps its own checker (stable ids). Pools whose whole backend is one shared connection
+ * carry a share key (see CachePoolConnection), so within one probe run only the first of them really
+ * probes the connection.
  *
  * @internal
  */
@@ -36,6 +42,7 @@ final readonly class CachePoolDetector implements CheckerDetectorInterface
             $class = $pool->getClass();
             // The child's own "name" wins; a parent fills it in when the child has none.
             $name = $this->poolName($pool);
+            $shareKey = CachePoolConnection::shareKey($container, $pool);
             $parentName = null;
             while ($pool instanceof ChildDefinition) {
                 $pool = $container->findDefinition($pool->getParent());
@@ -49,11 +56,17 @@ final readonly class CachePoolDetector implements CheckerDetectorInterface
                 continue;
             }
 
-            yield sprintf('healthcheck.checker.cache.pool.%s', $name) => (new Definition(CacheChecker::class))
-                    ->addArgument(new Reference($id))
-                    ->addArgument($name)
-                    ->addArgument($parentName)
+            $checker = (new Definition(CacheChecker::class))
+                ->addArgument(new Reference($id))
+                ->addArgument($name)
+                ->addArgument($parentName)
+                ->addArgument($shareKey)
             ;
+            if ($shareKey !== null) {
+                $checker->addTag(ContainerIds::TAG_SHARED_PROBE, ['key' => $shareKey]);
+            }
+
+            yield sprintf('healthcheck.checker.cache.pool.%s', $name) => $checker;
         }
     }
 

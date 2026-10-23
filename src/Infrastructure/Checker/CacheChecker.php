@@ -15,10 +15,14 @@ use Symfony\Component\DependencyInjection\Attribute\Exclude;
 #[Exclude]
 final readonly class CacheChecker extends AbstractReadinessChecker
 {
+    /**
+     * @param non-empty-string|null $shareKey see CachePoolConnection
+     */
     public function __construct(
         private AdapterInterface $connection,
         private string $id,
         private ?string $parentName,
+        private ?string $shareKey = null,
     ) {
     }
 
@@ -44,6 +48,12 @@ final readonly class CacheChecker extends AbstractReadinessChecker
         return $this->parentName !== null
             ? sprintf('Cache (%s : %s) connection', $this->parentName, $this->id)
             : sprintf('Cache (%s) connection', $this->id);
+    }
+
+    #[Override]
+    protected function sharedProbeKey(): ?string
+    {
+        return $this->shareKey;
     }
 
     #[Override]

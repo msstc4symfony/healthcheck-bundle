@@ -21,6 +21,8 @@ final readonly class ContainerIds
 
     public const PARAM_NON_CRITICAL_CHECKERS = 'msstc4symfony_healthcheck.non_critical_checkers';
 
+    public const TAG_SHARED_PROBE = 'healthcheck.shared_probe';
+
     public const SERVICE_CACHED_ACTION = 'msstc4symfony_healthcheck.action.cached';
 
     public const SERVICE_PARALLEL_ACTION = 'msstc4symfony_healthcheck.action.parallel';

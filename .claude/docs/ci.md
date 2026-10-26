@@ -7,7 +7,6 @@ jobs:
   standard:
     uses: msstc4symfony/bundle-standard/.github/workflows/php-bundle.yml@v1.0.0
     with:
-      slug: msstc4symfony/healthcheck-bundle
       extensions: 'mbstring, xml, ctype, iconv, intl, redis, mongodb, memcache, memcached, rdkafka'
       infection-min-msi: 72
       infection-min-covered-msi: 72
@@ -27,5 +26,5 @@ jobs:
   pin every listed `symfony/*` to `7.4.*`, `COMPOSER=composer-ci.json composer
   update --prefer-lowest --prefer-stable`, run `vendor/bin/phpunit` (the CI step
   list is in `bundle-standard`'s `php-bundle.yml`).
-- Codecov is off (`run-codecov` defaults to `false`): no `CODECOV_TOKEN` yet.
+- No coverage upload: the standard dropped Codecov in v4.0.0.
 - Change the gate in `bundle-standard`, never by forking the workflow here.

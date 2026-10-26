@@ -121,6 +121,5 @@ tight.
 
 ## Coverage
 
-`make test-with-coverage` produces HTML coverage in `coverage/`. CI
-phpunit job uploads clover XML to Codecov on the default Symfony variant
-only (one upload per CI run — flags don't differentiate matrix variants).
+`make test-with-coverage` produces HTML coverage in `coverage/`. CI collects
+coverage only for Infection; nothing is uploaded (bundle-standard v4.0.0).

@@ -446,6 +446,10 @@ every detector using it. The abstract prototype itself is skipped explicitly by 
 - **`SharedProbe::reportTo()` сначала сравнивает длительность с бюджетом,** потом смотрит ошибку: так медленная общая
   неудача даёт `exceeded budget`, как и в пути Timeout (там `resetTrailing` заменяет ошибку). Оба пути покрыты
   `SharedProbeBehaviourTest::testASlowSharedFailureExceedsASmallerBudgetTheSameWayInBothPaths`.
+- **Known issue, won't fix (решение владельца 2026-10-24 UTC): кластерные подключения шарят пробу.** `CachePoolConnection`
+  не различает однохостовый и кластерный/многосерверный DSN, поэтому пулы на Redis Cluster, `RedisArray` или нескольких
+  Memcached-серверах получают один исход пробы, которая попала на один узел; упавший шард может остаться незамеченным.
+  Исправление (разбор DSN при компиляции и исключение таких подключений из шаринга) сознательно не делаем.
 - **Ограничения общей пробы (задокументированы в README):** на кластерном/многосерверном подключении (Redis Cluster,
   `RedisArray`, несколько Memcached) одна проба попадает на один шард; ошибка namespace первого пула (ACL key pattern,
   marshaller) распространяется на остальные; у пользовательских `sharedProbeKey()` шарится только исход `doCheck()` —
